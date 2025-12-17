@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from './ThemeToggle';
 import { SortingAndFiltersPopover } from './SortingAndFiltersPopover';
+import { ColumnHeader } from './ColumnHeader';
+import { ColumnFilterModal } from './ColumnFilterModal';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { cn } from '@/lib/utils';
 import { Search, Bell, Settings, User, Upload, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -31,6 +33,8 @@ export const PurchaseOrderBookPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('purchase-order-book');
   const [planMode, setPlanMode] = useState<'erp' | 'prod'>('erp');
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
 
   const data = useMemo(() => mockData, []);
 
@@ -260,23 +264,25 @@ export const PurchaseOrderBookPage: React.FC = () => {
                             position: 'relative',
                           }}
                         >
-                          {header.isPlaceholder ? null : (
-                            <div
-                              className={`flex items-center gap-2 ${
-                                header.column.getCanSort() && !isGroupHeader ? 'cursor-pointer select-none' : ''
-                              }`}
-                              onClick={header.column.getCanSort() && !isGroupHeader ? header.column.getToggleSortingHandler() : undefined}
+                          {header.isPlaceholder ? null : isGroupHeader ? (
+                            <div className="flex items-center gap-2">
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                            </div>
+                          ) : (
+                            <ColumnHeader
+                              header={header}
+                              columnId={header.column.id}
+                              sorting={sorting}
+                              columnFilters={columnFilters}
+                              onSortingChange={setSorting}
+                              onColumnFiltersChange={setColumnFilters}
+                              onFilterClick={(columnId) => {
+                                setFilterModalColumnId(columnId);
+                                setFilterModalOpen(true);
+                              }}
                             >
                               {flexRender(header.column.columnDef.header, header.getContext())}
-                              {header.column.getCanSort() && !isGroupHeader && (
-                                <span className="text-[var(--color-text-tertiary)] text-xs">
-                                  {{
-                                    asc: '↑',
-                                    desc: '↓',
-                                  }[header.column.getIsSorted() as string] ?? '↕'}
-                                </span>
-                              )}
-                            </div>
+                            </ColumnHeader>
                           )}
                           {header.column.getCanResize() && !isGroupHeader && (
                             <div
@@ -402,6 +408,86 @@ export const PurchaseOrderBookPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Column Filter Modal */}
+      {filterModalColumnId && (
+        <ColumnFilterModal
+          open={filterModalOpen}
+          onOpenChange={setFilterModalOpen}
+          columnId={filterModalColumnId}
+          columnLabel={(columns.find((col) => col.id === filterModalColumnId)?.header as string) || filterModalColumnId}
+          category={(() => {
+            // Find the column definition to get its group
+            const findColumnGroup = (columnId: string): string | undefined => {
+              for (const col of columns) {
+                if ('columns' in col && Array.isArray(col.columns)) {
+                  const found = col.columns.find((c) => c.id === columnId);
+                  if (found) {
+                    return typeof col.header === 'string' ? col.header : undefined;
+                  }
+                } else if (col.id === columnId) {
+                  // Check if it's in a group by looking at surrounding columns
+                  return undefined; // Ungrouped
+                }
+              }
+              return undefined;
+            };
+            return findColumnGroup(filterModalColumnId);
+          })()}
+          columnType={(() => {
+            // Detect column type from data
+            if (!data.length) return 'text';
+            const sampleValue = (data[0] as any)[filterModalColumnId];
+            if (typeof sampleValue === 'number') return 'number';
+            if (typeof sampleValue === 'string' && /^\d{4}-\d{2}-\d{2}/.test(sampleValue)) return 'date';
+            return 'text';
+          })()}
+          options={(() => {
+            const values = new Set<string | number>();
+            data.forEach((row) => {
+              const value = (row as any)[filterModalColumnId];
+              if (value !== undefined && value !== null) {
+                values.add(value);
+              }
+            });
+            return Array.from(values)
+              .map((value) => ({
+                label: String(value),
+                value,
+              }))
+              .sort((a, b) => String(a.value).localeCompare(String(b.value)));
+          })()}
+          selectedValues={(() => {
+            const filter = columnFilters.find((f) => f.id === filterModalColumnId);
+            if (!filter) return [];
+            if (Array.isArray(filter.value)) {
+              return filter.value;
+            }
+            if (typeof filter.value === 'object' && filter.value !== null && 'values' in filter.value) {
+              return (filter.value as any).values || [];
+            }
+            return [filter.value].filter(Boolean);
+          })()}
+          condition={(() => {
+            const filter = columnFilters.find((f) => f.id === filterModalColumnId);
+            if (!filter) return 'is';
+            if (typeof filter.value === 'object' && filter.value !== null && 'condition' in filter.value) {
+              return (filter.value as any).condition === 'isNot' ? 'isNot' : 'is';
+            }
+            return 'is';
+          })()}
+          onApply={(values, condition) => {
+            const newFilters = columnFilters.filter((f) => f.id !== filterModalColumnId);
+            if (values.length > 0) {
+              newFilters.push({
+                id: filterModalColumnId,
+                value: condition === 'is' ? values : { condition, values },
+              });
+            }
+            setColumnFilters(newFilters);
+          }}
+        />
+      )}
     </div>
   );
 };

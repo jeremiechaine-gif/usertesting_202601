@@ -109,14 +109,53 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     setHasDraftChanges(false);
   }, [sorting, columnFilters, open]);
 
+  // Helper to recursively find column by ID and get its label
+  const getColumnLabel = (columnId: string): string => {
+    const findColumn = (cols: ColumnDef<any>[]): ColumnDef<any> | null => {
+      for (const col of cols) {
+        if (col.id === columnId) {
+          return col;
+        }
+        if ('columns' in col && Array.isArray(col.columns)) {
+          const found = findColumn(col.columns);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const column = findColumn(columns);
+    if (!column) return columnId;
+
+    // Extract header text
+    if (typeof column.header === 'string') {
+      return column.header;
+    }
+    if (typeof column.header === 'function') {
+      // For function headers, try to get a readable name from the column definition
+      return column.id || columnId;
+    }
+    return column.id || columnId;
+  };
+
   // Get sortable columns
   const sortableColumns = useMemo(() => {
-    return columns
-      .filter((col) => col.id && col.enableSorting !== false)
-      .map((col) => ({
-        id: col.id!,
-        label: typeof col.header === 'string' ? col.header : col.id || 'Unknown',
-      }));
+    const getSortableColumns = (cols: ColumnDef<any>[]): Array<{ id: string; label: string }> => {
+      const result: Array<{ id: string; label: string }> = [];
+      for (const col of cols) {
+        if (col.id && col.enableSorting !== false) {
+          result.push({
+            id: col.id,
+            label: getColumnLabel(col.id),
+          });
+        }
+        if ('columns' in col && Array.isArray(col.columns)) {
+          result.push(...getSortableColumns(col.columns));
+        }
+      }
+      return result;
+    };
+    return getSortableColumns(columns);
   }, [columns]);
 
   // Get filter definition by ID
@@ -258,10 +297,20 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const hasActiveFilters = draftFilters.length > 0;
   const hasAnyActive = hasActiveSorts || hasActiveFilters;
 
+  // Calculate active counts from table state (for trigger badge)
+  const activeSortCount = sorting.length;
+  const activeFilterCount = columnFilters.length;
+  const totalActiveCount = activeSortCount + activeFilterCount;
+
   const defaultTrigger = (
-    <Button variant="ghost" size="sm" className="gap-2">
+    <Button variant="outline" size="sm" className="gap-2">
       <Filter className="w-4 h-4" />
-      Add Filter +
+      Sorting and filters
+      {totalActiveCount > 0 && (
+        <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
+          {totalActiveCount}
+        </Badge>
+      )}
     </Button>
   );
 
@@ -299,6 +348,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             onUpdateFilterValues={handleUpdateFilterValues}
             onRemoveFilter={handleRemoveFilter}
             getFilterDef={getFilterDef}
+            getFilterColumnLabel={getColumnLabel}
             getFilterDisplayValues={getFilterDisplayValues}
             onSave={handleSave}
             onClearAll={handleClearAll}
@@ -341,6 +391,7 @@ interface MainViewProps {
   onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
   onRemoveFilter: (filterId: string) => void;
   getFilterDef: (filterId: string) => FilterDefinition | undefined;
+  getFilterColumnLabel: (columnId: string) => string;
   getFilterDisplayValues: (filter: FilterConfig) => string[];
   onSave: () => void;
   onClearAll: () => void;
@@ -363,6 +414,7 @@ const MainView: React.FC<MainViewProps> = ({
   onUpdateFilterValues,
   onRemoveFilter,
   getFilterDef,
+  getFilterColumnLabel,
   getFilterDisplayValues,
   onSave,
   onClearAll,
@@ -485,6 +537,7 @@ const MainView: React.FC<MainViewProps> = ({
                       <FilterRow
                         key={filter.id}
                         filter={filter}
+                        columnLabel={getFilterColumnLabel(filter.filterId)}
                         filterDef={getFilterDef(filter.filterId)}
                         displayValues={getFilterDisplayValues(filter)}
                         onUpdateValues={onUpdateFilterValues}
@@ -570,17 +623,21 @@ const SortRow: React.FC<SortRowProps> = ({
       <Button
         variant="outline"
         size="sm"
-        className="h-8 px-3 gap-2 border-primary/20 hover:bg-primary/10 hover:border-primary/40"
+        className="h-8 px-3 gap-2"
+        style={{
+          borderColor: '#31C7AD',
+          color: '#31C7AD',
+        }}
         onClick={() => onUpdate(sort.id, { direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
       >
         {sort.direction === 'asc' ? (
           <>
-            <ArrowUp className="h-4 w-4 text-primary" />
+            <ArrowUp className="h-4 w-4" style={{ color: '#31C7AD' }} />
             <span>Ascending</span>
           </>
         ) : (
           <>
-            <ArrowDown className="h-4 w-4 text-primary" />
+            <ArrowDown className="h-4 w-4" style={{ color: '#31C7AD' }} />
             <span>Descending</span>
           </>
         )}
@@ -600,6 +657,7 @@ const SortRow: React.FC<SortRowProps> = ({
 // Filter Row Component
 interface FilterRowProps {
   filter: FilterConfig;
+  columnLabel: string;
   filterDef: FilterDefinition | undefined;
   displayValues: string[];
   onUpdateValues: (filterId: string, values: (string | number)[]) => void;
@@ -608,6 +666,7 @@ interface FilterRowProps {
 
 const FilterRow: React.FC<FilterRowProps> = ({
   filter,
+  columnLabel,
   filterDef,
   displayValues,
   onUpdateValues,
@@ -619,24 +678,13 @@ const FilterRow: React.FC<FilterRowProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedValues, setSelectedValues] = useState<(string | number)[]>(filter.values);
 
-  if (!filterDef) {
-    return (
-      <div className="flex items-center justify-between p-2 border rounded-md">
-        <span className="text-sm text-muted-foreground">Unknown filter</span>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onRemove(filter.id)}>
-          <X className="h-3 w-3" />
-        </Button>
-      </div>
-    );
-  }
-
   const handleSaveValues = () => {
     onUpdateValues(filter.id, selectedValues);
     setIsEditing(false);
   };
 
   const handleToggleValue = (value: string | number) => {
-    if (filterDef.type === 'select') {
+    if (filterDef && filterDef.type === 'select') {
       setSelectedValues([value]);
     } else {
       setSelectedValues((prev) =>
@@ -646,11 +694,10 @@ const FilterRow: React.FC<FilterRowProps> = ({
   };
 
   return (
-    <div className="flex items-start gap-2 p-2 border rounded-md bg-background">
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium mb-1">{filterDef.label}</div>
-        {isEditing && filterDef.options ? (
-          <div className="space-y-2">
+    <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
+      {isEditing && filterDef && filterDef.options ? (
+        <>
+          <div className="flex-1 space-y-2">
             <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
               {filterDef.options.map((option) => {
                 const isSelected = selectedValues.includes(option.value);
@@ -682,8 +729,11 @@ const FilterRow: React.FC<FilterRowProps> = ({
               </Button>
             </div>
           </div>
-        ) : (
-          <div className="flex flex-wrap gap-1">
+        </>
+      ) : (
+        <>
+          <span className="text-sm font-medium shrink-0">{columnLabel}</span>
+          <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
             {visibleValues.map((value, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs">
                 {value}
@@ -697,7 +747,7 @@ const FilterRow: React.FC<FilterRowProps> = ({
             {displayValues.length === 0 && (
               <span className="text-xs text-muted-foreground">No values selected</span>
             )}
-            {filterDef.options && (
+            {filterDef && filterDef.options && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -708,16 +758,16 @@ const FilterRow: React.FC<FilterRowProps> = ({
               </Button>
             )}
           </div>
-        )}
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 shrink-0"
-        onClick={() => onRemove(filter.id)}
-      >
-        <X className="h-3 w-3" />
-      </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            onClick={() => onRemove(filter.id)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </>
+      )}
     </div>
   );
 };
