@@ -19,8 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from './ThemeToggle';
+import { SortingAndFiltersPopover } from './SortingAndFiltersPopover';
+import { filterDefinitions } from '@/lib/filterDefinitions';
 import { cn } from '@/lib/utils';
-import { Search, Bell, Settings, User, Upload, Download, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, Bell, Settings, User, Upload, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export const PurchaseOrderBookPage: React.FC = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -209,10 +211,14 @@ export const PurchaseOrderBookPage: React.FC = () => {
                 <SelectItem value="none">Group by None</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Add Filter +
-            </Button>
+            <SortingAndFiltersPopover
+              sorting={sorting}
+              columnFilters={columnFilters}
+              onSortingChange={setSorting}
+              onColumnFiltersChange={setColumnFilters}
+              columns={columns}
+              filterDefinitions={filterDefinitions}
+            />
           </div>
           <Button variant="ghost" size="sm">Columns</Button>
         </div>
