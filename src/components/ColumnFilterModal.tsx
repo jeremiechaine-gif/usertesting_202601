@@ -161,9 +161,19 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
   };
 
   // Handle apply
-  const handleApply = () => {
+  const handleApply = (e: React.MouseEvent) => {
+    // Stop any event propagation to prevent header clicks
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Apply filter first
     onApply(selectedValues, condition);
-    onOpenChange(false);
+    
+    // Close modal after a small delay to ensure event propagation is stopped
+    // This prevents the click from bubbling to the header
+    setTimeout(() => {
+      onOpenChange(false);
+    }, 10);
   };
 
   // Handle cancel
@@ -306,7 +316,14 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleApply} className="bg-[#2063F0] hover:bg-[#1a54d8]">
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleApply(e);
+            }} 
+            className="bg-[#2063F0] hover:bg-[#1a54d8]"
+          >
             Apply
           </Button>
         </DialogFooter>

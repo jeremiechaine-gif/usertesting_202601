@@ -17,14 +17,15 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { ThemeToggle } from './ThemeToggle';
 import { SortingAndFiltersPopover } from './SortingAndFiltersPopover';
 import { ColumnHeader } from './ColumnHeader';
 import { ColumnFilterModal } from './ColumnFilterModal';
 import { filterDefinitions } from '@/lib/filterDefinitions';
+import { ScopeDropdown } from './ScopeDropdown';
 import { cn } from '@/lib/utils';
-import { Search, Bell, Settings, User, Upload, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
 
 export const PurchaseOrderBookPage: React.FC = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -35,6 +36,8 @@ export const PurchaseOrderBookPage: React.FC = () => {
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedScopeId, setSelectedScopeId] = useState<string | null>(null);
 
   const data = useMemo(() => mockData, []);
 
@@ -67,14 +70,16 @@ export const PurchaseOrderBookPage: React.FC = () => {
     },
   });
 
-  const activeFilters = columnFilters.length;
-  const filterSummary = activeFilters > 0 
-    ? `Filters (${activeFilters}): ${columnFilters.slice(0, 2).map(f => f.id).join(', ')}${activeFilters > 2 ? '...' : ''}`
-    : '';
 
   return (
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
-      <Sidebar activeItem="supply" />
+      {!sidebarCollapsed && (
+        <Sidebar 
+          activeItem="supply" 
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(true)}
+        />
+      )}
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Banner */}
@@ -87,117 +92,154 @@ export const PurchaseOrderBookPage: React.FC = () => {
 
         {/* Main Header */}
         <div className="border-b bg-background">
-          <div className="px-6 py-5">
-            <div className="flex items-center justify-between mb-5">
+          <div className="px-6 py-4">
+            {/* Top Header Row */}
+            <div className="flex items-center justify-between mb-4">
+              {/* Left Side */}
               <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
-                {filterSummary && (
-                  <Badge variant="secondary" className="px-3 py-1">
-                    {filterSummary}
-                  </Badge>
+                {sidebarCollapsed && (
+                  <Button 
+                    variant="ghost" 
+                    className="h-8 px-3 gap-2"
+                    onClick={() => setSidebarCollapsed(false)}
+                  >
+                    <Menu className="w-4 h-4" />
+                    <span className="text-sm">Menu</span>
+                  </Button>
                 )}
+                {/* Logo placeholder - teal bird-like icon */}
+                <div className="w-6 h-6 rounded bg-[#31C7AD] flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">P</span>
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
+                <div className="h-6 w-px bg-border" />
+                <ScopeDropdown
+                  selectedScopeId={selectedScopeId}
+                  onScopeSelect={setSelectedScopeId}
+                  onScopeFiltersChange={(filters: ColumnFiltersState) => {
+                    setColumnFilters(filters);
+                  }}
+                />
               </div>
-              
-              <div className="flex items-center gap-4">
+
+              {/* Center - Search */}
+              <div className="flex-1 max-w-md mx-8">
+                <div className="relative flex items-center">
+                  <InputWithIcon
+                    placeholder="Search..."
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    startAdornment={<Search className="w-4 h-4 text-muted-foreground" />}
+                    className="pr-20"
+                  />
+                  <div className="absolute right-2 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground border rounded bg-background">
+                    <span>⌘</span>
+                    <span>K</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side */}
+              <div className="flex items-center gap-3">
+                {/* ERP Plan / Production Plan Toggle */}
                 <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
                   <Button
-                    variant={planMode === 'erp' ? 'secondary' : 'ghost'}
+                    variant={planMode === 'erp' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setPlanMode('erp')}
-                    className={planMode === 'erp' ? 'bg-background shadow-sm' : ''}
+                    className={planMode === 'erp' ? 'bg-background text-[#2063F0] shadow-sm' : 'text-muted-foreground'}
                   >
                     ERP Plan
                   </Button>
                   <Button
-                    variant={planMode === 'prod' ? 'secondary' : 'ghost'}
+                    variant={planMode === 'prod' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setPlanMode('prod')}
-                    className={planMode === 'prod' ? 'bg-background shadow-sm' : ''}
+                    className={planMode === 'prod' ? 'bg-background text-[#2063F0] shadow-sm' : 'text-muted-foreground'}
                   >
-                    Prod Plan
+                    Production Plan
                   </Button>
-                </div>
-                
-                <Badge variant="outline" className="px-3 py-1.5">
-                  Routine: No routine available
-                </Badge>
-                
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon">
-                    <Bell className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Settings className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <User className="w-5 h-5" />
-                  </Button>
-                  <ThemeToggle />
-                </div>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 mb-4">
-              <div className="flex-1 max-w-md w-full">
-                <InputWithIcon
-                  placeholder="Search objects…"
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  startAdornment={<Search className="w-4 h-4" />}
-                />
-                <div className="text-xs text-muted-foreground mt-1 ml-1">
-                  ⌘K
-                </div>
-              </div>
-
-              {/* KPI Chips */}
-              <div className="flex items-center gap-3 lg:gap-4 ml-auto flex-wrap">
-                <div className="flex items-center gap-3 px-4 py-3 bg-card rounded-lg border shadow-sm hover:shadow transition-shadow">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                    <span className="text-primary-foreground text-sm font-bold">✓</span>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Buy Parts Inventory</div>
-                    <div className="text-base font-bold">€3,062,069.59</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3 px-4 py-3 bg-card rounded-lg border shadow-sm hover:shadow transition-shadow">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                    <span className="text-primary-foreground text-sm font-bold">✓</span>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Inventory Value</div>
-                    <div className="text-base font-bold">€11,893,888.07</div>
-                  </div>
                 </div>
 
-                <Button variant="secondary" size="sm">Simulate</Button>
-                <Button variant="ghost" size="icon">
-                  <Upload className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Download className="w-5 h-5" />
+                <div className="h-6 w-px bg-border" />
+
+                {/* Routine Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 px-3 text-sm">
+                      Routine: No routine Available
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>No routine available</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Save/Download Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                      <Save className="w-4 h-4" />
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Save</DropdownMenuItem>
+                    <DropdownMenuItem>Download</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Link Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                      <LinkIcon className="w-4 h-4" />
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
+                    <DropdownMenuItem>Share</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <div className="h-6 w-px bg-border" />
+
+                {/* Notifications */}
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Bell className="w-5 h-5" />
                 </Button>
               </div>
             </div>
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="h-auto p-1 bg-muted">
-                <TabsTrigger value="purchase-order-book" className="data-[state=active]:bg-background">
+              <TabsList className="h-auto p-0 bg-transparent border-b border-transparent">
+                <TabsTrigger 
+                  value="purchase-order-book" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                >
                   Purchase Order Book
                 </TabsTrigger>
-                <TabsTrigger value="planning" className="data-[state=active]:bg-background">
+                <TabsTrigger 
+                  value="line-of-balance" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                >
+                  Line of Balance
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="planning" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                >
                   Planning
+                  <Badge variant="secondary" className="ml-2 text-xs">Beta</Badge>
                 </TabsTrigger>
-                <TabsTrigger value="missing-parts" className="data-[state=active]:bg-background">
-                  Missing Parts
-                </TabsTrigger>
-                <TabsTrigger value="event-explorer" className="data-[state=active]:bg-background">
-                  Event Explorer
-                  <Badge variant="secondary" className="ml-2">Beta</Badge>
+                <TabsTrigger 
+                  value="opportunities" 
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                >
+                  Opportunities
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -222,6 +264,10 @@ export const PurchaseOrderBookPage: React.FC = () => {
               onColumnFiltersChange={setColumnFilters}
               columns={columns}
               filterDefinitions={filterDefinitions}
+              onOpenFilterModal={(columnId) => {
+                setFilterModalColumnId(columnId);
+                setFilterModalOpen(true);
+              }}
             />
           </div>
           <Button variant="ghost" size="sm">Columns</Button>
@@ -477,6 +523,7 @@ export const PurchaseOrderBookPage: React.FC = () => {
             return 'is';
           })()}
           onApply={(values, condition) => {
+            // Prevent any potential event bubbling that might trigger header click
             const newFilters = columnFilters.filter((f) => f.id !== filterModalColumnId);
             if (values.length > 0) {
               newFilters.push({
@@ -484,7 +531,11 @@ export const PurchaseOrderBookPage: React.FC = () => {
                 value: condition === 'is' ? values : { condition, values },
               });
             }
-            setColumnFilters(newFilters);
+            // Use setTimeout to ensure modal closes before state update
+            // This prevents any click events from bubbling to header
+            setTimeout(() => {
+              setColumnFilters(newFilters);
+            }, 0);
           }}
         />
       )}

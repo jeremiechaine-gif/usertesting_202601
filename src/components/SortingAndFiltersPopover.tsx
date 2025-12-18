@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -14,13 +14,13 @@ import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { FilterChip } from '@/components/ui/filter-chip';
+import { SortChip } from '@/components/ui/sort-chip';
 import {
   X,
   Plus,
   GripVertical,
   ArrowLeft,
-  ArrowUp,
-  ArrowDown,
   Info,
   Star,
   ChevronRight,
@@ -67,6 +67,9 @@ interface SortingAndFiltersPopoverProps {
   // Filter definitions
   filterDefinitions: FilterDefinition[];
   
+  // Callback to open filter modal for a column
+  onOpenFilterModal?: (columnId: string) => void;
+  
   // Trigger button (optional, can be passed as children)
   trigger?: React.ReactNode;
 }
@@ -78,6 +81,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   onColumnFiltersChange,
   columns,
   filterDefinitions,
+  onOpenFilterModal,
   trigger,
 }) => {
   const [open, setOpen] = useState(false);
@@ -243,9 +247,41 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     setHasDraftChanges(true);
   };
 
+  // Map filter definition ID to column ID
+  const getColumnIdFromFilterId = (filterId: string): string | null => {
+    const mapping: Record<string, string> = {
+      'part-name': 'partName',
+      'part-number': 'partNumber',
+      'type': 'type',
+      'delivery-status': 'deliveryStatus',
+      'plant': 'plant',
+      'supplier': 'supplier',
+      'buyer-codes': 'buyerCodes', // Generic buyer codes - might need specific column
+      'escalation-level': 'escalationLevel',
+      'otd-status': 'otdStatus',
+      'open-quantity': 'openQuantity',
+      'price': 'price',
+      'inventory-value': 'inventoryValue',
+      'consumed-part-buyer-codes': 'consumedPartBuyerCodes', // Might not exist as column
+      'produced-part-buyer-codes': 'producedPartBuyerCodes', // Might not exist as column
+    };
+    return mapping[filterId] || null;
+  };
+
   // Add filter
   const handleAddFilter = (filterDef: FilterDefinition) => {
-    // Check if filter already exists
+    // Check if this filter maps to a column - if so, open the column filter modal
+    const columnId = getColumnIdFromFilterId(filterDef.id);
+    if (columnId && onOpenFilterModal) {
+      // Close the popover and open the filter modal
+      setView('main');
+      setFilterSearch('');
+      setOpen(false);
+      onOpenFilterModal(columnId);
+      return;
+    }
+
+    // Otherwise, add filter to draft (for filters that don't map to columns)
     const existingFilter = draftFilters.find((f) => f.filterId === filterDef.id);
     if (existingFilter) {
       // If exists, just switch to main view (user can edit it there)
@@ -302,6 +338,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const activeFilterCount = columnFilters.length;
   const totalActiveCount = activeSortCount + activeFilterCount;
 
+
   const defaultTrigger = (
     <Button variant="outline" size="sm" className="gap-2">
       <Filter className="w-4 h-4" />
@@ -315,13 +352,22 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         {trigger || defaultTrigger}
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-[480px] max-w-[90vw] p-0"
-        align="start"
+      </SheetTrigger>
+      <SheetContent
+        side="left"
+        className="w-[560px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
+        style={{
+          top: '16px',
+          bottom: '16px',
+          left: '16px',
+          right: 'auto',
+          height: 'calc(100vh - 32px)',
+          maxHeight: 'calc(100vh - 32px)',
+          width: '560px',
+        }}
         onEscapeKeyDown={() => {
           if (view === 'add-filter') {
             setView('main');
@@ -369,8 +415,8 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             onClose={() => setOpen(false)}
           />
         )}
-      </PopoverContent>
-    </Popover>
+      </SheetContent>
+    </Sheet>
   );
 };
 
@@ -422,16 +468,16 @@ const MainView: React.FC<MainViewProps> = ({
   onClose,
 }) => {
   return (
-    <div className="flex flex-col max-h-[600px]">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <h3 className="font-semibold text-sm">Sorting & Filters</h3>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1 px-4">
+      <ScrollArea className="flex-1 px-4 min-h-0">
         <div className="py-4 space-y-4">
           {/* Current Sorting Section */}
           <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full">
@@ -553,7 +599,7 @@ const MainView: React.FC<MainViewProps> = ({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30">
+      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -593,18 +639,14 @@ const SortRow: React.FC<SortRowProps> = ({
   onUpdate,
   onRemove,
 }) => {
-
   return (
-    <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
+    <div className="flex items-center gap-2">
       <button
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
         title="Drag to reorder"
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <Badge variant="outline" className="h-6 w-6 shrink-0 justify-center p-0">
-        {index + 1}
-      </Badge>
       <Select
         value={sort.columnId}
         onValueChange={(value) => onUpdate(sort.id, { columnId: value })}
@@ -620,36 +662,16 @@ const SortRow: React.FC<SortRowProps> = ({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-8 px-3 gap-2"
-        style={{
-          borderColor: '#31C7AD',
-          color: '#31C7AD',
-        }}
-        onClick={() => onUpdate(sort.id, { direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
-      >
-        {sort.direction === 'asc' ? (
-          <>
-            <ArrowUp className="h-4 w-4" style={{ color: '#31C7AD' }} />
-            <span>Ascending</span>
-          </>
-        ) : (
-          <>
-            <ArrowDown className="h-4 w-4" style={{ color: '#31C7AD' }} />
-            <span>Descending</span>
-          </>
-        )}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 shrink-0"
-        onClick={() => onRemove(sort.id)}
-      >
-        <X className="h-3 w-3" />
-      </Button>
+      <SortChip
+        label=""
+        direction={sort.direction}
+        position={index + 1}
+        showPosition={true}
+        showDragHandle={false}
+        onToggleDirection={() => onUpdate(sort.id, { direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
+        onRemove={() => onRemove(sort.id)}
+        className="flex-1"
+      />
     </div>
   );
 };
@@ -672,108 +694,29 @@ const FilterRow: React.FC<FilterRowProps> = ({
   onUpdateValues,
   onRemove,
 }) => {
-  const maxVisible = 2;
-  const visibleValues = displayValues.slice(0, maxVisible);
-  const remainingCount = displayValues.length - maxVisible;
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedValues, setSelectedValues] = useState<(string | number)[]>(filter.values);
-
-  const handleSaveValues = () => {
-    onUpdateValues(filter.id, selectedValues);
-    setIsEditing(false);
-  };
-
-  const handleToggleValue = (value: string | number) => {
-    if (filterDef && filterDef.type === 'select') {
-      setSelectedValues([value]);
-    } else {
-      setSelectedValues((prev) =>
-        prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-      );
-    }
+  const handleRemoveValue = (value: string | number) => {
+    const newValues = filter.values.filter((v) => v !== value);
+    onUpdateValues(filter.id, newValues);
   };
 
   return (
-    <div className="flex items-center gap-2 p-2 border rounded-md bg-background">
-      {isEditing && filterDef && filterDef.options ? (
-        <>
-          <div className="flex-1 space-y-2">
-            <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              {filterDef.options.map((option) => {
-                const isSelected = selectedValues.includes(option.value);
-                return (
-                  <Badge
-                    key={option.value}
-                    variant={isSelected ? 'default' : 'outline'}
-                    className="text-xs cursor-pointer"
-                    onClick={() => handleToggleValue(option.value)}
-                  >
-                    {option.label}
-                  </Badge>
-                );
-              })}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleSaveValues}>
-                Save
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedValues(filter.values);
-                  setIsEditing(false);
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <span className="text-sm font-medium shrink-0">{columnLabel}</span>
-          <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
-            {visibleValues.map((value, idx) => (
-              <Badge key={idx} variant="secondary" className="text-xs">
-                {value}
-              </Badge>
-            ))}
-            {remainingCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                +{remainingCount}
-              </Badge>
-            )}
-            {displayValues.length === 0 && (
-              <span className="text-xs text-muted-foreground">No values selected</span>
-            )}
-            {filterDef && filterDef.options && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 text-xs px-2"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </Button>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0"
-            onClick={() => onRemove(filter.id)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </>
-      )}
-    </div>
+    <FilterChip
+      label={columnLabel}
+      values={filter.values}
+      displayValues={displayValues}
+      options={filterDef?.options?.map((opt) => ({ value: opt.value, label: opt.label }))}
+      maxVisible={2}
+      onRemove={() => onRemove(filter.id)}
+      onRemoveValue={handleRemoveValue}
+      onUpdateValues={(values) => onUpdateValues(filter.id, values)}
+      enableInlineEdit={!!filterDef?.options}
+      showEditButton={false}
+    />
   );
 };
 
 // Add Filter View Component
-interface AddFilterViewProps {
+export interface AddFilterViewProps {
   filterSearch: string;
   onFilterSearchChange: (value: string) => void;
   filteredFilterDefs: FilterDefinition[];
@@ -788,7 +731,7 @@ interface AddFilterViewProps {
   onClose: () => void;
 }
 
-const AddFilterView: React.FC<AddFilterViewProps> = ({
+export const AddFilterView: React.FC<AddFilterViewProps> = ({
   filterSearch,
   onFilterSearchChange,
   filteredFilterDefs,
@@ -798,25 +741,25 @@ const AddFilterView: React.FC<AddFilterViewProps> = ({
   onClose,
 }) => {
   return (
-    <div className="flex flex-col max-h-[600px]">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h3 className="font-semibold text-sm">Add filter</h3>
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Filter List */}
-      <ScrollArea className="flex-1">
-        <Command className="rounded-lg border-0">
-          <div className="px-2 py-2 border-b">
-            <div className="flex items-center border rounded-md px-3">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <Command className="rounded-lg border-0 h-full flex flex-col">
+          <div className="px-4 py-3 border-b shrink-0">
+            <div className="flex items-center border rounded-md px-3 bg-background">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <input
                 placeholder="Search filter…"
@@ -826,7 +769,7 @@ const AddFilterView: React.FC<AddFilterViewProps> = ({
               />
             </div>
           </div>
-          <CommandList>
+          <CommandList className="flex-1 min-h-0 overflow-auto">
             {filterSearch ? (
               // Search results
               <>
@@ -920,7 +863,7 @@ const AddFilterView: React.FC<AddFilterViewProps> = ({
             )}
           </CommandList>
         </Command>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

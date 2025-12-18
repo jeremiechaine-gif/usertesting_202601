@@ -2,7 +2,7 @@
  * Column Header Component with hover indicators and context menu
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -133,8 +133,21 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
 
   // Handle header click for sorting
   const handleHeaderClick = (e: React.MouseEvent) => {
-    // Don't trigger if clicking on the menu button
-    if ((e.target as HTMLElement).closest('[role="button"]')) {
+    // Don't trigger if clicking on the menu button or any interactive element
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('[role="button"]') ||
+      target.closest('[role="menuitem"]') ||
+      target.closest('[data-radix-dropdown-menu-trigger]') ||
+      target.closest('[data-radix-dropdown-menu-content]') ||
+      target.closest('[data-radix-dialog-content]') ||
+      target.closest('[data-radix-dialog-overlay]')
+    ) {
+      return;
+    }
+    
+    // Don't trigger if event came from a modal or dropdown
+    if (target.closest('[data-state]')) {
       return;
     }
     
@@ -154,6 +167,24 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
     }
   };
 
+  // Track if filter modal is open to prevent header clicks
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  
+  useEffect(() => {
+    // Check if filter modal is open by looking for dialog overlay
+    const checkModal = () => {
+      const dialog = document.querySelector('[data-radix-dialog-overlay]');
+      setFilterModalOpen(!!dialog);
+    };
+    
+    // Check periodically and on mutations
+    const observer = new MutationObserver(checkModal);
+    observer.observe(document.body, { childList: true, subtree: true });
+    checkModal();
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
       className="flex items-center h-full relative group pr-8"
@@ -164,7 +195,15 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
           setIsHovered(false);
         }
       }}
-      onClick={handleHeaderClick}
+      onClick={(e) => {
+        // Don't trigger header click if filter modal is open
+        if (filterModalOpen) {
+          e.stopPropagation();
+          e.preventDefault();
+          return;
+        }
+        handleHeaderClick(e);
+      }}
     >
       <div className="flex-1 min-w-0 truncate cursor-pointer select-none">{children}</div>
 
