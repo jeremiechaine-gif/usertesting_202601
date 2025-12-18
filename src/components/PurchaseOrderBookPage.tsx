@@ -107,10 +107,12 @@ export const PurchaseOrderBookPage: React.FC = () => {
                     <span className="text-sm">Menu</span>
                   </Button>
                 )}
-                {/* Logo placeholder - teal bird-like icon */}
-                <div className="w-6 h-6 rounded bg-[#31C7AD] flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">P</span>
-                </div>
+                {/* Pelico small logo */}
+                <img 
+                  src="/images/Pelico-small-logo.svg" 
+                  alt="Pelico" 
+                  className="w-6 h-6 shrink-0"
+                />
                 <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
                 <div className="h-6 w-px bg-border" />
                 <ScopeDropdown

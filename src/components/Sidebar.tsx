@@ -35,10 +35,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onTog
       {/* Logo/Brand area */}
       <div className="px-6 py-5 border-b flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-sm shrink-0">
-            P
-          </div>
-          <span className="text-lg font-bold whitespace-nowrap">PELICO</span>
+          <img 
+            src="/images/Pelico-long-logo.svg" 
+            alt="Pelico" 
+            className="h-8 shrink-0"
+          />
         </div>
         
         {/* Toggle button */}
