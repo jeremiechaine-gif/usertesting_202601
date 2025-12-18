@@ -14,7 +14,6 @@ import { mockData } from '../lib/mockData';
 import { columns } from '../lib/columns';
 import { Sidebar } from './Sidebar';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -124,23 +123,6 @@ export const PurchaseOrderBookPage: React.FC = () => {
                     setColumnFilters(filters);
                   }}
                 />
-              </div>
-
-              {/* Center - Search */}
-              <div className="flex-1 max-w-md mx-8">
-                <div className="relative flex items-center">
-                  <InputWithIcon
-                    placeholder="Search..."
-                    value={globalFilter}
-                    onChange={(e) => setGlobalFilter(e.target.value)}
-                    startAdornment={<Search className="w-4 h-4 text-muted-foreground" />}
-                    className="pr-20"
-                  />
-                  <div className="absolute right-2 flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground border rounded bg-background">
-                    <span>⌘</span>
-                    <span>K</span>
-                  </div>
-                </div>
               </div>
 
               {/* Right Side */}
@@ -267,7 +249,20 @@ export const PurchaseOrderBookPage: React.FC = () => {
               }}
             />
           </div>
-          <Button variant="ghost" size="sm">Columns</Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => {
+                // TODO: Open search functionality
+                setGlobalFilter('');
+              }}
+            >
+              <Search className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm">Columns</Button>
+          </div>
         </div>
 
         {/* Table */}

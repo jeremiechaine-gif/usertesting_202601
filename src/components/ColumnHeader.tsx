@@ -211,14 +211,15 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
       <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0 pointer-events-none">
         {/* Sort indicator - badge with position and arrow */}
         {isSorted && (
-          <div className="flex flex-col items-center pointer-events-auto gap-0.5 px-1 py-0.5 rounded" style={{ backgroundColor: '#ADE9DE' }}>
-            <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center">
-              <span className="text-xs font-medium text-gray-700">{sortIndex}</span>
-            </div>
+          <div 
+            className="flex items-center justify-center pointer-events-auto gap-1 px-1.5 h-6 rounded" 
+            style={{ backgroundColor: '#ADE9DE', minWidth: '24px' }}
+          >
+            <span className="text-xs font-medium text-gray-700 leading-none">{sortIndex}</span>
             {sortDirection === 'asc' ? (
-              <ArrowUp className="h-3.5 w-3.5 text-gray-700" />
+              <ArrowUp className="h-3 w-3 text-gray-700 shrink-0" />
             ) : (
-              <ArrowDown className="h-3.5 w-3.5 text-gray-700" />
+              <ArrowDown className="h-3 w-3 text-gray-700 shrink-0" />
             )}
           </div>
         )}
