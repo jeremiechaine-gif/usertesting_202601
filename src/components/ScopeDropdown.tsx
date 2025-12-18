@@ -91,14 +91,20 @@ export const ScopeDropdown: React.FC<ScopeDropdownProps> = ({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-auto px-3 py-1.5 text-sm">
-            <span className={cn(
-              "text-[#2063F0]",
-              !selectedScope && "text-muted-foreground"
-            )}>
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "h-auto px-3 py-1.5 text-sm rounded-md transition-colors",
+              "bg-muted/50 hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              selectedScope 
+                ? "text-foreground font-medium" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <span>
               {selectedScope ? `Scope: ${selectedScope.name}` : 'Scope: Select a scope'}
             </span>
-            <ChevronDown className="ml-2 h-4 w-4" />
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">

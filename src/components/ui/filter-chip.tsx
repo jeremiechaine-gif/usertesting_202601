@@ -45,6 +45,8 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   enableInlineEdit = false,
   className,
 }) => {
+  // Edit button is always visible to allow users to see all options or change selected options
+  const canEdit = enableInlineEdit && options && options.length > 0 || onEdit;
   const [isEditing, setIsEditing] = useState(false);
   const [selectedValues, setSelectedValues] = useState<(string | number)[]>(values);
 
@@ -93,7 +95,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
     return (
       <div
         className={cn(
-          'flex flex-col gap-2 p-2 rounded-md bg-muted/50',
+          'flex flex-col gap-2 p-2 rounded-md bg-muted/70',
           className
         )}
       >
@@ -137,67 +139,70 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 rounded-md bg-muted/50',
+        'flex items-center gap-2 p-2 rounded-md bg-muted/70 overflow-hidden',
         className
       )}
     >
       {/* Label */}
-      <span className="text-sm font-medium shrink-0">{label}:</span>
+      <span className="text-sm font-medium shrink-0 whitespace-nowrap">{label}:</span>
 
-      {/* Values badges */}
-      <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
-        {visibleValues.map((value, idx) => (
-          <Badge
-            key={idx}
-            variant="secondary"
-            className="text-xs flex items-center gap-1 pr-1"
-          >
-            <span>{getDisplayValue(value, idx)}</span>
-            {onRemoveValue && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveValue(value);
-                }}
-                className="hover:bg-secondary rounded-full p-0.5 transition-colors"
-                aria-label={`Remove ${getDisplayValue(value, idx)}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </Badge>
-        ))}
-        {remainingCount > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            +{remainingCount}
-          </Badge>
-        )}
-        {values.length === 0 && (
-          <span className="text-xs text-muted-foreground">No values selected</span>
-        )}
-        {enableInlineEdit && options && options.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-5 text-xs px-2"
-            onClick={() => setIsEditing(true)}
-          >
-            Edit
-          </Button>
-        )}
+      {/* Values badges - single line with overflow */}
+      <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          {visibleValues.map((value, idx) => (
+            <Badge
+              key={idx}
+              variant="secondary"
+              className="text-xs flex items-center gap-1 pr-1 shrink-0"
+              style={{ backgroundColor: '#ADE9DE' }}
+            >
+              <span className="whitespace-nowrap">{getDisplayValue(value, idx)}</span>
+              {onRemoveValue && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveValue(value);
+                  }}
+                  className="hover:bg-[#9DD9CE] rounded-full p-0.5 transition-colors shrink-0"
+                  aria-label={`Remove ${getDisplayValue(value, idx)}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </Badge>
+          ))}
+          {remainingCount > 0 && (
+            <Badge 
+              variant="secondary" 
+              className="text-xs shrink-0"
+              style={{ backgroundColor: '#ADE9DE' }}
+            >
+              +{remainingCount}
+            </Badge>
+          )}
+          {values.length === 0 && (
+            <span className="text-xs text-muted-foreground whitespace-nowrap">No values selected</span>
+          )}
+        </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions - Edit and Remove buttons together */}
       <div className="flex items-center gap-1 shrink-0">
-        {showEditButton && onEdit && !enableInlineEdit && (
+        {/* Edit button - always visible to allow users to see all options or change selected options */}
+        {showEditButton && (
           <Button
             variant="ghost"
             size="sm"
             className="h-5 text-xs px-2 pointer-events-auto"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit();
+              if (enableInlineEdit && options && options.length > 0) {
+                setIsEditing(true);
+              } else if (onEdit) {
+                onEdit();
+              }
             }}
+            disabled={!canEdit}
           >
             Edit
           </Button>

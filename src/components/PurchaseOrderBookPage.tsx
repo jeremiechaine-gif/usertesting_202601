@@ -24,6 +24,7 @@ import { ColumnHeader } from './ColumnHeader';
 import { ColumnFilterModal } from './ColumnFilterModal';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
+import { RoutineDropdown } from './RoutineDropdown';
 import { cn } from '@/lib/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
 
@@ -38,6 +39,7 @@ export const PurchaseOrderBookPage: React.FC = () => {
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedScopeId, setSelectedScopeId] = useState<string | null>(null);
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
 
   const data = useMemo(() => mockData, []);
 
@@ -166,17 +168,10 @@ export const PurchaseOrderBookPage: React.FC = () => {
                 <div className="h-6 w-px bg-border" />
 
                 {/* Routine Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-3 text-sm">
-                      Routine: No routine Available
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>No routine available</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <RoutineDropdown
+                  selectedRoutineId={selectedRoutineId}
+                  onRoutineSelect={setSelectedRoutineId}
+                />
 
                 {/* Save/Download Dropdown */}
                 <DropdownMenu>

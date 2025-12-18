@@ -396,6 +396,8 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             getFilterDef={getFilterDef}
             getFilterColumnLabel={getColumnLabel}
             getFilterDisplayValues={getFilterDisplayValues}
+            getColumnIdFromFilterId={getColumnIdFromFilterId}
+            onOpenFilterModal={onOpenFilterModal}
             onSave={handleSave}
             onClearAll={handleClearAll}
             hasAnyActive={hasAnyActive}
@@ -439,6 +441,8 @@ interface MainViewProps {
   getFilterDef: (filterId: string) => FilterDefinition | undefined;
   getFilterColumnLabel: (columnId: string) => string;
   getFilterDisplayValues: (filter: FilterConfig) => string[];
+  getColumnIdFromFilterId: (filterId: string) => string | null;
+  onOpenFilterModal?: (columnId: string) => void;
   onSave: () => void;
   onClearAll: () => void;
   hasAnyActive: boolean;
@@ -462,6 +466,8 @@ const MainView: React.FC<MainViewProps> = ({
   getFilterDef,
   getFilterColumnLabel,
   getFilterDisplayValues,
+  getColumnIdFromFilterId,
+  onOpenFilterModal,
   onSave,
   onClearAll,
   hasAnyActive,
@@ -504,7 +510,7 @@ const MainView: React.FC<MainViewProps> = ({
               </AccordionTrigger>
               <AccordionContent className="pt-2 pb-4">
                 {!dismissedTip && (
-                  <div className="mb-3 p-2 bg-muted rounded-md flex items-start gap-2 text-xs text-muted-foreground">
+                  <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300">
                     <Info className="h-4 w-4 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       Tip: Shift + click to multi-sort
@@ -512,7 +518,7 @@ const MainView: React.FC<MainViewProps> = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-4 w-4 shrink-0"
+                      className="h-4 w-4 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/50"
                       onClick={onDismissTip}
                     >
                       <X className="h-3 w-3" />
@@ -588,6 +594,8 @@ const MainView: React.FC<MainViewProps> = ({
                         displayValues={getFilterDisplayValues(filter)}
                         onUpdateValues={onUpdateFilterValues}
                         onRemove={onRemoveFilter}
+                        onOpenFilterModal={onOpenFilterModal}
+                        getColumnIdFromFilterId={getColumnIdFromFilterId}
                       />
                     ))}
                   </div>
@@ -684,6 +692,8 @@ interface FilterRowProps {
   displayValues: string[];
   onUpdateValues: (filterId: string, values: (string | number)[]) => void;
   onRemove: (filterId: string) => void;
+  onOpenFilterModal?: (columnId: string) => void;
+  getColumnIdFromFilterId: (filterId: string) => string | null;
 }
 
 const FilterRow: React.FC<FilterRowProps> = ({
@@ -693,10 +703,20 @@ const FilterRow: React.FC<FilterRowProps> = ({
   displayValues,
   onUpdateValues,
   onRemove,
+  onOpenFilterModal,
+  getColumnIdFromFilterId,
 }) => {
   const handleRemoveValue = (value: string | number) => {
     const newValues = filter.values.filter((v) => v !== value);
     onUpdateValues(filter.id, newValues);
+  };
+
+  const handleEdit = () => {
+    // Map filter ID to column ID and open the filter modal
+    const columnId = getColumnIdFromFilterId(filter.filterId);
+    if (columnId && onOpenFilterModal) {
+      onOpenFilterModal(columnId);
+    }
   };
 
   return (
@@ -709,8 +729,9 @@ const FilterRow: React.FC<FilterRowProps> = ({
       onRemove={() => onRemove(filter.id)}
       onRemoveValue={handleRemoveValue}
       onUpdateValues={(values) => onUpdateValues(filter.id, values)}
-      enableInlineEdit={!!filterDef?.options}
-      showEditButton={false}
+      onEdit={handleEdit}
+      enableInlineEdit={false}
+      showEditButton={true}
     />
   );
 };
