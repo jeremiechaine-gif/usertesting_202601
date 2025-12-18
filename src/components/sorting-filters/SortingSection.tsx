@@ -55,11 +55,11 @@ export const SortingSection: React.FC<SortingSectionProps> = ({
           </TooltipProvider>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="pt-2 pb-4">
+      <AccordionContent className="pt-2 pb-4 min-w-0">
         {!dismissedTip && (
           <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300">
             <Info className="h-4 w-4 mt-0.5 shrink-0" />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               Tip: Shift + click to multi-sort
             </div>
             <Button
@@ -82,12 +82,12 @@ export const SortingSection: React.FC<SortingSectionProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <Button variant="outline" size="sm" onClick={onAddSort} className="gap-2">
               <Plus className="h-4 w-4" />
               Add sort
             </Button>
-            <div className="space-y-2 max-w-full">
+            <div className="space-y-2 w-full min-w-0 overflow-hidden">
               {draftSorting.map((sort, index) => (
                 <SortRow
                   key={sort.id}

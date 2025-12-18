@@ -139,24 +139,34 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 p-2 rounded-md bg-muted/70 overflow-hidden',
+        'flex items-center gap-2 p-2 rounded-md bg-muted/70 w-full min-w-0 overflow-hidden',
         className
       )}
+      style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: '8px'
+      }}
     >
-      {/* Label */}
-      <span className="text-sm font-medium shrink-0 whitespace-nowrap">{label}:</span>
+      {/* Label - Fixed width */}
+      <span className="text-sm font-medium shrink-0 whitespace-nowrap truncate" style={{ maxWidth: '90px' }}>{label}:</span>
 
-      {/* Values badges - single line with overflow */}
-      <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+      {/* Values badges - Flexible, can shrink */}
+      <div className="flex items-center gap-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {visibleValues.map((value, idx) => (
             <Badge
               key={idx}
               variant="secondary"
-              className="text-xs flex items-center gap-1 pr-1 shrink-0"
-              style={{ backgroundColor: '#ADE9DE' }}
+              className="text-xs flex items-center gap-1 pr-1"
+              style={{ 
+                backgroundColor: '#ADE9DE',
+                maxWidth: '80px',
+                minWidth: 0,
+                flexShrink: 1
+              }}
             >
-              <span className="whitespace-nowrap">{getDisplayValue(value, idx)}</span>
+              <span className="whitespace-nowrap truncate block min-w-0 overflow-hidden">{getDisplayValue(value, idx)}</span>
               {onRemoveValue && (
                 <button
                   onClick={(e) => {
@@ -174,26 +184,26 @@ export const FilterChip: React.FC<FilterChipProps> = ({
           {remainingCount > 0 && (
             <Badge 
               variant="secondary" 
-              className="text-xs shrink-0"
+              className="text-xs shrink-0 whitespace-nowrap"
               style={{ backgroundColor: '#ADE9DE' }}
             >
               +{remainingCount}
             </Badge>
           )}
           {values.length === 0 && (
-            <span className="text-xs text-muted-foreground whitespace-nowrap">No values selected</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap truncate">No values selected</span>
           )}
         </div>
       </div>
 
-      {/* Actions - Edit and Remove buttons together */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* Actions - Edit and Remove buttons together - Fixed width, always visible */}
+      <div className="flex items-center gap-1 shrink-0" style={{ width: '70px', justifyContent: 'flex-end' }}>
         {/* Edit button - always visible to allow users to see all options or change selected options */}
         {showEditButton && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-5 text-xs px-2 pointer-events-auto"
+            className="h-6 text-xs px-2 shrink-0 pointer-events-auto whitespace-nowrap"
             onClick={(e) => {
               e.stopPropagation();
               if (enableInlineEdit && options && options.length > 0) {

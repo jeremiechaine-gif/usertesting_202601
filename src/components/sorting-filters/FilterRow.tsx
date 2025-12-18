@@ -62,7 +62,7 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
   );
 
   return (
-    <div className="max-w-full min-w-0">
+    <div className="w-full min-w-0">
       <FilterChip
         label={columnLabel}
         values={filter.values}
@@ -75,7 +75,7 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
         onEdit={handleEdit}
         enableInlineEdit={false}
         showEditButton={true}
-        className="max-w-full"
+        className="w-full min-w-0"
       />
     </div>
   );

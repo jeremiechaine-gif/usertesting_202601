@@ -82,7 +82,6 @@ interface SortingAndFiltersPopoverProps {
   selectedRoutineId?: string | null;
   onSaveAsRoutine?: () => void;
   onUpdateRoutine?: () => void;
-  hasUnsavedChanges?: boolean;
   
   // Trigger button (optional, can be passed as children)
   trigger?: React.ReactNode;
@@ -99,7 +98,6 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   selectedRoutineId,
   onSaveAsRoutine,
   onUpdateRoutine,
-  hasUnsavedChanges = false,
   trigger,
 }) => {
   const [open, setOpen] = useState(false);
@@ -268,7 +266,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[800px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
+        className="w-[900px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
         style={{
           top: '16px',
           bottom: '16px',
@@ -307,7 +305,6 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             selectedRoutineId={selectedRoutineId}
             onSaveAsRoutine={onSaveAsRoutine}
             onUpdateRoutine={onUpdateRoutine}
-            hasUnsavedChanges={hasUnsavedChanges}
             onSave={handleSave}
             onClearAll={handleClearAll}
             hasAnyActive={hasAnyActive}
@@ -350,7 +347,6 @@ interface MainViewProps {
   selectedRoutineId?: string | null;
   onSaveAsRoutine?: () => void;
   onUpdateRoutine?: () => void;
-  hasUnsavedChanges?: boolean;
   onSave: () => void;
   onClearAll: () => void;
   hasAnyActive: boolean;
@@ -377,7 +373,6 @@ const MainView: React.FC<MainViewProps> = ({
   selectedRoutineId,
   onSaveAsRoutine,
   onUpdateRoutine,
-  hasUnsavedChanges = false,
   onSave,
   onClearAll,
   hasAnyActive,
@@ -400,20 +395,18 @@ const MainView: React.FC<MainViewProps> = ({
       </div>
 
       {/* Routine Section */}
-      {selectedRoutine && (
-        <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xs text-muted-foreground shrink-0">Active Routine:</span>
-            <span className="text-sm font-medium truncate max-w-[600px]" title={selectedRoutine.name}>
-              {selectedRoutine.name}
-            </span>
-          </div>
+      <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs text-muted-foreground shrink-0">Active Routine:</span>
+          <span className="text-sm font-medium truncate max-w-[600px]" title={selectedRoutine?.name || 'None'}>
+            {selectedRoutine?.name || 'None'}
+          </span>
         </div>
-      )}
+      </div>
 
       <ScrollArea className="flex-1 px-4 min-h-0">
-        <div className="py-4 space-y-4">
-          <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full">
+        <div className="py-4 space-y-4 min-w-0">
+          <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full min-w-0">
             <SortingSection
               draftSorting={draftSorting}
               sortableColumns={sortableColumns}
@@ -439,8 +432,11 @@ const MainView: React.FC<MainViewProps> = ({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 shrink-0 gap-2">
+        <div className="flex items-center gap-2 flex-1">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -450,27 +446,27 @@ const MainView: React.FC<MainViewProps> = ({
           >
             Clear all
           </Button>
-          {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-xs" style={{ backgroundColor: '#FFF3CD', color: '#856404', borderColor: '#FFE69C' }}>
-              Unsaved changes
-            </Badge>
-          )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          {(onSaveAsRoutine || onUpdateRoutine) ? (
+          {/* Segmented Control: Default action based on routine status */}
+          {(onSaveAsRoutine || onUpdateRoutine) && (
             <div className="flex items-center">
-              {/* Main Apply Button (left segment) */}
+              {/* Main Button (left segment) - Default action */}
               <Button 
                 variant="default" 
                 size="sm" 
                 className="bg-[#2063F0] hover:bg-[#1a54d8] rounded-r-none border-r border-r-[#1a54d8]"
                 disabled={!hasDraftChanges}
-                onClick={onSave}
+                onClick={() => {
+                  onSave();
+                  if (selectedRoutineId && onUpdateRoutine) {
+                    onUpdateRoutine();
+                  } else if (onSaveAsRoutine) {
+                    onSaveAsRoutine();
+                  }
+                }}
               >
-                Apply
+                {selectedRoutineId ? 'Update routine' : 'Create routine'}
               </Button>
               {/* Dropdown Trigger (right segment) */}
               <DropdownMenu>
@@ -506,17 +502,23 @@ const MainView: React.FC<MainViewProps> = ({
                       disabled={!hasDraftChanges}
                     >
                       <Save className="mr-2 h-4 w-4" />
-                      {selectedRoutineId ? 'Save as new routine' : 'Save as routine'}
+                      {selectedRoutineId ? 'Save as new routine' : 'Create routine'}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ) : (
-            <Button variant="default" size="sm" onClick={onSave} disabled={!hasDraftChanges} className="bg-[#2063F0] hover:bg-[#1a54d8]">
-              Apply
-            </Button>
           )}
+          {/* Simple Apply Button */}
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={onSave} 
+            disabled={!hasDraftChanges} 
+            className="bg-[#2063F0] hover:bg-[#1a54d8]"
+          >
+            Apply
+          </Button>
         </div>
       </div>
     </div>

@@ -41,7 +41,7 @@ const SortRowComponent: React.FC<SortRowProps> = ({
   }, [sort.id, onRemove]);
 
   return (
-    <div className="flex items-center gap-2 min-w-0 max-w-full">
+    <div className="flex items-center gap-2 min-w-0 w-full">
       <button
         className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
         title="Drag to reorder"
@@ -49,7 +49,7 @@ const SortRowComponent: React.FC<SortRowProps> = ({
         <GripVertical className="h-4 w-4" />
       </button>
       <Select value={sort.columnId} onValueChange={handleColumnChange}>
-        <SelectTrigger className="flex-1 h-8 min-w-0 max-w-[300px]">
+        <SelectTrigger className="flex-1 h-8 min-w-0 max-w-[200px]">
           <SelectValue placeholder="Select column" />
         </SelectTrigger>
         <SelectContent>

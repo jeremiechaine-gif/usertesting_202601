@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { RoutineModal } from './RoutineModal';
 import { getRoutines, deleteRoutine, type Routine } from '@/lib/routines';
-import { ChevronDown, Plus, Edit, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Edit, Trash2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
 
@@ -28,6 +28,10 @@ interface RoutineDropdownProps {
   currentSorting?: SortingState;
   currentGroupBy?: string | null;
   currentPageSize?: number;
+  // Highlight when there are unsaved changes
+  hasUnsavedChanges?: boolean;
+  onUpdateRoutine?: () => void;
+  onSaveAsRoutine?: () => void;
 }
 
 export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
@@ -37,6 +41,9 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
   currentSorting = [],
   currentGroupBy = null,
   currentPageSize = 100,
+  hasUnsavedChanges = false,
+  onUpdateRoutine,
+  onSaveAsRoutine,
 }) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -87,7 +94,8 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
               "bg-muted/50 hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               selectedRoutine 
                 ? "text-foreground font-medium" 
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+              hasUnsavedChanges && selectedRoutine && "ring-2 ring-[#2063F0] ring-offset-2 bg-[#2063F0]/10"
             )}
           >
             <span>
@@ -159,6 +167,29 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
           {selectedRoutineId && (
             <>
               <DropdownMenuSeparator />
+              {hasUnsavedChanges && onUpdateRoutine && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onUpdateRoutine();
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Update routine
+                </DropdownMenuItem>
+              )}
+              {hasUnsavedChanges && onSaveAsRoutine && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    onSaveAsRoutine();
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save as new routine
+                </DropdownMenuItem>
+              )}
+              {hasUnsavedChanges && <DropdownMenuSeparator />}
               <DropdownMenuItem
                 onClick={() => onRoutineSelect(null)}
                 className="cursor-pointer text-muted-foreground"

@@ -28,8 +28,7 @@ import { PlanDropdown } from './PlanDropdown';
 import { RoutineDropdown } from './RoutineDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
-import { getRoutine, mergeFilters, updateRoutine } from '@/lib/routines';
-import { getScope as getScopeById } from '@/lib/scopes';
+import { getRoutine, updateRoutine } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
@@ -39,7 +38,26 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   const { currentScopeId, setCurrentScopeId, getScopeFilters } = useScope();
   
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  // Separate scope filters (applied to table but not shown in modal) from user/routine filters
+  const [scopeFilters, setScopeFilters] = useState<ColumnFiltersState>([]);
+  const [userFilters, setUserFilters] = useState<ColumnFiltersState>([]);
+  // Combined filters for table (scope + user)
+  const columnFilters = useMemo(() => {
+    // Combine scope filters and user filters
+    // User filters override scope filters for the same column
+    const combined: ColumnFiltersState = [...scopeFilters];
+    userFilters.forEach(userFilter => {
+      const existingIndex = combined.findIndex(f => f.id === userFilter.id);
+      if (existingIndex >= 0) {
+        // User filter overrides scope filter for same column
+        combined[existingIndex] = userFilter;
+      } else {
+        // Add new user filter
+        combined.push(userFilter);
+      }
+    });
+    return combined;
+  }, [scopeFilters, userFilters]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [activeTab, setActiveTab] = useState('purchase-order-book');
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
@@ -73,6 +91,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     const sortingMatches = JSON.stringify(sorting) === JSON.stringify(routine.sorting);
     
     // Compare filters (need to normalize for comparison)
+    // Only compare user filters, not scope filters
     const normalizeFilters = (filters: ColumnFiltersState) => {
       return filters.map(f => ({
         id: f.id,
@@ -81,15 +100,15 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           : f.value
       })).sort((a, b) => a.id.localeCompare(b.id));
     };
-    const currentFiltersNormalized = normalizeFilters(columnFilters);
+    const currentUserFiltersNormalized = normalizeFilters(userFilters);
     const routineFiltersNormalized = normalizeFilters(routine.filters);
-    const filtersMatch = JSON.stringify(currentFiltersNormalized) === JSON.stringify(routineFiltersNormalized);
+    const filtersMatch = JSON.stringify(currentUserFiltersNormalized) === JSON.stringify(routineFiltersNormalized);
     
     // Compare groupBy
     const groupByMatches = selectedGroupBy === routine.groupBy;
     
     return !sortingMatches || !filtersMatch || !groupByMatches;
-  }, [selectedRoutineId, sorting, columnFilters, selectedGroupBy]);
+  }, [selectedRoutineId, sorting, userFilters, selectedGroupBy]);
   
   // Handler to save as new routine (memoized)
   const handleSaveAsRoutine = useCallback(() => {
@@ -97,6 +116,12 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     setRoutineModalOpen(true);
   }, []);
   
+
+  // Apply scope filters (always applied to table but not shown in modal)
+  useEffect(() => {
+    const scopeFiltersFromContext = getScopeFilters();
+    setScopeFilters(scopeFiltersFromContext);
+  }, [currentScopeId, getScopeFilters]);
 
   // Apply routine configuration when routine changes
   useEffect(() => {
@@ -107,64 +132,29 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         setSorting(routine.sorting);
         setSelectedGroupBy(routine.groupBy || null);
         
-        // Handle scope mode
-        if (routine.scopeMode === 'scope-aware') {
-          // Merge routine filters with current scope filters
-          const scopeFilters = getScopeFilters();
-          const mergedFilters = mergeFilters(routine.filters, scopeFilters);
-          setColumnFilters(mergedFilters);
-          setScopeOverridden(false);
-        } else if (routine.scopeMode === 'scope-fixed' && routine.linkedScopeId) {
-          // Use linked scope instead of current scope
-          const linkedScope = getScopeById(routine.linkedScopeId);
-          if (linkedScope) {
-            const linkedScopeFilters = linkedScope.filters
-              .filter((filter) => filter.values.length > 0)
-              .map((filter) => ({
-                id: filter.filterId,
-                value: filter.condition
-                  ? { condition: filter.condition, values: filter.values }
-                  : filter.values,
-              }));
-            const mergedFilters = mergeFilters(routine.filters, linkedScopeFilters);
-            setColumnFilters(mergedFilters);
-            setScopeOverridden(true);
-          } else {
-            // Linked scope not found, fallback to routine filters only
-            setColumnFilters(routine.filters);
-            setScopeOverridden(false);
-          }
-        } else {
-          // No scope linked, use routine filters only
-          setColumnFilters(routine.filters);
-          setScopeOverridden(false);
-        }
+        // Set user filters from routine (scope filters are separate and already applied)
+        setUserFilters(routine.filters);
+        setScopeOverridden(false);
       }
     } else {
-      // No routine selected, use scope filters only
-      const scopeFilters = getScopeFilters();
-      setColumnFilters(scopeFilters);
+      // No routine selected, clear user filters
+      setUserFilters([]);
       setScopeOverridden(false);
     }
-  }, [selectedRoutineId, currentScopeId, getScopeFilters]);
+  }, [selectedRoutineId]);
 
-  // Apply scope filters when scope changes (if no routine or routine is scope-aware)
-  useEffect(() => {
-    if (!selectedRoutineId) {
-      // No routine, apply scope filters directly
-      const scopeFilters = getScopeFilters();
-      setColumnFilters(scopeFilters);
-    } else {
-      // Routine is active, check if it's scope-aware
-      const routine = getRoutine(selectedRoutineId);
-      if (routine && routine.scopeMode === 'scope-aware') {
-        // Re-merge with updated scope
-        const scopeFilters = getScopeFilters();
-        const mergedFilters = mergeFilters(routine.filters, scopeFilters);
-        setColumnFilters(mergedFilters);
-      }
-    }
-  }, [currentScopeId, selectedRoutineId, getScopeFilters]);
+  // Scope filters are already handled in the first useEffect above
+  // User filters are handled in the routine useEffect above
+
+  // Handler for column filters change from table
+  const handleColumnFiltersChange = useCallback((updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
+    const newFilters = typeof updater === 'function' ? updater(columnFilters) : updater;
+    // When filters change from table (e.g., column header), update user filters
+    // Remove scope filters from the incoming filters to get only user filters
+    const scopeFilterIds = new Set(scopeFilters.map((f: any) => f.id));
+    const userOnlyFilters = newFilters.filter((f: any) => !scopeFilterIds.has(f.id));
+    setUserFilters(userOnlyFilters);
+  }, [columnFilters, scopeFilters]);
 
   const table = useReactTable({
     data,
@@ -175,7 +165,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
       globalFilter,
     },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -201,9 +191,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     const routine = getRoutine(selectedRoutineId);
     if (!routine) return;
     
-    // Update routine with current view state
+    // Update routine with current view state (only user filters, not scope filters)
     updateRoutine(selectedRoutineId, {
-      filters: columnFilters,
+      filters: userFilters,
       sorting,
       groupBy: selectedGroupBy,
       pageSize: table.getState().pagination.pageSize,
@@ -212,7 +202,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     // Force re-render by updating routine selection
     setSelectedRoutineId(null);
     setTimeout(() => setSelectedRoutineId(selectedRoutineId), 0);
-  }, [selectedRoutineId, columnFilters, sorting, selectedGroupBy, table]);
+  }, [selectedRoutineId, userFilters, sorting, selectedGroupBy, table]);
 
   return (
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
@@ -271,6 +261,13 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 <RoutineDropdown
                   selectedRoutineId={selectedRoutineId}
                   onRoutineSelect={setSelectedRoutineId}
+                  currentFilters={userFilters}
+                  currentSorting={sorting}
+                  currentGroupBy={selectedGroupBy}
+                  currentPageSize={table.getState().pagination.pageSize}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  onUpdateRoutine={handleUpdateRoutine}
+                  onSaveAsRoutine={handleSaveAsRoutine}
                 />
               </div>
 
@@ -356,15 +353,14 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             />
             <SortingAndFiltersPopover
               sorting={sorting}
-              columnFilters={columnFilters}
+              columnFilters={userFilters}
               onSortingChange={setSorting}
-              onColumnFiltersChange={setColumnFilters}
+              onColumnFiltersChange={setUserFilters}
               columns={columns}
               filterDefinitions={filterDefinitions}
               selectedRoutineId={selectedRoutineId}
               onSaveAsRoutine={handleSaveAsRoutine}
               onUpdateRoutine={handleUpdateRoutine}
-              hasUnsavedChanges={hasUnsavedChanges}
             onOpenFilterModal={handleOpenFilterModal}
             />
           </div>
@@ -432,7 +428,13 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                               sorting={sorting}
                               columnFilters={columnFilters}
                               onSortingChange={setSorting}
-                              onColumnFiltersChange={setColumnFilters}
+                              onColumnFiltersChange={(filters) => {
+                                // When filters change from column header, update user filters
+                                // Remove scope filters from the incoming filters to get only user filters
+                                const scopeFilterIds = new Set(scopeFilters.map((f: any) => f.id));
+                                const userOnlyFilters = filters.filter((f: any) => !scopeFilterIds.has(f.id));
+                                setUserFilters(userOnlyFilters);
+                              }}
                               onFilterClick={(columnId) => {
                                 setFilterModalColumnId(columnId);
                                 setFilterModalOpen(true);
@@ -616,7 +618,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               .sort((a, b) => String(a.value).localeCompare(String(b.value)));
           })()}
           selectedValues={(() => {
-            const filter = columnFilters.find((f) => f.id === filterModalColumnId);
+            const filter = userFilters.find((f) => f.id === filterModalColumnId);
             if (!filter) return [];
             if (Array.isArray(filter.value)) {
               return filter.value;
@@ -627,7 +629,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             return [filter.value].filter(Boolean);
           })()}
           condition={(() => {
-            const filter = columnFilters.find((f) => f.id === filterModalColumnId);
+            const filter = userFilters.find((f) => f.id === filterModalColumnId);
             if (!filter) return 'is';
             if (typeof filter.value === 'object' && filter.value !== null && 'condition' in filter.value) {
               return (filter.value as any).condition === 'isNot' ? 'isNot' : 'is';
@@ -636,7 +638,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           })()}
           onApply={(values, condition) => {
             // Prevent any potential event bubbling that might trigger header click
-            const newFilters = columnFilters.filter((f) => f.id !== filterModalColumnId);
+            const newFilters = userFilters.filter((f) => f.id !== filterModalColumnId);
             if (values.length > 0) {
               newFilters.push({
                 id: filterModalColumnId,
@@ -646,7 +648,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             // Use setTimeout to ensure modal closes before state update
             // This prevents any click events from bubbling to header
             setTimeout(() => {
-              setColumnFilters(newFilters);
+              setUserFilters(newFilters);
             }, 0);
           }}
         />
@@ -667,7 +669,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               setTimeout(() => setSelectedRoutineId(selectedRoutineId), 0);
             }
           }}
-          currentFilters={columnFilters}
+          currentFilters={userFilters}
           currentSorting={sorting}
           currentGroupBy={selectedGroupBy}
           currentPageSize={table.getState().pagination.pageSize}

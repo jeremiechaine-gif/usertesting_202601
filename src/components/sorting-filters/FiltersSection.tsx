@@ -48,7 +48,7 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
           )}
         </div>
       </AccordionTrigger>
-      <AccordionContent className="pt-2 pb-4">
+      <AccordionContent className="pt-2 pb-4 min-w-0">
         {draftFilters.length === 0 ? (
           <div className="border-2 border-dashed rounded-md p-6 text-center">
             <p className="text-sm text-muted-foreground mb-3">No filter yet</p>
@@ -58,12 +58,12 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <Button variant="default" size="sm" onClick={onAddFilter} className="gap-2">
               <Plus className="h-4 w-4" />
               Add filter
             </Button>
-            <div className="space-y-2 max-w-full">
+            <div className="space-y-2 w-full min-w-0 overflow-hidden">
               {draftFilters.map((filter) => {
                 const filterDef = getFilterDef(filter.filterId);
                 return (
