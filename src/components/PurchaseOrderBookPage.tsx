@@ -24,6 +24,7 @@ import { ColumnFilterModal } from './ColumnFilterModal';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
 import { RoutineDropdown } from './RoutineDropdown';
+import { GroupByDropdown } from './GroupByDropdown';
 import { cn } from '@/lib/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
 
@@ -39,6 +40,7 @@ export const PurchaseOrderBookPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedScopeId, setSelectedScopeId] = useState<string | null>(null);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+  const [selectedGroupBy, setSelectedGroupBy] = useState<string | null>(null);
 
   const data = useMemo(() => mockData, []);
 
@@ -228,14 +230,10 @@ export const PurchaseOrderBookPage: React.FC = () => {
         {/* Table Controls */}
         <div className="px-6 py-3.5 bg-muted/50 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Select value="none" onValueChange={() => {}}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Group by None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Group by None</SelectItem>
-              </SelectContent>
-            </Select>
+            <GroupByDropdown
+              selectedGroupBy={selectedGroupBy}
+              onGroupBySelect={setSelectedGroupBy}
+            />
             <SortingAndFiltersPopover
               sorting={sorting}
               columnFilters={columnFilters}

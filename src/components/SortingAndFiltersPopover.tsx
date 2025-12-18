@@ -340,7 +340,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
 
 
   const defaultTrigger = (
-    <Button variant="outline" size="sm" className="gap-2">
+    <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5">
       <Filter className="w-4 h-4" />
       Sorting and filters
       {totalActiveCount > 0 && (
