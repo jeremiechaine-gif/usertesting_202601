@@ -28,7 +28,7 @@ interface RoutineModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   routine?: Routine | null;
-  onSave: () => void;
+  onSave: (routineId?: string) => void; // Pass routineId when creating a new routine
   // Current view state to capture
   currentFilters?: ColumnFiltersState;
   currentSorting?: SortingState;
@@ -94,11 +94,11 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
     if (routine) {
       updateRoutine(routine.id, routineData);
+      onSave(routine.id);
     } else {
-      createRoutine(routineData);
+      const newRoutine = createRoutine(routineData);
+      onSave(newRoutine.id); // Pass the ID of the newly created routine
     }
-
-    onSave();
   };
 
   return (

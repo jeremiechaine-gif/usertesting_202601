@@ -77,10 +77,14 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
     }
   };
 
-  const handleRoutineSaved = () => {
+  const handleRoutineSaved = (routineId?: string) => {
     setRoutines(getRoutines());
     setCreateModalOpen(false);
     setEditRoutine(null);
+    // If a new routine was created, select it automatically
+    if (routineId && !selectedRoutineId) {
+      onRoutineSelect(routineId);
+    }
   };
 
   return (
@@ -95,11 +99,15 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
               selectedRoutine 
                 ? "text-foreground font-medium" 
                 : "text-muted-foreground hover:text-foreground",
-              hasUnsavedChanges && selectedRoutine && "ring-2 ring-[#ff9800] ring-offset-2 bg-[#ff9800]/10"
+              hasUnsavedChanges && "ring-2 ring-[#ff9800] ring-offset-2 bg-[#ff9800]/10"
             )}
           >
             <span>
-              {selectedRoutine ? `Routine: ${selectedRoutine.name}` : 'Routine: No routine Available'}
+              {selectedRoutine 
+                ? `Routine: ${selectedRoutine.name}` 
+                : hasUnsavedChanges 
+                  ? 'Créer une routine'
+                  : 'Routine: No routine Available'}
             </span>
             <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
           </Button>
@@ -198,8 +206,14 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
             })
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleCreate} className="cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
+          <DropdownMenuItem 
+            onClick={handleCreate} 
+            className={cn(
+              "cursor-pointer",
+              hasUnsavedChanges && !selectedRoutineId && "text-[#ff9800] hover:bg-[#ff9800]/10"
+            )}
+          >
+            <Plus className={cn("mr-2 h-4 w-4", hasUnsavedChanges && !selectedRoutineId && "text-[#ff9800]")} />
             Create new routine
           </DropdownMenuItem>
           {selectedRoutineId && (

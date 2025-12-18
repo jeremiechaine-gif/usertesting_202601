@@ -82,8 +82,13 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   const data = useMemo(() => mockData, []);
   
   // Detect unsaved changes: compare current view state with active routine
+  // Also detect if there are any sorts or filters when no routine is selected
   const hasUnsavedChanges = useMemo(() => {
-    if (!selectedRoutineId) return false;
+    // If no routine selected, check if there are any sorts or filters
+    if (!selectedRoutineId) {
+      return sorting.length > 0 || userFilters.length > 0;
+    }
+    
     const routine = getRoutine(selectedRoutineId);
     if (!routine) return false;
     
