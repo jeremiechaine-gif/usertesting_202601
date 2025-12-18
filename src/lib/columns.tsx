@@ -77,15 +77,28 @@ const formatDaysDelta = (days: number): string => {
   return `${sign}${days} d`;
 };
 
-// Escalation level indicator
+// Escalation level indicator with badge
 const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
-  const colors = ['#e0e0e0', '#2196f3', '#ff9800', '#f44336'];
+  const badgeConfig = {
+    1: { color: '#E3F2FD', textColor: '#1976D2', label: '1' }, // Blue pale
+    2: { color: '#FFF9C4', textColor: '#F57F17', label: '2' }, // Yellow pale
+    3: { color: '#FFEBEE', textColor: '#C62828', label: '3' }, // Red pale
+    4: { color: '#212121', textColor: '#FFFFFF', label: '4' }, // Black
+  };
+  
+  const config = badgeConfig[level as keyof typeof badgeConfig] || badgeConfig[1];
+  
   return (
-    <div
-      className="w-5 h-5 rounded-full border-2 border-white"
-      style={{ backgroundColor: colors[level] || colors[0] }}
-      title={`Escalation Level ${level}`}
-    />
+    <Badge
+      className="h-6 px-2 text-xs font-semibold shrink-0"
+      style={{
+        backgroundColor: config.color,
+        color: config.textColor,
+        border: `1px solid ${config.textColor}20`,
+      }}
+    >
+      {config.label}
+    </Badge>
   );
 };
 

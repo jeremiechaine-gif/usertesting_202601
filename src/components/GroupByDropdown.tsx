@@ -52,17 +52,12 @@ export const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button 
-          variant="ghost" 
-          className={cn(
-            "h-auto px-3 py-1.5 text-sm rounded-md transition-colors",
-            "bg-muted/50 hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            selectedOption 
-              ? "text-foreground font-medium" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
+          variant="outline" 
+          size="sm"
+          className="gap-2 h-auto px-3 py-1.5"
         >
           <span>{displayLabel}</span>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+          <ChevronDown className="h-4 w-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">

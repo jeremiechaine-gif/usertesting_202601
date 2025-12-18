@@ -216,7 +216,24 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
         handleHeaderClick(e);
       }}
     >
-      <div className="flex-1 min-w-0 truncate cursor-pointer select-none">{children}</div>
+      <div 
+        className="flex-1 min-w-0 truncate cursor-pointer select-none"
+        style={{
+          // Calculate available width based on visible icons
+          maxWidth: (() => {
+            let reservedSpace = 0;
+            if (isSorted) reservedSpace += 32; // Sort badge with padding
+            if (hasFilter || isHovered || menuOpen) reservedSpace += 28; // Filter button with padding
+            if (reservedSpace > 0) reservedSpace += 8; // Gap between icons
+            return reservedSpace > 0 ? `calc(100% - ${reservedSpace}px)` : '100%';
+          })(),
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {children}
+      </div>
 
       {/* Indicators - absolutely positioned to not affect column width */}
       <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0 pointer-events-none">

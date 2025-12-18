@@ -352,10 +352,6 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         {/* Table Controls */}
         <div className="px-6 py-3.5 bg-muted/50 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <GroupByDropdown
-              selectedGroupBy={selectedGroupBy}
-              onGroupBySelect={setSelectedGroupBy}
-            />
             <SortingAndFiltersPopover
               sorting={sorting}
               columnFilters={userFilters}
@@ -371,9 +367,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           </div>
           <div className="flex items-center gap-2">
             <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8"
+              variant="outline" 
+              size="sm"
+              className="gap-2 h-auto px-3 py-1.5"
               onClick={() => {
                 // TODO: Open search functionality
                 setGlobalFilter('');
@@ -381,12 +377,16 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             >
               <Search className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">Columns</Button>
+            <GroupByDropdown
+              selectedGroupBy={selectedGroupBy}
+              onGroupBySelect={setSelectedGroupBy}
+            />
+            <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5">Columns</Button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto px-6 pb-4">
           <div className="inline-block min-w-full align-middle">
             <table
               className="min-w-full divide-y divide-[var(--color-table-border)] border-collapse"
@@ -413,7 +413,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           key={header.id}
                           colSpan={colSpan}
                           className={cn(
-                            'px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider border-r transition-colors',
+                            'px-4 py-3 text-left text-sm font-medium text-muted-foreground border-r transition-colors',
                             bgColor,
                             header.column.getCanSort() && !isGroupHeader && 'hover:bg-muted cursor-pointer'
                           )}
@@ -491,6 +491,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 ))}
               </tbody>
             </table>
+            <div className="h-4" /> {/* Spacer for bottom padding */}
           </div>
         </div>
 

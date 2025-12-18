@@ -133,13 +133,13 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
     
     const row: PurchaseOrderRow = {
       id: `row-${i + 1}`,
-      escalationLevel: randomInt(0, 3),
+      escalationLevel: randomInt(1, 4), // Values between 1 and 4
       type,
       event: generateEventId(type),
       otdStatus: determineOTDStatus(deliveryDate, otdDate),
       deliveryStatus: randomElement<DeliveryStatus>(['Pending', 'Pending', 'Pending', 'Shipped', 'Delivered']),
       subcontract: Math.random() > 0.7,
-      partEscalationLevel: randomInt(0, 3),
+      partEscalationLevel: randomInt(1, 4), // Values between 1 and 4
       partNumber: generatePartNumber(),
       partName: randomElement(partNames),
       plant: randomElement(plants),
