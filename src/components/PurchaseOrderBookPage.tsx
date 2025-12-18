@@ -427,6 +427,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                               columnId={header.column.id}
                               sorting={sorting}
                               columnFilters={columnFilters}
+                              userFilters={userFilters}
                               onSortingChange={setSorting}
                               onColumnFiltersChange={(filters) => {
                                 // When filters change from column header, update user filters

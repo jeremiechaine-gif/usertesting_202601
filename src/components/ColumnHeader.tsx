@@ -28,7 +28,8 @@ interface ColumnHeaderProps {
   header: Header<any, unknown>; // Keep for future use
   columnId: string;
   sorting: Array<{ id: string; desc: boolean }>;
-  columnFilters: Array<{ id: string; value: unknown }>;
+  columnFilters: Array<{ id: string; value: unknown }>; // Combined filters (scope + user) - used for table filtering
+  userFilters?: Array<{ id: string; value: unknown }>; // User/routine filters (should show visual feedback)
   onSortingChange: (updater: any) => void;
   onColumnFiltersChange: (updater: any) => void;
   onFilterClick?: (columnId: string) => void;
@@ -39,7 +40,8 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   header: _header, // Prefix with _ to indicate intentionally unused
   columnId,
   sorting,
-  columnFilters,
+  columnFilters: _columnFilters, // Combined filters - kept for potential future use
+  userFilters = [],
   onSortingChange,
   onColumnFiltersChange,
   onFilterClick,
@@ -60,12 +62,12 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
     [sortInfo, sorting, columnId]
   );
 
-  // Memoize filter info
-  const filterInfo = useMemo(
-    () => columnFilters.find((f) => f.id === columnId),
-    [columnFilters, columnId]
+  // Check if there's a user/routine filter (not just scope filter)
+  // Only show filter indicator if there's a user/routine filter (not just scope filter)
+  const hasFilter = useMemo(
+    () => !!userFilters.find((f) => f.id === columnId),
+    [userFilters, columnId]
   );
-  const hasFilter = !!filterInfo;
 
   // Memoized handlers to prevent unnecessary re-renders
   const handleSortAscending = useCallback(() => {
@@ -83,10 +85,13 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   }, [columnId, sorting, onSortingChange]);
 
   const handleClearFilter = useCallback(() => {
-    const newFilters = columnFilters.filter((f) => f.id !== columnId);
+    // Only clear user filters, not scope filters
+    // onColumnFiltersChange expects the full filter list, but we only pass user filters
+    // The parent component will handle merging with scope filters
+    const newFilters = userFilters.filter((f) => f.id !== columnId);
     onColumnFiltersChange(newFilters);
     setMenuOpen(false);
-  }, [columnId, columnFilters, onColumnFiltersChange]);
+  }, [columnId, userFilters, onColumnFiltersChange]);
 
   const handleFilterClick = useCallback(() => {
     if (onFilterClick) {

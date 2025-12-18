@@ -284,7 +284,8 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const hasActiveFilters = draftFilters.length > 0;
   const hasAnyActive = hasActiveSorts || hasActiveFilters;
 
-  // Calculate active counts from table state (for trigger badge)
+  // Calculate active counts from user/routine filters only (exclude scope filters)
+  // columnFilters passed to this component are already user/routine filters only
   const activeSortCount = sorting.length;
   const activeFilterCount = columnFilters.length;
   const totalActiveCount = activeSortCount + activeFilterCount;
@@ -294,11 +295,11 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5">
       <Filter className="w-4 h-4" />
       Sorting and filters
-      {totalActiveCount > 0 && (
+      {totalActiveCount > 0 ? (
         <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
           {totalActiveCount}
         </Badge>
-      )}
+      ) : null}
     </Button>
   );
 
