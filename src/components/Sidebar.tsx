@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft } from 'lucide-react';
+import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -7,9 +7,10 @@ interface SidebarProps {
   activeItem: string;
   isCollapsed: boolean;
   onToggle: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onToggle }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onToggle, onNavigate }) => {
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
     { id: 'escalation', label: 'Escalation Room', icon: AlertTriangle },
@@ -23,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onTog
     { id: 'upload', label: 'Upload Data', icon: Upload },
     { id: 'config', label: 'Config Editor', icon: Settings },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'scope-routines', label: 'Scope & Routines', icon: FolderKanban },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -66,12 +68,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onTog
                   'w-full justify-start gap-3',
                   isActive && 'bg-primary text-primary-foreground hover:bg-primary/90'
                 )}
-                asChild
+                onClick={() => onNavigate?.(item.id)}
               >
-                <a href="#">
-                  <Icon className="w-5 h-5" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                </a>
+                <Icon className="w-5 h-5" />
+                <span className="flex-1 text-left">{item.label}</span>
               </Button>
             );
           })}

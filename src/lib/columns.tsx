@@ -3,7 +3,7 @@
  * Includes column grouping, sorting, filtering, and resizing
  */
 
-import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper, type ColumnDef, type FilterFn } from '@tanstack/react-table';
 import type { PurchaseOrderRow } from './mockData';
 import { CheckboxWithIndeterminate } from '@/components/ui/checkbox-with-indeterminate';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +12,53 @@ import { Button } from '@/components/ui/button';
 import { Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const columnHelper = createColumnHelper<PurchaseOrderRow>();
+
+/**
+ * Custom filter function that handles:
+ * - Single values: exact match
+ * - Arrays of values: OR logic (value must be in array)
+ * - Condition objects: { condition: 'is' | 'isNot', values: [...] }
+ * - Multiple filters: AND logic (all filters must match)
+ * 
+ * This function is exported for testing purposes.
+ */
+export const customFilterFn: FilterFn<PurchaseOrderRow> = (row, columnId, filterValue, _addMeta) => {
+  const cellValue = row.getValue(columnId);
+  
+  // Handle null/undefined filter values
+  if (filterValue === null || filterValue === undefined) {
+    return true;
+  }
+  
+  // Handle condition objects: { condition: 'is' | 'isNot', values: [...] }
+  if (typeof filterValue === 'object' && filterValue !== null && 'condition' in filterValue && 'values' in filterValue) {
+    const condition = (filterValue as any).condition;
+    const values = (filterValue as any).values;
+    
+    if (!Array.isArray(values) || values.length === 0) {
+      return true; // No filter values means show all
+    }
+    
+    const isMatch = values.includes(cellValue);
+    
+    if (condition === 'isNot') {
+      return !isMatch;
+    }
+    // Default to 'is'
+    return isMatch;
+  }
+  
+  // Handle arrays: OR logic (value must be in array)
+  if (Array.isArray(filterValue)) {
+    if (filterValue.length === 0) {
+      return true; // Empty array means show all
+    }
+    return filterValue.includes(cellValue);
+  }
+  
+  // Handle single value: exact match
+  return cellValue === filterValue;
+};
 
 // Helper to format currency
 const formatCurrency = (value: number): string => {
@@ -107,7 +154,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <Badge variant="secondary">{info.getValue()}</Badge>
         ),
         size: 70,
-        filterFn: 'equals',
+        filterFn: customFilterFn,
       }),
       columnHelper.accessor('event', {
         id: 'event',
@@ -132,7 +179,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'OTD Status',
         cell: (info) => <OTDStatusIndicator status={info.getValue()} />,
         size: 100,
-        filterFn: 'equals',
+        filterFn: customFilterFn,
       }),
       columnHelper.accessor('deliveryStatus', {
         id: 'deliveryStatus',
@@ -147,7 +194,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           );
         },
         size: 120,
-        filterFn: 'equals',
+        filterFn: customFilterFn,
       }),
     ],
   },
@@ -158,7 +205,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
     header: 'Subcontract',
     cell: (info) => (info.getValue() ? 'Yes' : 'No'),
     size: 100,
-    filterFn: 'equals',
+    filterFn: customFilterFn,
   }),
 
   // Group: Produced Part
@@ -197,7 +244,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Plant',
         cell: (info) => <span className="text-sm">{info.getValue()}</span>,
         size: 120,
-        filterFn: 'equals',
+        filterFn: customFilterFn,
       }),
     ],
   },

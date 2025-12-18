@@ -1,7 +1,7 @@
 /**
- * Group By Dropdown Component
- * Displays current group by selection
- * Same style as ScopeDropdown
+ * Plan Dropdown Component
+ * Displays current plan (ERP Plan / Production Plan) and allows selection
+ * Same style as ScopeDropdown and RoutineDropdown
  */
 
 import React from 'react';
@@ -17,36 +17,25 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface GroupByOption {
-  id: string;
-  label: string;
+type PlanType = 'erp' | 'prod';
+
+interface PlanDropdownProps {
+  selectedPlan: PlanType | null;
+  onPlanSelect: (plan: PlanType | null) => void;
 }
 
-interface GroupByDropdownProps {
-  selectedGroupBy: string | null;
-  onGroupBySelect: (groupBy: string | null) => void;
-}
-
-// Mock group by options - replace with actual data source
-const groupByOptions: GroupByOption[] = [
-  { id: 'none', label: 'None' },
-  { id: 'supplier', label: 'Supplier' },
-  { id: 'plant', label: 'Plant' },
-  { id: 'type', label: 'Type' },
-  { id: 'status', label: 'Status' },
+const plans: { id: PlanType; name: string }[] = [
+  { id: 'erp', name: 'ERP Plan' },
+  { id: 'prod', name: 'Production Plan' },
 ];
 
-export const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
-  selectedGroupBy,
-  onGroupBySelect,
+export const PlanDropdown: React.FC<PlanDropdownProps> = ({
+  selectedPlan,
+  onPlanSelect,
 }) => {
-  const selectedOption = selectedGroupBy 
-    ? groupByOptions.find((opt) => opt.id === selectedGroupBy) 
+  const selectedPlanData = selectedPlan 
+    ? plans.find((p) => p.id === selectedPlan) 
     : null;
-
-  const displayLabel = selectedOption 
-    ? `Group by ${selectedOption.label}` 
-    : 'Group by None';
 
   return (
     <DropdownMenu>
@@ -56,35 +45,37 @@ export const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
           className={cn(
             "h-auto px-3 py-1.5 text-sm rounded-md transition-colors",
             "bg-muted/50 hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            selectedOption 
+            selectedPlanData 
               ? "text-foreground font-medium" 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <span>{displayLabel}</span>
+          <span>
+            {selectedPlanData ? `Plan: ${selectedPlanData.name}` : 'Plan: Select a plan'}
+          </span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        <DropdownMenuLabel>Group by</DropdownMenuLabel>
+        <DropdownMenuLabel>Plans</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {groupByOptions.map((option) => (
+        {plans.map((plan) => (
           <DropdownMenuItem
-            key={option.id}
-            onClick={() => onGroupBySelect(option.id === 'none' ? null : option.id)}
+            key={plan.id}
+            onClick={() => onPlanSelect(plan.id)}
             className={cn(
               "cursor-pointer",
-              selectedGroupBy === option.id && "bg-muted font-medium"
+              selectedPlan === plan.id && "bg-muted font-medium"
             )}
           >
-            {option.label}
+            {plan.name}
           </DropdownMenuItem>
         ))}
-        {selectedGroupBy && (
+        {selectedPlan && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => onGroupBySelect(null)}
+              onClick={() => onPlanSelect(null)}
               className="cursor-pointer text-muted-foreground"
             >
               Clear selection

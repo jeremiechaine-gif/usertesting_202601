@@ -3,7 +3,7 @@
  * Create or edit a scope with name, description, and filters
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,9 @@ import { FilterChip } from '@/components/ui/filter-chip';
 import { X } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
 import { filterDefinitions } from '@/lib/filterDefinitions';
-import { AddFilterView } from './SortingAndFiltersPopover';
-import { ColumnFilterModal } from './ColumnFilterModal';
+// Lazy load heavy components to reduce bundle size
+const AddFilterView = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.AddFilterView })));
+const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 
 interface ScopeModalProps {
   open: boolean;
@@ -184,21 +185,23 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
 
               {showAddFilter ? (
                 <div className="border rounded-lg p-4 bg-muted/50">
-                  <AddFilterView
-                    filterSearch={filterSearch}
-                    onFilterSearchChange={setFilterSearch}
-                    filteredFilterDefs={filteredFilterDefs}
-                    groupedFilters={groupedFilters}
-                    onSelectFilter={handleAddFilter}
-                    onBack={() => {
-                      setShowAddFilter(false);
-                      setFilterSearch('');
-                    }}
-                    onClose={() => {
-                      setShowAddFilter(false);
-                      setFilterSearch('');
-                    }}
-                  />
+                  <Suspense fallback={<div className="h-32 flex items-center justify-center">Loading...</div>}>
+                    <AddFilterView
+                      filterSearch={filterSearch}
+                      onFilterSearchChange={setFilterSearch}
+                      filteredFilterDefs={filteredFilterDefs}
+                      groupedFilters={groupedFilters}
+                      onSelectFilter={handleAddFilter}
+                      onBack={() => {
+                        setShowAddFilter(false);
+                        setFilterSearch('');
+                      }}
+                      onClose={() => {
+                        setShowAddFilter(false);
+                        setFilterSearch('');
+                      }}
+                    />
+                  </Suspense>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -282,33 +285,35 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
           : 'text';
 
         return (
-          <ColumnFilterModal
-            open={!!editingFilterId}
-            onOpenChange={(open) => {
-              if (!open) setEditingFilterId(null);
-            }}
-            columnId={columnId}
-            columnLabel={editingFilterDef.label}
-            category={editingFilterDef.category || 'General'}
-            columnType={columnType}
-            options={options}
-            selectedValues={editingFilter.values}
-            condition={editingFilter.condition || 'is'}
-            onApply={(values: (string | number)[], condition: string) => {
-              setFilters(
-                filters.map((f) =>
-                  f.id === editingFilterId
-                    ? {
-                        ...f,
-                        values,
-                        condition: condition !== 'is' ? condition : undefined,
-                      }
-                    : f
-                )
-              );
-              setEditingFilterId(null);
-            }}
-          />
+          <Suspense fallback={null}>
+            <ColumnFilterModal
+              open={!!editingFilterId}
+              onOpenChange={(open) => {
+                if (!open) setEditingFilterId(null);
+              }}
+              columnId={columnId}
+              columnLabel={editingFilterDef.label}
+              category={editingFilterDef.category || 'General'}
+              columnType={columnType}
+              options={options}
+              selectedValues={editingFilter.values}
+              condition={editingFilter.condition || 'is'}
+              onApply={(values: (string | number)[], condition: string) => {
+                setFilters(
+                  filters.map((f) =>
+                    f.id === editingFilterId
+                      ? {
+                          ...f,
+                          values,
+                          condition: condition !== 'is' ? condition : undefined,
+                        }
+                      : f
+                  )
+                );
+                setEditingFilterId(null);
+              }}
+            />
+          </Suspense>
         );
       })()}
     </Dialog>

@@ -4,31 +4,39 @@
  * Syncs bidirectionally with TanStack Table state
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Accordion } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FilterChip } from '@/components/ui/filter-chip';
-import { SortChip } from '@/components/ui/sort-chip';
+import { getRoutine } from '@/lib/routines';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   X,
-  Plus,
-  GripVertical,
   ArrowLeft,
-  Info,
   Star,
   ChevronRight,
   Filter,
   Search,
+  ChevronDown,
+  Save,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ColumnDef, SortingState, ColumnFiltersState } from '@tanstack/react-table';
+// Import refactored modules
+import { useSortingFiltersState } from './sorting-filters/hooks/useSortingFiltersState';
+import { draftSortingToTableState, draftFiltersToTableState } from './sorting-filters/stateAdapters';
+import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getColumnIdFromFilterId } from './sorting-filters/utils';
+import { SortingSection } from './sorting-filters/SortingSection';
+import { FiltersSection } from './sorting-filters/FiltersSection';
 
 // Types
 export interface SortConfig {
@@ -70,6 +78,12 @@ interface SortingAndFiltersPopoverProps {
   // Callback to open filter modal for a column
   onOpenFilterModal?: (columnId: string) => void;
   
+  // Routine information
+  selectedRoutineId?: string | null;
+  onSaveAsRoutine?: () => void;
+  onUpdateRoutine?: () => void;
+  hasUnsavedChanges?: boolean;
+  
   // Trigger button (optional, can be passed as children)
   trigger?: React.ReactNode;
 }
@@ -82,126 +96,53 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   columns,
   filterDefinitions,
   onOpenFilterModal,
+  selectedRoutineId,
+  onSaveAsRoutine,
+  onUpdateRoutine,
+  hasUnsavedChanges = false,
   trigger,
 }) => {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<'main' | 'add-filter'>('main');
-  const [draftSorting, setDraftSorting] = useState<SortConfig[]>([]);
-  const [draftFilters, setDraftFilters] = useState<FilterConfig[]>([]);
-  const [hasDraftChanges, setHasDraftChanges] = useState(false);
   const [dismissedTip, setDismissedTip] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
 
-  // Initialize draft state from table state
-  // Note: We reset draft state when popover opens to ensure it reflects current table state.
-  // Closing without Save will discard draft changes (standard UX pattern for configuration panels).
-  // This prevents accidental changes and makes the "Save" action explicit.
-  useEffect(() => {
-    const sortConfigs: SortConfig[] = sorting.map((sort, index) => ({
-      id: `sort-${index}`,
-      columnId: sort.id,
-      direction: sort.desc ? 'desc' : 'asc',
-    }));
-    setDraftSorting(sortConfigs);
+  // Use custom hook for draft state management
+  const {
+    draftSorting,
+    draftFilters,
+    hasDraftChanges,
+    setDraftSorting,
+    setDraftFilters,
+    setHasDraftChanges,
+  } = useSortingFiltersState({
+    sorting,
+    columnFilters,
+    modalOpen: open,
+  });
 
-    const filterConfigs: FilterConfig[] = columnFilters.map((filter) => ({
-      id: `filter-${filter.id}`,
-      filterId: filter.id,
-      values: Array.isArray(filter.value) ? filter.value : [filter.value].filter(Boolean),
-    }));
-    setDraftFilters(filterConfigs);
-    setHasDraftChanges(false);
-  }, [sorting, columnFilters, open]);
+  // Get sortable columns (memoized)
+  const sortableColumns = useMemo(() => getSortableColumns(columns), [columns]);
 
-  // Helper to recursively find column by ID and get its label
-  const getColumnLabel = (columnId: string): string => {
-    const findColumn = (cols: ColumnDef<any>[]): ColumnDef<any> | null => {
-      for (const col of cols) {
-        if (col.id === columnId) {
-          return col;
-        }
-        if ('columns' in col && Array.isArray(col.columns)) {
-          const found = findColumn(col.columns);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
+  // Group filter definitions (memoized)
+  const groupedFilters = useMemo(() => groupFilterDefinitions(filterDefinitions), [filterDefinitions]);
 
-    const column = findColumn(columns);
-    if (!column) return columnId;
-
-    // Extract header text
-    if (typeof column.header === 'string') {
-      return column.header;
-    }
-    if (typeof column.header === 'function') {
-      // For function headers, try to get a readable name from the column definition
-      return column.id || columnId;
-    }
-    return column.id || columnId;
-  };
-
-  // Get sortable columns
-  const sortableColumns = useMemo(() => {
-    const getSortableColumns = (cols: ColumnDef<any>[]): Array<{ id: string; label: string }> => {
-      const result: Array<{ id: string; label: string }> = [];
-      for (const col of cols) {
-        if (col.id && col.enableSorting !== false) {
-          result.push({
-            id: col.id,
-            label: getColumnLabel(col.id),
-          });
-        }
-        if ('columns' in col && Array.isArray(col.columns)) {
-          result.push(...getSortableColumns(col.columns));
-        }
-      }
-      return result;
-    };
-    return getSortableColumns(columns);
-  }, [columns]);
-
-  // Get filter definition by ID
-  const getFilterDef = (filterId: string) => {
-    return filterDefinitions.find((f) => f.id === filterId);
-  };
-
-  // Group filter definitions
-  const groupedFilters = useMemo(() => {
-    const favorites = filterDefinitions.filter((f) => f.isFavorite);
-    const general = filterDefinitions.filter((f) => f.category === 'general');
-    const consumedParts = filterDefinitions.filter((f) => f.category === 'consumed-parts');
-    const producedParts = filterDefinitions.filter((f) => f.category === 'produced-parts');
-
-    return { favorites, general, consumedParts, producedParts };
-  }, [filterDefinitions]);
-
-  // Filter search results
-  const filteredFilterDefs = useMemo(() => {
-    if (!filterSearch) return filterDefinitions;
-    const searchLower = filterSearch.toLowerCase();
-    return filterDefinitions.filter(
-      (f) => f.label.toLowerCase().includes(searchLower) || f.id.toLowerCase().includes(searchLower)
-    );
-  }, [filterDefinitions, filterSearch]);
+  // Filter search results (memoized)
+  const filteredFilterDefs = useMemo(
+    () => filterSearchResults(filterDefinitions, filterSearch),
+    [filterDefinitions, filterSearch]
+  );
 
   // Apply draft changes to table
   const handleSave = () => {
-    // Convert draft sorting to TanStack format
-    const newSorting: SortingState = draftSorting.map((sort) => ({
-      id: sort.columnId,
-      desc: sort.direction === 'desc',
-    }));
+    const newSorting = draftSortingToTableState(draftSorting);
+    const newFilters = draftFiltersToTableState(draftFilters);
+    
     onSortingChange(newSorting);
-
-    // Convert draft filters to TanStack format
-    const newFilters: ColumnFiltersState = draftFilters.map((filter) => ({
-      id: filter.filterId,
-      value: filter.values.length === 1 ? filter.values[0] : filter.values,
-    }));
     onColumnFiltersChange(newFilters);
 
+    // Reset draft changes flag and close modal
+    // Note: The hook will sync draft state with new table state on next render
     setHasDraftChanges(false);
     setOpen(false);
   };
@@ -247,26 +188,8 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     setHasDraftChanges(true);
   };
 
-  // Map filter definition ID to column ID
-  const getColumnIdFromFilterId = (filterId: string): string | null => {
-    const mapping: Record<string, string> = {
-      'part-name': 'partName',
-      'part-number': 'partNumber',
-      'type': 'type',
-      'delivery-status': 'deliveryStatus',
-      'plant': 'plant',
-      'supplier': 'supplier',
-      'buyer-codes': 'buyerCodes', // Generic buyer codes - might need specific column
-      'escalation-level': 'escalationLevel',
-      'otd-status': 'otdStatus',
-      'open-quantity': 'openQuantity',
-      'price': 'price',
-      'inventory-value': 'inventoryValue',
-      'consumed-part-buyer-codes': 'consumedPartBuyerCodes', // Might not exist as column
-      'produced-part-buyer-codes': 'producedPartBuyerCodes', // Might not exist as column
-    };
-    return mapping[filterId] || null;
-  };
+  // Use utility function for filter ID to column ID mapping
+  // (getColumnIdFromFilterId is imported from utils)
 
   // Add filter
   const handleAddFilter = (filterDef: FilterDefinition) => {
@@ -315,19 +238,6 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     setHasDraftChanges(true);
   };
 
-  // Get filter display values
-  const getFilterDisplayValues = (filter: FilterConfig): string[] => {
-    const def = getFilterDef(filter.filterId);
-    if (!def) return filter.values.map(String);
-
-    return filter.values.map((val) => {
-      if (def.options) {
-        const option = def.options.find((opt) => opt.value === val);
-        return option?.label || String(val);
-      }
-      return String(val);
-    });
-  };
 
   const hasActiveSorts = draftSorting.length > 0;
   const hasActiveFilters = draftFilters.length > 0;
@@ -358,7 +268,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[560px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
+        className="w-[800px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
         style={{
           top: '16px',
           bottom: '16px',
@@ -366,7 +276,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
           right: 'auto',
           height: 'calc(100vh - 32px)',
           maxHeight: 'calc(100vh - 32px)',
-          width: '560px',
+          width: '800px',
         }}
         onEscapeKeyDown={() => {
           if (view === 'add-filter') {
@@ -393,15 +303,16 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             onAddFilter={() => setView('add-filter')}
             onUpdateFilterValues={handleUpdateFilterValues}
             onRemoveFilter={handleRemoveFilter}
-            getFilterDef={getFilterDef}
-            getFilterColumnLabel={getColumnLabel}
-            getFilterDisplayValues={getFilterDisplayValues}
-            getColumnIdFromFilterId={getColumnIdFromFilterId}
             onOpenFilterModal={onOpenFilterModal}
+            selectedRoutineId={selectedRoutineId}
+            onSaveAsRoutine={onSaveAsRoutine}
+            onUpdateRoutine={onUpdateRoutine}
+            hasUnsavedChanges={hasUnsavedChanges}
             onSave={handleSave}
             onClearAll={handleClearAll}
             hasAnyActive={hasAnyActive}
             onClose={() => setOpen(false)}
+            columns={columns}
           />
         ) : (
           <AddFilterView
@@ -428,51 +339,56 @@ interface MainViewProps {
   draftFilters: FilterConfig[];
   sortableColumns: { id: string; label: string }[];
   filterDefinitions: FilterDefinition[];
-  hasDraftChanges: boolean;
+  columns: ColumnDef<any>[];
   dismissedTip: boolean;
   onDismissTip: () => void;
   onAddSort: () => void;
   onUpdateSort: (sortId: string, updates: Partial<SortConfig>) => void;
   onRemoveSort: (sortId: string) => void;
   onReorderSort: (fromIndex: number, toIndex: number) => void;
-  onAddFilter: () => void;
-  onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
-  onRemoveFilter: (filterId: string) => void;
-  getFilterDef: (filterId: string) => FilterDefinition | undefined;
-  getFilterColumnLabel: (columnId: string) => string;
-  getFilterDisplayValues: (filter: FilterConfig) => string[];
-  getColumnIdFromFilterId: (filterId: string) => string | null;
   onOpenFilterModal?: (columnId: string) => void;
+  selectedRoutineId?: string | null;
+  onSaveAsRoutine?: () => void;
+  onUpdateRoutine?: () => void;
+  hasUnsavedChanges?: boolean;
   onSave: () => void;
   onClearAll: () => void;
   hasAnyActive: boolean;
   onClose: () => void;
+  hasDraftChanges: boolean;
+  onAddFilter: () => void;
+  onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
+  onRemoveFilter: (filterId: string) => void;
 }
 
 const MainView: React.FC<MainViewProps> = ({
   draftSorting,
   draftFilters,
   sortableColumns,
-  hasDraftChanges,
+  filterDefinitions,
+  columns,
   dismissedTip,
   onDismissTip,
   onAddSort,
   onUpdateSort,
   onRemoveSort,
   onReorderSort,
-  onAddFilter,
-  onUpdateFilterValues,
-  onRemoveFilter,
-  getFilterDef,
-  getFilterColumnLabel,
-  getFilterDisplayValues,
-  getColumnIdFromFilterId,
   onOpenFilterModal,
+  selectedRoutineId,
+  onSaveAsRoutine,
+  onUpdateRoutine,
+  hasUnsavedChanges = false,
   onSave,
   onClearAll,
   hasAnyActive,
   onClose,
+  hasDraftChanges,
+  onAddFilter,
+  onUpdateFilterValues,
+  onRemoveFilter,
 }) => {
+  const selectedRoutine = selectedRoutineId ? getRoutine(selectedRoutineId) : null;
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
@@ -483,258 +399,133 @@ const MainView: React.FC<MainViewProps> = ({
         </Button>
       </div>
 
+      {/* Routine Section */}
+      {selectedRoutine && (
+        <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs text-muted-foreground shrink-0">Active Routine:</span>
+            <span className="text-sm font-medium truncate max-w-[600px]" title={selectedRoutine.name}>
+              {selectedRoutine.name}
+            </span>
+          </div>
+        </div>
+      )}
+
       <ScrollArea className="flex-1 px-4 min-h-0">
         <div className="py-4 space-y-4">
-          {/* Current Sorting Section */}
           <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full">
-            <AccordionItem value="sorting" className="border-none">
-              <AccordionTrigger className="py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">CURRENT SORTING</span>
-                  {draftSorting.length > 0 && (
-                    <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
-                      {draftSorting.length}
-                    </Badge>
-                  )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Tip: Shift + click to multi-sort</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pt-2 pb-4">
-                {!dismissedTip && (
-                  <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300">
-                    <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      Tip: Shift + click to multi-sort
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-                      onClick={onDismissTip}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-
-                {draftSorting.length === 0 ? (
-                  <div className="border-2 border-dashed rounded-md p-6 text-center">
-                    <p className="text-sm text-muted-foreground mb-3">No sorting yet</p>
-                    <Button variant="default" size="sm" onClick={onAddSort} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add sort
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Button variant="outline" size="sm" onClick={onAddSort} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add sort
-                    </Button>
-                    {draftSorting.map((sort, index) => (
-                      <SortRow
-                        key={sort.id}
-                        sort={sort}
-                        index={index}
-                        sortableColumns={sortableColumns}
-                        onUpdate={onUpdateSort}
-                        onRemove={onRemoveSort}
-                        onReorder={onReorderSort}
-                      />
-                    ))}
-                  </div>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-
+            <SortingSection
+              draftSorting={draftSorting}
+              sortableColumns={sortableColumns}
+              dismissedTip={dismissedTip}
+              onDismissTip={onDismissTip}
+              onAddSort={onAddSort}
+              onUpdateSort={onUpdateSort}
+              onRemoveSort={onRemoveSort}
+              onReorderSort={onReorderSort}
+            />
             <Separator />
-
-            {/* Current Filters Section */}
-            <AccordionItem value="filters" className="border-none">
-              <AccordionTrigger className="py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">CURRENT FILTERS</span>
-                  {draftFilters.length > 0 && (
-                    <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
-                      {draftFilters.length}
-                    </Badge>
-                  )}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pt-2 pb-4">
-                {draftFilters.length === 0 ? (
-                  <div className="border-2 border-dashed rounded-md p-6 text-center">
-                    <p className="text-sm text-muted-foreground mb-3">No filter yet</p>
-                    <Button variant="default" size="sm" onClick={onAddFilter} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add filter
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Button variant="default" size="sm" onClick={onAddFilter} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add filter
-                    </Button>
-                    {draftFilters.map((filter) => (
-                      <FilterRow
-                        key={filter.id}
-                        filter={filter}
-                        columnLabel={getFilterColumnLabel(filter.filterId)}
-                        filterDef={getFilterDef(filter.filterId)}
-                        displayValues={getFilterDisplayValues(filter)}
-                        onUpdateValues={onUpdateFilterValues}
-                        onRemove={onRemoveFilter}
-                        onOpenFilterModal={onOpenFilterModal}
-                        getColumnIdFromFilterId={getColumnIdFromFilterId}
-                      />
-                    ))}
-                  </div>
-                )}
-              </AccordionContent>
-            </AccordionItem>
+            <FiltersSection
+              draftFilters={draftFilters}
+              filterDefinitions={filterDefinitions}
+              columns={columns}
+              onAddFilter={onAddFilter}
+              onUpdateFilterValues={onUpdateFilterValues}
+              onRemoveFilter={onRemoveFilter}
+              onOpenFilterModal={onOpenFilterModal}
+            />
           </Accordion>
         </div>
       </ScrollArea>
 
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClearAll}
-          disabled={!hasAnyActive}
-          className="text-muted-foreground"
-        >
-          Clear all
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            disabled={!hasAnyActive}
+            className="text-muted-foreground"
+          >
+            Clear all
+          </Button>
+          {hasUnsavedChanges && (
+            <Badge variant="outline" className="text-xs" style={{ backgroundColor: '#FFF3CD', color: '#856404', borderColor: '#FFE69C' }}>
+              Unsaved changes
+            </Badge>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="default" size="sm" onClick={onSave} disabled={!hasDraftChanges}>
-            Save
-          </Button>
+          {(onSaveAsRoutine || onUpdateRoutine) ? (
+            <div className="flex items-center">
+              {/* Main Apply Button (left segment) */}
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="bg-[#2063F0] hover:bg-[#1a54d8] rounded-r-none border-r border-r-[#1a54d8]"
+                disabled={!hasDraftChanges}
+                onClick={onSave}
+              >
+                Apply
+              </Button>
+              {/* Dropdown Trigger (right segment) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="bg-[#2063F0] hover:bg-[#1a54d8] rounded-l-none px-2"
+                    disabled={!hasDraftChanges}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[200px]">
+                  {selectedRoutineId && onUpdateRoutine && (
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        onSave();
+                        onUpdateRoutine();
+                      }}
+                      disabled={!hasDraftChanges}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Update current routine
+                    </DropdownMenuItem>
+                  )}
+                  {onSaveAsRoutine && (
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        onSave();
+                        onSaveAsRoutine();
+                      }}
+                      disabled={!hasDraftChanges}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      {selectedRoutineId ? 'Save as new routine' : 'Save as routine'}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <Button variant="default" size="sm" onClick={onSave} disabled={!hasDraftChanges} className="bg-[#2063F0] hover:bg-[#1a54d8]">
+              Apply
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Sort Row Component
-interface SortRowProps {
-  sort: SortConfig;
-  index: number;
-  sortableColumns: { id: string; label: string }[];
-  onUpdate: (sortId: string, updates: Partial<SortConfig>) => void;
-  onRemove: (sortId: string) => void;
-  onReorder: (fromIndex: number, toIndex: number) => void;
-}
+// SortRow component is now in src/components/sorting-filters/SortRow.tsx
 
-const SortRow: React.FC<SortRowProps> = ({
-  sort,
-  index,
-  sortableColumns,
-  onUpdate,
-  onRemove,
-}) => {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
-        title="Drag to reorder"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <Select
-        value={sort.columnId}
-        onValueChange={(value) => onUpdate(sort.id, { columnId: value })}
-      >
-        <SelectTrigger className="flex-1 h-8">
-          <SelectValue placeholder="Select column" />
-        </SelectTrigger>
-        <SelectContent>
-          {sortableColumns.map((col) => (
-            <SelectItem key={col.id} value={col.id}>
-              {col.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <SortChip
-        label=""
-        direction={sort.direction}
-        position={index + 1}
-        showPosition={true}
-        showDragHandle={false}
-        onToggleDirection={() => onUpdate(sort.id, { direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
-        onRemove={() => onRemove(sort.id)}
-        className="flex-1"
-      />
-    </div>
-  );
-};
-
-// Filter Row Component
-interface FilterRowProps {
-  filter: FilterConfig;
-  columnLabel: string;
-  filterDef: FilterDefinition | undefined;
-  displayValues: string[];
-  onUpdateValues: (filterId: string, values: (string | number)[]) => void;
-  onRemove: (filterId: string) => void;
-  onOpenFilterModal?: (columnId: string) => void;
-  getColumnIdFromFilterId: (filterId: string) => string | null;
-}
-
-const FilterRow: React.FC<FilterRowProps> = ({
-  filter,
-  columnLabel,
-  filterDef,
-  displayValues,
-  onUpdateValues,
-  onRemove,
-  onOpenFilterModal,
-  getColumnIdFromFilterId,
-}) => {
-  const handleRemoveValue = (value: string | number) => {
-    const newValues = filter.values.filter((v) => v !== value);
-    onUpdateValues(filter.id, newValues);
-  };
-
-  const handleEdit = () => {
-    // Map filter ID to column ID and open the filter modal
-    const columnId = getColumnIdFromFilterId(filter.filterId);
-    if (columnId && onOpenFilterModal) {
-      onOpenFilterModal(columnId);
-    }
-  };
-
-  return (
-    <FilterChip
-      label={columnLabel}
-      values={filter.values}
-      displayValues={displayValues}
-      options={filterDef?.options?.map((opt) => ({ value: opt.value, label: opt.label }))}
-      maxVisible={2}
-      onRemove={() => onRemove(filter.id)}
-      onRemoveValue={handleRemoveValue}
-      onUpdateValues={(values) => onUpdateValues(filter.id, values)}
-      onEdit={handleEdit}
-      enableInlineEdit={false}
-      showEditButton={true}
-    />
-  );
-};
+// FilterRow component is now in src/components/sorting-filters/FilterRow.tsx
 
 // Add Filter View Component
 export interface AddFilterViewProps {

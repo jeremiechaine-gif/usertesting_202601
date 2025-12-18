@@ -2,7 +2,7 @@
  * Column Header Component with hover indicators and context menu
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ interface ColumnHeaderProps {
   children: React.ReactNode;
 }
 
-export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
+const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   header: _header, // Prefix with _ to indicate intentionally unused
   columnId,
   sorting,
@@ -48,46 +48,52 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Check if column is sorted
-  const sortInfo = sorting.find((s) => s.id === columnId);
+  // Memoize sort info to prevent unnecessary recalculations
+  const sortInfo = useMemo(
+    () => sorting.find((s) => s.id === columnId),
+    [sorting, columnId]
+  );
   const isSorted = !!sortInfo;
   const sortDirection = sortInfo?.desc ? 'desc' : 'asc';
-  const sortIndex = sortInfo ? sorting.findIndex((s) => s.id === columnId) + 1 : 0;
+  const sortIndex = useMemo(
+    () => (sortInfo ? sorting.findIndex((s) => s.id === columnId) + 1 : 0),
+    [sortInfo, sorting, columnId]
+  );
 
-  // Check if column has filter
-  const filterInfo = columnFilters.find((f) => f.id === columnId);
+  // Memoize filter info
+  const filterInfo = useMemo(
+    () => columnFilters.find((f) => f.id === columnId),
+    [columnFilters, columnId]
+  );
   const hasFilter = !!filterInfo;
 
-  // Handle sort ascending
-  const handleSortAscending = () => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleSortAscending = useCallback(() => {
     const newSorting = sorting.filter((s) => s.id !== columnId);
     newSorting.push({ id: columnId, desc: false });
     onSortingChange(newSorting);
     setMenuOpen(false);
-  };
+  }, [columnId, sorting, onSortingChange]);
 
-  // Handle sort descending
-  const handleSortDescending = () => {
+  const handleSortDescending = useCallback(() => {
     const newSorting = sorting.filter((s) => s.id !== columnId);
     newSorting.push({ id: columnId, desc: true });
     onSortingChange(newSorting);
     setMenuOpen(false);
-  };
+  }, [columnId, sorting, onSortingChange]);
 
-  // Handle clear filter
-  const handleClearFilter = () => {
+  const handleClearFilter = useCallback(() => {
     const newFilters = columnFilters.filter((f) => f.id !== columnId);
     onColumnFiltersChange(newFilters);
     setMenuOpen(false);
-  };
+  }, [columnId, columnFilters, onColumnFiltersChange]);
 
-  // Handle filter click
-  const handleFilterClick = () => {
+  const handleFilterClick = useCallback(() => {
     if (onFilterClick) {
       onFilterClick(columnId);
     }
     setMenuOpen(false);
-  };
+  }, [columnId, onFilterClick]);
 
   // Handle pin column (placeholder)
   const handlePinColumn = () => {
@@ -131,8 +137,8 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
     setMenuOpen(false);
   };
 
-  // Handle header click for sorting
-  const handleHeaderClick = (e: React.MouseEvent) => {
+  // Memoized header click handler
+  const handleHeaderClick = useCallback((e: React.MouseEvent) => {
     // Don't trigger if clicking on the menu button or any interactive element
     const target = e.target as HTMLElement;
     if (
@@ -165,7 +171,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
       // Add asc sort
       handleSortAscending();
     }
-  };
+  }, [isSorted, sortDirection, columnId, sorting, onSortingChange, handleSortAscending, handleSortDescending]);
 
   // Track if filter modal is open to prevent header clicks
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -329,4 +335,7 @@ export const ColumnHeader: React.FC<ColumnHeaderProps> = ({
     </div>
   );
 };
+
+// Memoize ColumnHeader to prevent unnecessary re-renders when table data changes
+export const ColumnHeader = React.memo(ColumnHeaderComponent);
 

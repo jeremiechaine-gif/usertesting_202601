@@ -164,3 +164,4 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
 // Pre-generate data for the app
 export const mockData = generateMockData(377);
 
+

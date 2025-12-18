@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { ScopeModal } from './ScopeModal';
-import { getScopes, deleteScope, type Scope } from '@/lib/scopes';
-import { ChevronDown, Plus, Edit, Trash2 } from 'lucide-react';
+import { getScopes, deleteScope, setDefaultScope, type Scope } from '@/lib/scopes';
+import { useScope } from '@/contexts/ScopeContext';
+import { ChevronDown, Plus, Edit, Trash2, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScopeDropdownProps {
@@ -29,6 +30,7 @@ export const ScopeDropdown: React.FC<ScopeDropdownProps> = ({
   onScopeSelect,
   onScopeFiltersChange,
 }) => {
+  const { refreshScopes } = useScope();
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editScope, setEditScope] = useState<Scope | null>(null);
@@ -82,9 +84,18 @@ export const ScopeDropdown: React.FC<ScopeDropdownProps> = ({
   };
 
   const handleScopeSaved = () => {
-    setScopes(getScopes());
+    const updatedScopes = getScopes();
+    setScopes(updatedScopes);
+    refreshScopes();
     setCreateModalOpen(false);
     setEditScope(null);
+  };
+
+  const handleSetDefault = (scopeId: string) => {
+    setDefaultScope(scopeId);
+    const updatedScopes = getScopes();
+    setScopes(updatedScopes);
+    refreshScopes();
   };
 
   return (
@@ -165,6 +176,15 @@ export const ScopeDropdown: React.FC<ScopeDropdownProps> = ({
           {selectedScopeId && (
             <>
               <DropdownMenuSeparator />
+              {selectedScope && !selectedScope.isDefault && (
+                <DropdownMenuItem
+                  onClick={() => handleSetDefault(selectedScope.id)}
+                  className="cursor-pointer"
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Set as default scope
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => handleScopeSelect(null)}
                 className="cursor-pointer text-muted-foreground"

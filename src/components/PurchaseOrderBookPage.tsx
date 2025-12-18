@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,31 +18,153 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { SortingAndFiltersPopover } from './SortingAndFiltersPopover';
 import { ColumnHeader } from './ColumnHeader';
-import { ColumnFilterModal } from './ColumnFilterModal';
+// Lazy load heavy modals to reduce initial bundle size
+const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.SortingAndFiltersPopover })));
+const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
+import { PlanDropdown } from './PlanDropdown';
 import { RoutineDropdown } from './RoutineDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
+import { useScope } from '@/contexts/ScopeContext';
+import { getRoutine, mergeFilters, updateRoutine } from '@/lib/routines';
+import { getScope as getScopeById } from '@/lib/scopes';
+import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
 
-export const PurchaseOrderBookPage: React.FC = () => {
+export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+  // Use ScopeContext for global scope management
+  const { currentScopeId, setCurrentScopeId, getScopeFilters } = useScope();
+  
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [activeTab, setActiveTab] = useState('purchase-order-book');
-  const [planMode, setPlanMode] = useState<'erp' | 'prod'>('erp');
+  const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
+  
+  // Memoized handler for opening filter modal
+  const handleOpenFilterModal = useCallback((columnId: string) => {
+    setFilterModalColumnId(columnId);
+    setFilterModalOpen(true);
+  }, []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedScopeId, setSelectedScopeId] = useState<string | null>(null);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
   const [selectedGroupBy, setSelectedGroupBy] = useState<string | null>(null);
+  const [routineModalOpen, setRoutineModalOpen] = useState(false);
+  const [routineModalMode, setRoutineModalMode] = useState<'create' | 'update'>('create');
+  
+  // Track if scope is overridden by routine (for future UI indicator)
+  const [_scopeOverridden, setScopeOverridden] = useState(false);
 
   const data = useMemo(() => mockData, []);
+  
+  // Detect unsaved changes: compare current view state with active routine
+  const hasUnsavedChanges = useMemo(() => {
+    if (!selectedRoutineId) return false;
+    const routine = getRoutine(selectedRoutineId);
+    if (!routine) return false;
+    
+    // Compare sorting
+    const sortingMatches = JSON.stringify(sorting) === JSON.stringify(routine.sorting);
+    
+    // Compare filters (need to normalize for comparison)
+    const normalizeFilters = (filters: ColumnFiltersState) => {
+      return filters.map(f => ({
+        id: f.id,
+        value: typeof f.value === 'object' && f.value !== null 
+          ? JSON.stringify(f.value) 
+          : f.value
+      })).sort((a, b) => a.id.localeCompare(b.id));
+    };
+    const currentFiltersNormalized = normalizeFilters(columnFilters);
+    const routineFiltersNormalized = normalizeFilters(routine.filters);
+    const filtersMatch = JSON.stringify(currentFiltersNormalized) === JSON.stringify(routineFiltersNormalized);
+    
+    // Compare groupBy
+    const groupByMatches = selectedGroupBy === routine.groupBy;
+    
+    return !sortingMatches || !filtersMatch || !groupByMatches;
+  }, [selectedRoutineId, sorting, columnFilters, selectedGroupBy]);
+  
+  // Handler to save as new routine (memoized)
+  const handleSaveAsRoutine = useCallback(() => {
+    setRoutineModalMode('create');
+    setRoutineModalOpen(true);
+  }, []);
+  
+
+  // Apply routine configuration when routine changes
+  useEffect(() => {
+    if (selectedRoutineId) {
+      const routine = getRoutine(selectedRoutineId);
+      if (routine) {
+        // Apply routine configuration
+        setSorting(routine.sorting);
+        setSelectedGroupBy(routine.groupBy || null);
+        
+        // Handle scope mode
+        if (routine.scopeMode === 'scope-aware') {
+          // Merge routine filters with current scope filters
+          const scopeFilters = getScopeFilters();
+          const mergedFilters = mergeFilters(routine.filters, scopeFilters);
+          setColumnFilters(mergedFilters);
+          setScopeOverridden(false);
+        } else if (routine.scopeMode === 'scope-fixed' && routine.linkedScopeId) {
+          // Use linked scope instead of current scope
+          const linkedScope = getScopeById(routine.linkedScopeId);
+          if (linkedScope) {
+            const linkedScopeFilters = linkedScope.filters
+              .filter((filter) => filter.values.length > 0)
+              .map((filter) => ({
+                id: filter.filterId,
+                value: filter.condition
+                  ? { condition: filter.condition, values: filter.values }
+                  : filter.values,
+              }));
+            const mergedFilters = mergeFilters(routine.filters, linkedScopeFilters);
+            setColumnFilters(mergedFilters);
+            setScopeOverridden(true);
+          } else {
+            // Linked scope not found, fallback to routine filters only
+            setColumnFilters(routine.filters);
+            setScopeOverridden(false);
+          }
+        } else {
+          // No scope linked, use routine filters only
+          setColumnFilters(routine.filters);
+          setScopeOverridden(false);
+        }
+      }
+    } else {
+      // No routine selected, use scope filters only
+      const scopeFilters = getScopeFilters();
+      setColumnFilters(scopeFilters);
+      setScopeOverridden(false);
+    }
+  }, [selectedRoutineId, currentScopeId, getScopeFilters]);
+
+  // Apply scope filters when scope changes (if no routine or routine is scope-aware)
+  useEffect(() => {
+    if (!selectedRoutineId) {
+      // No routine, apply scope filters directly
+      const scopeFilters = getScopeFilters();
+      setColumnFilters(scopeFilters);
+    } else {
+      // Routine is active, check if it's scope-aware
+      const routine = getRoutine(selectedRoutineId);
+      if (routine && routine.scopeMode === 'scope-aware') {
+        // Re-merge with updated scope
+        const scopeFilters = getScopeFilters();
+        const mergedFilters = mergeFilters(routine.filters, scopeFilters);
+        setColumnFilters(mergedFilters);
+      }
+    }
+  }, [currentScopeId, selectedRoutineId, getScopeFilters]);
 
   const table = useReactTable({
     data,
@@ -73,6 +195,24 @@ export const PurchaseOrderBookPage: React.FC = () => {
     },
   });
 
+  // Handler to update current routine (memoized, defined after table)
+  const handleUpdateRoutine = useCallback(() => {
+    if (!selectedRoutineId) return;
+    const routine = getRoutine(selectedRoutineId);
+    if (!routine) return;
+    
+    // Update routine with current view state
+    updateRoutine(selectedRoutineId, {
+      filters: columnFilters,
+      sorting,
+      groupBy: selectedGroupBy,
+      pageSize: table.getState().pagination.pageSize,
+    });
+    
+    // Force re-render by updating routine selection
+    setSelectedRoutineId(null);
+    setTimeout(() => setSelectedRoutineId(selectedRoutineId), 0);
+  }, [selectedRoutineId, columnFilters, sorting, selectedGroupBy, table]);
 
   return (
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
@@ -81,6 +221,7 @@ export const PurchaseOrderBookPage: React.FC = () => {
           activeItem="supply" 
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
+          onNavigate={onNavigate}
         />
       )}
       
@@ -118,44 +259,23 @@ export const PurchaseOrderBookPage: React.FC = () => {
                 />
                 <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
                 <div className="h-6 w-px bg-border" />
+                <PlanDropdown
+                  selectedPlan={selectedPlan}
+                  onPlanSelect={setSelectedPlan}
+                />
                 <ScopeDropdown
-                  selectedScopeId={selectedScopeId}
-                  onScopeSelect={setSelectedScopeId}
-                  onScopeFiltersChange={(filters: ColumnFiltersState) => {
-                    setColumnFilters(filters);
-                  }}
+                  selectedScopeId={currentScopeId}
+                  onScopeSelect={setCurrentScopeId}
+                  onScopeFiltersChange={() => {}} // Handled by context
+                />
+                <RoutineDropdown
+                  selectedRoutineId={selectedRoutineId}
+                  onRoutineSelect={setSelectedRoutineId}
                 />
               </div>
 
               {/* Right Side */}
               <div className="flex items-center gap-3">
-                {/* ERP Plan / Production Plan Toggle */}
-                <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
-                  <Button
-                    variant={planMode === 'erp' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setPlanMode('erp')}
-                    className={planMode === 'erp' ? 'bg-background text-[#2063F0] shadow-sm' : 'text-muted-foreground'}
-                  >
-                    ERP Plan
-                  </Button>
-                  <Button
-                    variant={planMode === 'prod' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setPlanMode('prod')}
-                    className={planMode === 'prod' ? 'bg-background text-[#2063F0] shadow-sm' : 'text-muted-foreground'}
-                  >
-                    Production Plan
-                  </Button>
-                </div>
-
-                <div className="h-6 w-px bg-border" />
-
-                {/* Routine Dropdown */}
-                <RoutineDropdown
-                  selectedRoutineId={selectedRoutineId}
-                  onRoutineSelect={setSelectedRoutineId}
-                />
 
                 {/* Save/Download Dropdown */}
                 <DropdownMenu>
@@ -241,10 +361,11 @@ export const PurchaseOrderBookPage: React.FC = () => {
               onColumnFiltersChange={setColumnFilters}
               columns={columns}
               filterDefinitions={filterDefinitions}
-              onOpenFilterModal={(columnId) => {
-                setFilterModalColumnId(columnId);
-                setFilterModalOpen(true);
-              }}
+              selectedRoutineId={selectedRoutineId}
+              onSaveAsRoutine={handleSaveAsRoutine}
+              onUpdateRoutine={handleUpdateRoutine}
+              hasUnsavedChanges={hasUnsavedChanges}
+            onOpenFilterModal={handleOpenFilterModal}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -447,7 +568,8 @@ export const PurchaseOrderBookPage: React.FC = () => {
 
       {/* Column Filter Modal */}
       {filterModalColumnId && (
-        <ColumnFilterModal
+        <Suspense fallback={null}>
+          <ColumnFilterModal
           open={filterModalOpen}
           onOpenChange={setFilterModalOpen}
           columnId={filterModalColumnId}
@@ -527,6 +649,28 @@ export const PurchaseOrderBookPage: React.FC = () => {
               setColumnFilters(newFilters);
             }, 0);
           }}
+        />
+        </Suspense>
+      )}
+      
+      {/* Routine Modal */}
+      {routineModalOpen && (
+        <RoutineModal
+          open={routineModalOpen}
+          onOpenChange={setRoutineModalOpen}
+          routine={routineModalMode === 'update' && selectedRoutineId ? getRoutine(selectedRoutineId) : null}
+          onSave={() => {
+            setRoutineModalOpen(false);
+            // Refresh routine if updating
+            if (routineModalMode === 'update' && selectedRoutineId) {
+              setSelectedRoutineId(null);
+              setTimeout(() => setSelectedRoutineId(selectedRoutineId), 0);
+            }
+          }}
+          currentFilters={columnFilters}
+          currentSorting={sorting}
+          currentGroupBy={selectedGroupBy}
+          currentPageSize={table.getState().pagination.pageSize}
         />
       )}
     </div>

@@ -15,6 +15,9 @@ export interface Scope {
   name: string;
   description?: string;
   filters: ScopeFilter[];
+  isDefault?: boolean; // Scope par défaut pour l'utilisateur
+  userId?: string; // Utilisateur propriétaire (pour multi-utilisateurs)
+  isGlobal?: boolean; // Scope global vs personnel
   createdAt: string;
   updatedAt: string;
 }
@@ -78,5 +81,75 @@ export const deleteScope = (id: string): boolean => {
 export const getScope = (id: string): Scope | null => {
   const scopes = getScopes();
   return scopes.find((s) => s.id === id) || null;
+};
+
+export const getDefaultScope = (): Scope | null => {
+  const scopes = getScopes();
+  return scopes.find((s) => s.isDefault === true) || null;
+};
+
+export const setDefaultScope = (id: string): boolean => {
+  const scopes = getScopes();
+  // Retirer le flag isDefault de tous les scopes
+  scopes.forEach((s) => {
+    if (s.isDefault) {
+      s.isDefault = false;
+    }
+  });
+  // Définir le nouveau scope par défaut
+  const scope = scopes.find((s) => s.id === id);
+  if (scope) {
+    scope.isDefault = true;
+    saveScopes(scopes);
+    return true;
+  }
+  return false;
+};
+
+const CURRENT_SCOPE_KEY = 'pelico-current-scope';
+
+export const getCurrentScopeId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(CURRENT_SCOPE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+export const setCurrentScopeId = (id: string | null): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (id) {
+      localStorage.setItem(CURRENT_SCOPE_KEY, id);
+    } else {
+      localStorage.removeItem(CURRENT_SCOPE_KEY);
+    }
+  } catch (error) {
+    console.error('Failed to save current scope:', error);
+  }
+};
+
+export const shareScope = (id: string): string | null => {
+  const scope = getScope(id);
+  if (!scope) return null;
+  
+  // Generate shareable link (in a real app, this would be a server endpoint)
+  const shareToken = btoa(JSON.stringify({ type: 'scope', id, timestamp: Date.now() }));
+  return `${window.location.origin}/share/${shareToken}`;
+};
+
+export const duplicateScope = (id: string): Scope | null => {
+  const scope = getScope(id);
+  if (!scope) return null;
+  
+  return createScope({
+    name: `${scope.name} (Copy)`,
+    description: scope.description,
+    filters: scope.filters.map(f => ({ ...f, id: `filter-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` })),
+    isDefault: false,
+    userId: scope.userId,
+    isGlobal: scope.isGlobal,
+  });
 };
 
