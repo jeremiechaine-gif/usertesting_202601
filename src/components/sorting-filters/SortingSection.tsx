@@ -21,6 +21,7 @@ interface SortingSectionProps {
   onUpdateSort: (sortId: string, updates: Partial<SortConfig>) => void;
   onRemoveSort: (sortId: string) => void;
   onReorderSort: (fromIndex: number, toIndex: number) => void;
+  sortsNotInRoutine?: Set<string>; // IDs of sorts not in routine (for orange highlighting)
 }
 
 export const SortingSection: React.FC<SortingSectionProps> = ({
@@ -32,6 +33,7 @@ export const SortingSection: React.FC<SortingSectionProps> = ({
   onUpdateSort,
   onRemoveSort,
   onReorderSort,
+  sortsNotInRoutine = new Set(),
 }) => {
   return (
     <AccordionItem value="sorting" className="border-none">
@@ -97,6 +99,7 @@ export const SortingSection: React.FC<SortingSectionProps> = ({
                   onUpdate={onUpdateSort}
                   onRemove={onRemoveSort}
                   onReorder={onReorderSort}
+                  isNotInRoutine={sortsNotInRoutine.has(sort.id)}
                 />
               ))}
             </div>

@@ -95,7 +95,7 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
               selectedRoutine 
                 ? "text-foreground font-medium" 
                 : "text-muted-foreground hover:text-foreground",
-              hasUnsavedChanges && selectedRoutine && "ring-2 ring-[#2063F0] ring-offset-2 bg-[#2063F0]/10"
+              hasUnsavedChanges && selectedRoutine && "ring-2 ring-[#ff9800] ring-offset-2 bg-[#ff9800]/10"
             )}
           >
             <span>
@@ -112,52 +112,90 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
               No routines yet
             </DropdownMenuItem>
           ) : (
-            routines.map((routine) => (
-              <div key={routine.id} className="group">
-                <div className="flex items-center justify-between px-2 py-1.5 hover:bg-muted rounded-sm">
-                  <DropdownMenuItem
-                    className="flex-1 p-0 cursor-pointer"
-                    onClick={() => onRoutineSelect(routine.id)}
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span className={cn(
-                        "text-sm",
-                        selectedRoutineId === routine.id && "font-semibold text-[#2063F0]"
-                      )}>
-                        {routine.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
-                      </span>
+            routines.map((routine) => {
+              const isSelected = selectedRoutineId === routine.id;
+              const showActions = isSelected && hasUnsavedChanges;
+              
+              return (
+                <div key={routine.id} className="group">
+                  <div className={cn(
+                    "flex items-center justify-between px-2 py-1.5 hover:bg-muted rounded-sm",
+                    isSelected && hasUnsavedChanges && "bg-[#ff9800]/10 ring-1 ring-[#ff9800]"
+                  )}>
+                    <DropdownMenuItem
+                      className="flex-1 p-0 cursor-pointer"
+                      onClick={() => onRoutineSelect(routine.id)}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className={cn(
+                          "text-sm",
+                          isSelected && hasUnsavedChanges && "font-semibold text-[#ff9800]",
+                          isSelected && !hasUnsavedChanges && "font-semibold text-[#2063F0]"
+                        )}>
+                          {routine.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(routine);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(routine.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  </DropdownMenuItem>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(routine);
-                      }}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(routine.id);
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
                   </div>
+                  {/* Actions directly under selected routine when hasUnsavedChanges */}
+                  {showActions && (
+                    <>
+                      <div className="px-2 py-1">
+                        {onUpdateRoutine && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              onUpdateRoutine();
+                            }}
+                            className="cursor-pointer text-[#ff9800] hover:bg-[#ff9800]/10"
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            Update routine
+                          </DropdownMenuItem>
+                        )}
+                        {onSaveAsRoutine && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              onSaveAsRoutine();
+                            }}
+                            className="cursor-pointer text-[#ff9800] hover:bg-[#ff9800]/10"
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            Save as new routine
+                          </DropdownMenuItem>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleCreate} className="cursor-pointer">
@@ -167,29 +205,6 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
           {selectedRoutineId && (
             <>
               <DropdownMenuSeparator />
-              {hasUnsavedChanges && onUpdateRoutine && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onUpdateRoutine();
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Update routine
-                </DropdownMenuItem>
-              )}
-              {hasUnsavedChanges && onSaveAsRoutine && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    onSaveAsRoutine();
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save as new routine
-                </DropdownMenuItem>
-              )}
-              {hasUnsavedChanges && <DropdownMenuSeparator />}
               <DropdownMenuItem
                 onClick={() => onRoutineSelect(null)}
                 className="cursor-pointer text-muted-foreground"

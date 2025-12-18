@@ -5,6 +5,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { FilterChip } from '@/components/ui/filter-chip';
+import { cn } from '@/lib/utils';
 import type { FilterConfig, FilterDefinition } from '../SortingAndFiltersPopover';
 
 interface FilterRowProps {
@@ -16,6 +17,7 @@ interface FilterRowProps {
   onRemove: (filterId: string) => void;
   onOpenFilterModal?: (columnId: string) => void;
   getColumnIdFromFilterId: (filterId: string) => string | null;
+  isNotInRoutine?: boolean; // Highlight orange if not in routine
 }
 
 const FilterRowComponent: React.FC<FilterRowProps> = ({
@@ -27,6 +29,7 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
   onRemove,
   onOpenFilterModal,
   getColumnIdFromFilterId,
+  isNotInRoutine = false,
 }) => {
   const handleRemoveValue = useCallback(
     (value: string | number) => {
@@ -62,7 +65,10 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
   );
 
   return (
-    <div className="w-full min-w-0">
+    <div className={cn(
+      "w-full min-w-0 p-1 rounded-md transition-colors",
+      isNotInRoutine && "bg-[#ff9800]/10 ring-1 ring-[#ff9800]"
+    )}>
       <FilterChip
         label={columnLabel}
         values={filter.values}
@@ -75,7 +81,10 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
         onEdit={handleEdit}
         enableInlineEdit={false}
         showEditButton={true}
-        className="w-full min-w-0"
+        className={cn(
+          "w-full min-w-0",
+          isNotInRoutine && "ring-1 ring-[#ff9800]"
+        )}
       />
     </div>
   );

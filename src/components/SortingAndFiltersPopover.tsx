@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import type { ColumnDef, SortingState, ColumnFiltersState } from '@tanstack/react-table';
 // Import refactored modules
 import { useSortingFiltersState } from './sorting-filters/hooks/useSortingFiltersState';
-import { draftSortingToTableState, draftFiltersToTableState } from './sorting-filters/stateAdapters';
+import { draftSortingToTableState, draftFiltersToTableState, tableStateToDraftSorting, tableStateToDraftFilters } from './sorting-filters/stateAdapters';
 import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getColumnIdFromFilterId } from './sorting-filters/utils';
 import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
@@ -118,6 +118,49 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
     columnFilters,
     modalOpen: open,
   });
+
+  // Get routine for comparison
+  const selectedRoutine = selectedRoutineId ? getRoutine(selectedRoutineId) : null;
+  
+  // Determine which chips are not part of the routine (for orange highlighting)
+  const chipsNotInRoutine = useMemo(() => {
+    if (!selectedRoutineId || !selectedRoutine || !hasDraftChanges) {
+      return { sorts: new Set<string>(), filters: new Set<string>() };
+    }
+
+    const routineSorting = tableStateToDraftSorting(selectedRoutine.sorting);
+    const routineFilters = tableStateToDraftFilters(selectedRoutine.filters);
+
+    // Find sorts not in routine
+    const sortsNotInRoutine = new Set<string>();
+    draftSorting.forEach((draftSort) => {
+      const existsInRoutine = routineSorting.some(
+        (routineSort: SortConfig) =>
+          routineSort.columnId === draftSort.columnId &&
+          routineSort.direction === draftSort.direction
+      );
+      if (!existsInRoutine) {
+        sortsNotInRoutine.add(draftSort.id);
+      }
+    });
+
+    // Find filters not in routine
+    const filtersNotInRoutine = new Set<string>();
+    draftFilters.forEach((draftFilter) => {
+      const existsInRoutine = routineFilters.some((routineFilter: FilterConfig) => {
+        if (routineFilter.filterId !== draftFilter.filterId) return false;
+        // Compare values
+        const draftValues = [...draftFilter.values].sort().join(',');
+        const routineValues = [...routineFilter.values].sort().join(',');
+        return draftValues === routineValues;
+      });
+      if (!existsInRoutine) {
+        filtersNotInRoutine.add(draftFilter.id);
+      }
+    });
+
+    return { sorts: sortsNotInRoutine, filters: filtersNotInRoutine };
+  }, [selectedRoutineId, selectedRoutine, draftSorting, draftFilters, hasDraftChanges]);
 
   // Get sortable columns (memoized)
   const sortableColumns = useMemo(() => getSortableColumns(columns), [columns]);
@@ -310,6 +353,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             hasAnyActive={hasAnyActive}
             onClose={() => setOpen(false)}
             columns={columns}
+            chipsNotInRoutine={chipsNotInRoutine}
           />
         ) : (
           <AddFilterView
@@ -355,6 +399,7 @@ interface MainViewProps {
   onAddFilter: () => void;
   onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
   onRemoveFilter: (filterId: string) => void;
+  chipsNotInRoutine: { sorts: Set<string>; filters: Set<string> };
 }
 
 const MainView: React.FC<MainViewProps> = ({
@@ -381,6 +426,7 @@ const MainView: React.FC<MainViewProps> = ({
   onAddFilter,
   onUpdateFilterValues,
   onRemoveFilter,
+  chipsNotInRoutine,
 }) => {
   const selectedRoutine = selectedRoutineId ? getRoutine(selectedRoutineId) : null;
 
@@ -416,6 +462,7 @@ const MainView: React.FC<MainViewProps> = ({
               onUpdateSort={onUpdateSort}
               onRemoveSort={onRemoveSort}
               onReorderSort={onReorderSort}
+              sortsNotInRoutine={chipsNotInRoutine.sorts}
             />
             <Separator />
             <FiltersSection
@@ -426,6 +473,7 @@ const MainView: React.FC<MainViewProps> = ({
               onUpdateFilterValues={onUpdateFilterValues}
               onRemoveFilter={onRemoveFilter}
               onOpenFilterModal={onOpenFilterModal}
+              filtersNotInRoutine={chipsNotInRoutine.filters}
             />
           </Accordion>
         </div>
@@ -455,7 +503,7 @@ const MainView: React.FC<MainViewProps> = ({
               <Button 
                 variant="default" 
                 size="sm" 
-                className="bg-[#2063F0] hover:bg-[#1a54d8] rounded-r-none border-r border-r-[#1a54d8]"
+                className="bg-[#ff9800] hover:bg-[#f57c00] rounded-r-none border-r border-r-[#f57c00]"
                 disabled={!hasDraftChanges}
                 onClick={() => {
                   onSave();
@@ -474,7 +522,7 @@ const MainView: React.FC<MainViewProps> = ({
                   <Button 
                     variant="default" 
                     size="sm" 
-                    className="bg-[#2063F0] hover:bg-[#1a54d8] rounded-l-none px-2"
+                    className="bg-[#ff9800] hover:bg-[#f57c00] rounded-l-none px-2"
                     disabled={!hasDraftChanges}
                   >
                     <ChevronDown className="h-4 w-4" />

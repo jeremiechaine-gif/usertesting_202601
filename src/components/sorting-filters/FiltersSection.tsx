@@ -21,6 +21,7 @@ interface FiltersSectionProps {
   onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
   onRemoveFilter: (filterId: string) => void;
   onOpenFilterModal?: (columnId: string) => void;
+  filtersNotInRoutine?: Set<string>; // IDs of filters not in routine (for orange highlighting)
 }
 
 export const FiltersSection: React.FC<FiltersSectionProps> = ({
@@ -31,6 +32,7 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
   onUpdateFilterValues,
   onRemoveFilter,
   onOpenFilterModal,
+  filtersNotInRoutine = new Set(),
 }) => {
   const getFilterDef = (filterId: string) => {
     return filterDefinitions.find((f) => f.id === filterId);
@@ -77,6 +79,7 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
                     onRemove={onRemoveFilter}
                     onOpenFilterModal={onOpenFilterModal}
                     getColumnIdFromFilterId={getColumnIdFromFilterId}
+                    isNotInRoutine={filtersNotInRoutine.has(filter.id)}
                   />
                 );
               })}

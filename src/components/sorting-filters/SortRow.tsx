@@ -7,6 +7,7 @@ import React, { useCallback } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SortChip } from '@/components/ui/sort-chip';
 import { GripVertical } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { SortConfig } from '../SortingAndFiltersPopover';
 
 interface SortRowProps {
@@ -16,6 +17,7 @@ interface SortRowProps {
   onUpdate: (sortId: string, updates: Partial<SortConfig>) => void;
   onRemove: (sortId: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  isNotInRoutine?: boolean; // Highlight orange if not in routine
 }
 
 const SortRowComponent: React.FC<SortRowProps> = ({
@@ -24,6 +26,7 @@ const SortRowComponent: React.FC<SortRowProps> = ({
   sortableColumns,
   onUpdate,
   onRemove,
+  isNotInRoutine = false,
 }) => {
   const handleColumnChange = useCallback(
     (value: string) => {
@@ -41,7 +44,10 @@ const SortRowComponent: React.FC<SortRowProps> = ({
   }, [sort.id, onRemove]);
 
   return (
-    <div className="flex items-center gap-2 min-w-0 w-full">
+    <div className={cn(
+      "flex items-center gap-2 min-w-0 w-full p-2 rounded-md transition-colors",
+      isNotInRoutine && "bg-[#ff9800]/10 ring-1 ring-[#ff9800]"
+    )}>
       <button
         className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
         title="Drag to reorder"
@@ -68,7 +74,7 @@ const SortRowComponent: React.FC<SortRowProps> = ({
         showDragHandle={false}
         onToggleDirection={handleToggleDirection}
         onRemove={handleRemove}
-        className="shrink-0"
+        className={cn("shrink-0", isNotInRoutine && "ring-1 ring-[#ff9800] bg-[#ff9800]/20")}
       />
     </div>
   );
