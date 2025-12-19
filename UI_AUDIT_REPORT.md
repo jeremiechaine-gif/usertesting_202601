@@ -113,13 +113,38 @@ Complete UI audit and revamp of the application with a focus on maintaining cons
 ### 8. **Routine Modal**
 **File:** `src/components/RoutineModal.tsx`
 
-**Status:** ✅ PREVIOUSLY REDESIGNED (verified)
+**Status:** ✅ REDESIGNED
 
-**Features:**
-- Hero header with gradient
-- Multi-team selection with checkboxes
-- Proper scrolling (h-90vh, min-h-0)
-- Gradient buttons
+**Changes:**
+- **Hero Header:**
+  - Gradient background (teal/blue)
+  - Sparkles icon in gradient container
+  - Enhanced title with gradient text
+  - Better description spacing
+  
+- **Form Fields:**
+  - Name input with h-10 and focus states
+  - Description textarea with resize-none
+  - Labels with font-semibold styling
+  - Optional indicators styled properly
+  - Focus states with blue accent
+  
+- **Share with Teams:**
+  - Enhanced section with better labels
+  - Teal checkboxes (#31C7AD)
+  - Border with bg-muted/10
+  - Create team button with teal hover
+  - Selected teams badges with teal accent
+  
+- **Current Configuration:**
+  - Gradient background container
+  - Zap icon in filters badge
+  - Color-coded badges
+  
+- **Footer:**
+  - Premium styling with gradient button
+  - Disabled validation
+  - Consistent height (h-9)
 
 ### 9. **User Scopes & Routines Modal**
 **File:** `src/components/UserScopesRoutinesModal.tsx`
@@ -340,6 +365,8 @@ Both documents serve as:
 5. `design: revamp Column Filter modal with premium UI`
 6. `design: improve Column Filter modal layout`
 7. `design: complete UI revamp with premium style across all modals`
+8. `docs: add comprehensive UI audit report`
+9. `design: revamp Routine Modal with premium UI`
 
 All changes are tracked, documented, and reversible if needed.
 
