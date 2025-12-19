@@ -42,19 +42,20 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
   onSkipToAll,
 }) => {
   return (
-    <ScrollArea className="flex-1 min-h-0">
-      <div className="px-8 py-6 space-y-6">
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
-          <div className="p-2 rounded-lg bg-[#31C7AD]/10">
-            <User className="h-5 w-5 text-[#31C7AD]" />
+    <div className="flex-1 min-h-0 flex flex-col">
+      <ScrollArea className="flex-1">
+        <div className="px-8 py-6 space-y-6">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+            <div className="p-2 rounded-lg bg-[#31C7AD]/10">
+              <User className="h-5 w-5 text-[#31C7AD]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">Choose your role</p>
+              <p className="text-xs text-muted-foreground">
+                We'll recommend the most relevant routines for your daily work
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium mb-1">Choose your role</p>
-            <p className="text-xs text-muted-foreground">
-              We'll recommend the most relevant routines for your daily work
-            </p>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {ROLES.map((role) => {
@@ -113,49 +114,56 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
           })}
         </div>
 
-        {/* Option B: "I'm not sure yet" checkbox */}
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-            <Checkbox
-              id="unsure-role"
-              checked={isUnsure}
-              onCheckedChange={(checked) => {
-                onUnsureChange(checked === true);
-                if (checked) {
-                  onSelect('Autre / Mixte' as Persona); // Set a default persona
-                }
-              }}
-              className="mt-0.5 data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
-            />
-            <div className="flex-1">
-              <label
-                htmlFor="unsure-role"
-                className="text-sm font-medium cursor-pointer"
-              >
-                I'm not sure of my role yet
-              </label>
-              <p className="text-xs text-muted-foreground mt-1">
-                We'll show you all available routines to help you discover what might be useful
-              </p>
+          {/* Option B: "I'm not sure yet" checkbox */}
+          <div className="mt-6 pt-6 border-t border-border/50">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                 onClick={() => {
+                   onUnsureChange(!isUnsure);
+                   if (!isUnsure) {
+                     onSelect('Autre / Mixte' as Persona);
+                   }
+                 }}>
+              <Checkbox
+                id="unsure-role"
+                checked={isUnsure}
+                onCheckedChange={(checked) => {
+                  onUnsureChange(checked === true);
+                  if (checked) {
+                    onSelect('Autre / Mixte' as Persona);
+                  }
+                }}
+                className="mt-0.5 data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
+              />
+              <div className="flex-1">
+                <label
+                  htmlFor="unsure-role"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  I'm not sure of my role yet
+                </label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  We'll show you all available routines to help you discover what might be useful
+                </p>
+              </div>
             </div>
           </div>
         </div>
+      </ScrollArea>
 
-        {/* Option A: Skip to all routines link */}
-        <div className="mt-4 flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSkipToAll}
-            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
-          >
-            <List className="h-4 w-4" />
-            Skip to all routines
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Option A: Skip to all routines link - Fixed at bottom */}
+      <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSkipToAll}
+          className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5 w-full justify-center"
+        >
+          <List className="h-4 w-4" />
+          Skip to all routines
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 
