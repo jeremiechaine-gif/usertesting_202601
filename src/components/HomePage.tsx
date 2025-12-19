@@ -316,11 +316,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Scope Creation Modal */}
+      {/* Scope Creation Modal - Always in guided mode from Home page */}
       <ScopeModal
         open={scopeModalOpen}
         onOpenChange={setScopeModalOpen}
         scope={editingScope}
+        mode="guided"
         onSave={() => {
           setScopeModalOpen(false);
           setEditingScope(null);

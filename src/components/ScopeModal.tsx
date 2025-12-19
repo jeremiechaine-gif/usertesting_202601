@@ -18,7 +18,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { X, Target, Sparkles, CheckCircle2, Lightbulb } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
@@ -31,6 +32,7 @@ interface ScopeModalProps {
   onOpenChange: (open: boolean) => void;
   scope?: Scope | null;
   onSave: () => void;
+  mode?: 'guided' | 'normal'; // Guided mode shows helpful tips and examples
 }
 
 export const ScopeModal: React.FC<ScopeModalProps> = ({
@@ -38,6 +40,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   onOpenChange,
   scope,
   onSave,
+  mode = 'normal',
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -142,39 +145,136 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     def.label.toLowerCase().includes(filterSearch.toLowerCase())
   );
 
+  const isGuidedMode = mode === 'guided' && !scope;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle>{scope ? 'Edit Scope' : 'Create New Scope'}</DialogTitle>
-          <DialogDescription>
-            {scope ? 'Update scope details and filters' : 'Define a new scope with filters'}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        {isGuidedMode ? (
+          // Guided Mode Header with Hero Section
+          <div className="shrink-0">
+            <div className="bg-gradient-to-br from-[#31C7AD]/10 via-[#31C7AD]/5 to-transparent px-6 pt-6 pb-4 border-b">
+              <div className="flex items-start gap-4 mb-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-[#31C7AD] to-[#2ab89a] shadow-lg">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <DialogTitle className="text-2xl font-bold mb-2">Define Your Scope</DialogTitle>
+                  <DialogDescription className="text-base leading-relaxed">
+                    A scope is your <strong className="text-foreground">personal data perimeter</strong>. 
+                    It filters what you see by default, showing only the plants, parts, or suppliers 
+                    that are relevant to your daily work.
+                  </DialogDescription>
+                </div>
+              </div>
+              
+              {/* Quick Benefits */}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
+                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
+                  <span>Focus on what matters</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
+                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
+                  <span>Save time filtering</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
+                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
+                  <span>Personal to you</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Normal Mode Header
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
+            <DialogTitle>{scope ? 'Edit Scope' : 'Create New Scope'}</DialogTitle>
+            <DialogDescription>
+              {scope ? 'Update scope details and filters' : 'Define a new scope with filters'}
+            </DialogDescription>
+          </DialogHeader>
+        )}
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 px-6 py-4 min-h-0">
           <div className="space-y-4">
+            {isGuidedMode && (
+              // Naming Tips Section
+              <div className="rounded-xl border bg-gradient-to-br from-blue-50/50 to-transparent p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-sm text-blue-900 dark:text-blue-300">
+                    Naming Tips
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Choose a clear name that describes what you're focusing on. Good scope names are:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Location-based</p>
+                      <p className="text-xs text-muted-foreground">e.g., "Lyon Plant", "Europe Region"</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Role-based</p>
+                      <p className="text-xs text-muted-foreground">e.g., "My Suppliers", "Critical Parts"</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Product-based</p>
+                      <p className="text-xs text-muted-foreground">e.g., "Electric Motors", "Battery Cells"</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">Business-based</p>
+                      <p className="text-xs text-muted-foreground">e.g., "Q1 Focus", "Strategic Items"</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="scope-name">
-                Name <span className="text-destructive">*</span>
+              <Label htmlFor="scope-name" className="text-sm font-semibold">
+                Scope Name <span className="text-destructive">*</span>
               </Label>
+              {isGuidedMode && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Give your scope a memorable name that clearly describes its purpose
+                </p>
+              )}
               <Input
                 id="scope-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter scope name"
+                placeholder={isGuidedMode ? 'e.g., "My Lyon Plant" or "Strategic Suppliers"' : 'Enter scope name'}
+                className="h-10"
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="scope-description">Description (optional)</Label>
+              <Label htmlFor="scope-description" className="text-sm font-semibold">
+                Description {!isGuidedMode && '(optional)'}
+              </Label>
+              {isGuidedMode && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Add details about what this scope covers and when to use it
+                </p>
+              )}
               <Textarea
                 id="scope-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter scope description"
+                placeholder={isGuidedMode ? 'e.g., "All parts and suppliers for Lyon manufacturing plant"' : 'Enter scope description'}
                 rows={3}
               />
             </div>
@@ -182,18 +282,47 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
             {/* Filters */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Filters</Label>
+                <div>
+                  <Label className="text-sm font-semibold">Filters</Label>
+                  {isGuidedMode && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Define which data you want to see (plants, suppliers, part types, etc.)
+                    </p>
+                  )}
+                </div>
                 {!showAddFilter && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowAddFilter(true)}
+                    className="shrink-0"
                   >
                     <X className="mr-2 h-4 w-4 rotate-45" />
                     Add Filter
                   </Button>
                 )}
               </div>
+              
+              {isGuidedMode && filters.length === 0 && !showAddFilter && (
+                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center bg-muted/20">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#31C7AD]/10 mb-3">
+                    <Target className="h-6 w-6 text-[#31C7AD]" />
+                  </div>
+                  <p className="text-sm font-medium mb-1">No filters yet</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Start by adding filters to define your data perimeter
+                  </p>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowAddFilter(true)}
+                    className="bg-[#31C7AD] hover:bg-[#2ab89a]"
+                  >
+                    <X className="mr-2 h-4 w-4 rotate-45" />
+                    Add Your First Filter
+                  </Button>
+                </div>
+              )}
 
               {showAddFilter ? (
                 <div className="border rounded-lg p-4 bg-muted/50">
@@ -230,11 +359,11 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filters.length === 0 ? (
+                  {!isGuidedMode && filters.length === 0 ? (
                     <div className="text-sm text-muted-foreground py-4 text-center border rounded-md">
                       No filters added yet
                     </div>
-                  ) : (
+                  ) : filters.length > 0 ? (
                     filters.map((filter) => {
                       const filterDef = getFilterDef(filter.filterId);
                       const getDisplayValue = (value: string | number): string => {
@@ -272,14 +401,30 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                         />
                       );
                     })
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
+            
+            {isGuidedMode && filters.length > 0 && (
+              <div className="rounded-lg border bg-green-50/50 dark:bg-green-950/20 p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-300">
+                      Great! You've added {filters.length} filter{filters.length > 1 ? 's' : ''}
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                      These filters will be automatically applied whenever you use this scope
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
 
-        <DialogFooter className="px-6 py-4 border-t">
+        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/20">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
