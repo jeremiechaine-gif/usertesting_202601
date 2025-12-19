@@ -242,9 +242,10 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           </div>
         </div>
 
-        {/* Main Header */}
-        <div className="border-b bg-background shadow-sm">
-          <div className="px-6 py-5">
+        {/* Main Header with Gradient */}
+        <div className="relative border-b bg-background shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
+          <div className="relative px-6 py-5">
             {/* Top Header Row */}
             <div className="flex items-center justify-between mb-5">
               {/* Left Side */}
@@ -256,16 +257,18 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
-                    <span className="text-sm">Menu</span>
+                    <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
                 {/* Pelico small logo */}
-                <img 
-                  src="/images/Pelico-small-logo.svg" 
-                  alt="Pelico" 
-                  className="w-6 h-6 shrink-0"
-                />
-                <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
+                  <img 
+                    src="/images/Pelico-small-logo.svg" 
+                    alt="Pelico" 
+                    className="w-5 h-5 shrink-0 brightness-0 invert"
+                  />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Supply</h1>
                 <div className="h-7 w-px bg-border/60" />
                 <PlanDropdown
                   selectedPlan={selectedPlan}
@@ -295,9 +298,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 {/* Save/Download Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-muted/80 transition-colors">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10 transition-colors">
                       <Save className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3 ml-1" />
+                      <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -309,9 +312,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 {/* Link Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-muted/80 transition-colors">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10 transition-colors">
                       <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3 ml-1" />
+                      <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -323,7 +326,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 <div className="h-6 w-px bg-border/60" />
 
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 transition-colors">
+                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
@@ -334,19 +337,19 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               <TabsList className="h-auto p-0 bg-transparent border-b border-border/50">
                 <TabsTrigger 
                   value="purchase-order-book" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-[#2063F0]/5 transition-all rounded-none px-5 py-2.5 text-sm font-semibold"
                 >
                   Purchase Order Book
                 </TabsTrigger>
                 <TabsTrigger 
                   value="line-of-balance" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-[#2063F0]/5 transition-all rounded-none px-5 py-2.5 text-sm font-semibold"
                 >
                   Line of Balance
                 </TabsTrigger>
                 <TabsTrigger 
                   value="planning" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-[#2063F0]/5 transition-all rounded-none px-5 py-2.5 text-sm font-semibold"
                 >
                   Planning
                   <Badge variant="secondary" className="ml-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">Beta</Badge>

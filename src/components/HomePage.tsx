@@ -151,31 +151,34 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Main Header */}
-        <div className="border-b bg-background">
-          <div className="px-6 py-4">
+        {/* Main Header with Gradient */}
+        <div className="relative border-b bg-background">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
+          <div className="relative px-6 py-5">
             {/* Top Header Row */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               {/* Left Side */}
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
                     variant="ghost" 
-                    className="h-8 px-3 gap-2"
+                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
-                    <span className="text-sm">Menu</span>
+                    <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
                 {/* Pelico small logo */}
-                <img 
-                  src="/images/Pelico-small-logo.svg" 
-                  alt="Pelico" 
-                  className="w-6 h-6 shrink-0"
-                />
-                <h1 className="text-2xl font-bold tracking-tight">Home</h1>
-                <div className="h-6 w-px bg-border" />
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
+                  <img 
+                    src="/images/Pelico-small-logo.svg" 
+                    alt="Pelico" 
+                    className="w-5 h-5 shrink-0 brightness-0 invert"
+                  />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Home</h1>
+                <div className="h-6 w-px bg-border/60" />
                 <PlanDropdown
                   selectedPlan={selectedPlan}
                   onPlanSelect={setSelectedPlan}
@@ -187,9 +190,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 {/* Save/Download Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
                       <Save className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3 ml-1" />
+                      <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -201,9 +204,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 {/* Link Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
                       <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3 ml-1" />
+                      <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -212,10 +215,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <div className="h-6 w-px bg-border" />
+                <div className="h-6 w-px bg-border/60" />
 
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
@@ -226,45 +229,62 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         {/* Main Content */}
         <div className="flex-1 overflow-auto px-6 py-6">
           {/* Welcome Section */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold mb-1">Hello {userName},</h2>
-            <p className="text-muted-foreground">Here's what we have for you today</p>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
+              Hello {userName},
+            </h2>
+            <p className="text-muted-foreground text-base">Here's what we have for you today</p>
           </div>
 
           {/* Main Hero Card */}
-          <div className="mb-6 rounded-lg p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800">
-            <h3 className="text-xl font-semibold mb-2">Kick-start your supply chain optimization with Pelico</h3>
-            <p className="text-muted-foreground mb-4 max-w-2xl">
-              Optimize your supply chain operations with intelligent scopes, routines, and analytics. 
-              Define scopes to filter your data, create routines to save your preferred views, and 
-              manage your team to collaborate effectively on supply chain decisions.
-            </p>
+          <div className="relative mb-8 rounded-xl p-8 overflow-hidden border border-[#2063F0]/20 bg-background shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#2063F0]/10 via-[#31C7AD]/5 to-transparent" />
+            <div className="relative">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-2">Kick-start your supply chain optimization with Pelico</h3>
+                  <p className="text-muted-foreground leading-relaxed max-w-3xl">
+                    Optimize your supply chain operations with intelligent scopes, routines, and analytics. 
+                    Define scopes to filter your data, create routines to save your preferred views, and 
+                    manage your team to collaborate effectively on supply chain decisions.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pelico Onboarding Card */}
-            <div className="bg-background border rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Pelico onboarding</h3>
-              <div className="space-y-2">
+            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                  <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
+                </div>
+                <h3 className="text-xl font-bold">Pelico onboarding</h3>
+              </div>
+              <div className="space-y-3">
                 {onboardingTasks.map((task) => (
                   <div
                     key={task.id}
                     className={cn(
-                      "flex items-center justify-between p-3 rounded-md transition-colors",
+                      "flex items-center justify-between p-4 rounded-lg transition-all border",
                       task.completed 
-                        ? "bg-green-50 dark:bg-green-950/20" 
-                        : "bg-muted/50 hover:bg-muted"
+                        ? "bg-[#31C7AD]/10 border-[#31C7AD]/20" 
+                        : "bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm"
                     )}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {task.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
+                        <CheckCircle2 className="h-5 w-5 text-[#31C7AD] shrink-0" />
                       ) : (
                         <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
                       )}
                       <span className={cn(
-                        "text-sm",
+                        "text-sm font-medium",
                         task.completed && "text-muted-foreground line-through"
                       )}>
                         {task.label}
@@ -274,7 +294,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-sm h-auto py-1 px-2 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
+                        className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
                         onClick={() => handleTaskAction(task)}
                       >
                         {task.action}
@@ -286,26 +306,33 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             </div>
 
             {/* Pelico Academy Card */}
-            <div className="bg-background border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Pelico Academy</h3>
-                <Button variant="ghost" size="sm" className="text-sm h-auto">
+            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
+                    <Sparkles className="h-5 w-5 text-[#2063F0]" />
+                  </div>
+                  <h3 className="text-xl font-bold">Pelico Academy</h3>
+                </div>
+                <Button variant="ghost" size="sm" className="text-sm h-auto font-medium hover:bg-[#2063F0]/10 hover:text-[#2063F0]">
                   Help Center
                 </Button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {academyResources.map((resource) => {
                   const Icon = resource.icon;
                   return (
                     <button
                       key={resource.id}
                       onClick={resource.onClick}
-                      className="w-full flex items-center gap-3 p-3 rounded-md hover:bg-muted transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 hover:border-[#2063F0]/20 transition-all text-left border border-transparent"
                     >
-                      <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
-                      <span className="text-sm flex-1">{resource.title}</span>
+                      <div className="p-1.5 rounded-md bg-gradient-to-br from-muted/50 to-muted/30">
+                        <Icon className="h-4 w-4 text-foreground shrink-0" />
+                      </div>
+                      <span className="text-sm font-medium flex-1">{resource.title}</span>
                       {resource.isNew && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20">
                           New
                         </Badge>
                       )}

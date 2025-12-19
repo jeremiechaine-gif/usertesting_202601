@@ -173,27 +173,30 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
           </div>
         </div>
 
-        {/* Main Header */}
-        <div className="border-b bg-background">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between mb-4">
+        {/* Main Header with Gradient */}
+        <div className="relative border-b bg-background">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
+          <div className="relative px-6 py-5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
                     variant="ghost" 
-                    className="h-8 px-3 gap-2"
+                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
-                    <span className="text-sm">Menu</span>
+                    <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <img 
-                  src="/images/Pelico-small-logo.svg" 
-                  alt="Pelico" 
-                  className="w-6 h-6 shrink-0"
-                />
-                <h1 className="text-2xl font-bold tracking-tight">Teams & members</h1>
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
+                  <img 
+                    src="/images/Pelico-small-logo.svg" 
+                    alt="Pelico" 
+                    className="w-5 h-5 shrink-0 brightness-0 invert"
+                  />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Teams & members</h1>
               </div>
             </div>
           </div>
@@ -203,14 +206,15 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-6xl">
             {/* Hero Section */}
-            <div className="mb-8 rounded-lg p-6 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-800">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-lg bg-white/80 dark:bg-gray-900/80">
-                  <Users2 className="h-6 w-6 text-[#31C7AD]" />
+            <div className="relative mb-8 rounded-xl p-8 overflow-hidden border border-[#31C7AD]/20 bg-background shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+              <div className="relative flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-[#31C7AD] to-[#2063F0] shadow-md">
+                  <Users2 className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-semibold mb-2">Manage your teams and members</h2>
-                  <p className="text-sm text-muted-foreground max-w-2xl">
+                  <h2 className="text-2xl font-bold mb-2">Manage your teams and members</h2>
+                  <p className="text-muted-foreground max-w-3xl leading-relaxed">
                     Organize users into teams to share routines and collaborate effectively. 
                     Assign scopes and routines to streamline workflows and ensure everyone has access to the right tools.
                   </p>
@@ -221,14 +225,22 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
             {/* Teams Section */}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Teams</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {sortedTeams.length} {sortedTeams.length === 1 ? 'team' : 'teams'} • {users.length} {users.length === 1 ? 'member' : 'members'}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                    <Building2 className="h-5 w-5 text-[#31C7AD]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Teams</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {sortedTeams.length} {sortedTeams.length === 1 ? 'team' : 'teams'} • {users.length} {users.length === 1 ? 'member' : 'members'}
+                    </p>
+                  </div>
                 </div>
                 {isManager && sortedTeams.length > 0 && (
-                  <Button onClick={handleCreateTeam} className="gap-2">
+                  <Button
+                    onClick={handleCreateTeam}
+                    className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                  >
                     <Plus className="h-4 w-4" />
                     Create Team
                   </Button>
@@ -236,16 +248,19 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
               </div>
 
               {sortedTeams.length === 0 ? (
-                <div className="border-2 border-dashed rounded-xl p-16 text-center bg-muted/20">
-                  <div className="inline-flex p-4 rounded-full bg-muted mb-4">
-                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#31C7AD]/5 to-transparent">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 mb-4">
+                    <Building2 className="h-8 w-8 text-[#31C7AD]" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
-                  <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                  <p className="text-sm text-muted-foreground mb-5 max-w-sm text-center">
                     Create your first team to organize users and enable collaboration across your organization
                   </p>
                   {isManager && (
-                    <Button onClick={handleCreateTeam} className="gap-2">
+                    <Button
+                      onClick={handleCreateTeam}
+                      className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                    >
                       <Plus className="h-4 w-4" />
                       Create Team
                     </Button>
