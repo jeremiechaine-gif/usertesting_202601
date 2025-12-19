@@ -351,7 +351,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[900px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
+        className="w-[1000px] max-w-[90vw] p-0 flex flex-col !top-4 !bottom-4 !left-4 !right-auto !h-[calc(100vh-32px)] !max-h-[calc(100vh-32px)] rounded-lg [&>button]:hidden"
         style={{
           top: '16px',
           bottom: '16px',
