@@ -18,9 +18,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { Badge } from '@/components/ui/badge';
 import { X, Target, Sparkles, CheckCircle2, Lightbulb } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
+import { validateScope } from '@/lib/validation/scopeValidation';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
 // Lazy load heavy components to reduce bundle size
@@ -68,26 +68,39 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   }, [scope, open]);
 
   const handleSave = () => {
-    if (!name.trim()) {
-      alert('Scope name is required');
+    // Validate scope data
+    const validation = validateScope({
+      name,
+      description,
+      filters,
+    });
+
+    if (!validation.isValid) {
+      // Show first error (could be enhanced to show all errors)
+      alert(validation.errors[0] || 'Invalid scope data');
       return;
     }
 
-    if (scope) {
-      updateScope(scope.id, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        filters,
-      });
-    } else {
-      createScope({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        filters,
-      });
-    }
+    try {
+      if (scope) {
+        updateScope(scope.id, {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          filters,
+        });
+      } else {
+        createScope({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          filters,
+        });
+      }
 
-    onSave();
+      onSave();
+    } catch (error) {
+      console.error('Error saving scope:', error);
+      alert('Failed to save scope. Please try again.');
+    }
   };
 
   const handleAddFilter = (filterDef: typeof filterDefinitions[0]) => {

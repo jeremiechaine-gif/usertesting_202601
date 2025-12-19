@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { scoreRoutine, scoreAndRankRoutines, groupRoutinesByFrequency } from '../scoring';
-import type { RoutineLibraryEntry, Persona, Intent } from '../types';
+import type { RoutineLibraryEntry } from '../types';
 import { ROUTINE_LIBRARY } from '../routineLibrary';
 
 describe('scoring', () => {

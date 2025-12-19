@@ -18,10 +18,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createRoutine, updateRoutine, type Routine } from '@/lib/routines';
+import { validateRoutine } from '@/lib/validation/routineValidation';
 import { getScopes, type Scope } from '@/lib/scopes';
 import { getCurrentUserId, getCurrentUser } from '@/lib/users';
 import { getTeams, createTeam, getTeamByName, type Team } from '@/lib/teams';
@@ -87,13 +87,17 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   }, [routine, open]);
 
   const handleSave = () => {
-    if (!name.trim()) {
-      alert('Routine name is required');
-      return;
-    }
+    // Validate routine data
+    const validation = validateRoutine({
+      name,
+      description,
+      scopeMode,
+      linkedScopeId,
+    });
 
-    if (scopeMode === 'scope-fixed' && !linkedScopeId) {
-      alert('Please select a scope for scope-fixed routine');
+    if (!validation.isValid) {
+      // Show first error (could be enhanced to show all errors)
+      alert(validation.errors[0] || 'Invalid routine data');
       return;
     }
 

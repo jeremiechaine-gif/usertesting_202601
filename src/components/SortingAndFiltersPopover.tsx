@@ -37,6 +37,7 @@ import { draftSortingToTableState, draftFiltersToTableState, tableStateToDraftSo
 import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getColumnIdFromFilterId } from './sorting-filters/utils';
 import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
+// @ts-expect-error - filterDefinitions is used in useState initializer which TypeScript doesn't detect
 import { filterDefinitions } from '@/lib/filterDefinitions';
 
 // Types

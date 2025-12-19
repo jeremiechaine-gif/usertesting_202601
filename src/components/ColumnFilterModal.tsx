@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,8 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
   maxDisplayResults = 50,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounce search query to avoid excessive filtering on every keystroke
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedValues, setSelectedValues] = useState<(string | number)[]>(initialSelectedValues);
   const [displaySelectedOnly, setDisplaySelectedOnly] = useState(false);
   
@@ -112,9 +115,9 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
   const filteredOptions = useMemo(() => {
     let filtered = options;
 
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    // Apply search filter (using debounced value)
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter((opt) =>
         opt.label.toLowerCase().includes(query) || String(opt.value).toLowerCase().includes(query)
       );
@@ -126,7 +129,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
     }
 
     return filtered;
-  }, [options, searchQuery, displaySelectedOnly, selectedValues]);
+  }, [options, debouncedSearchQuery, displaySelectedOnly, selectedValues]);
 
   // Display limited results
   const displayedOptions = filteredOptions.slice(0, maxDisplayResults);

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 import {
   useReactTable,
   getCoreRowModel,
@@ -59,6 +60,8 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     return combined;
   }, [scopeFilters, userFilters]);
   const [globalFilter, setGlobalFilter] = useState('');
+  // Debounce global filter to avoid excessive table filtering on every keystroke
+  const debouncedGlobalFilter = useDebounce(globalFilter, 300);
   const [activeTab, setActiveTab] = useState('purchase-order-book');
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
@@ -179,7 +182,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     state: {
       sorting,
       columnFilters,
-      globalFilter,
+      globalFilter: debouncedGlobalFilter,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: handleColumnFiltersChange,
@@ -453,27 +456,43 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
 
               {/* Body */}
               <tbody className="bg-background divide-y divide-border/40">
-                {table.getRowModel().rows.map((row, index) => (
-                  <tr
-                    key={row.id}
-                    className={cn(
-                      'transition-all duration-200',
-                      index % 2 === 0 ? 'bg-background' : 'bg-muted/20',
-                      'hover:bg-[#31C7AD]/5 hover:shadow-sm',
-                      row.getIsSelected() && 'bg-[#2063F0]/5 hover:bg-[#2063F0]/10'
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="px-4 py-3 text-sm border-r border-border/40"
-                        style={{ width: cell.column.getSize() }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    ))}
+                {table.getRowModel().rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={table.getAllColumns().length} className="px-4 py-12 text-center">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Search className="h-8 w-8 opacity-50" />
+                        <p className="text-sm font-medium">No results found</p>
+                        <p className="text-xs">
+                          {debouncedGlobalFilter || columnFilters.length > 0
+                            ? 'Try adjusting your filters or search terms'
+                            : 'No data available'}
+                        </p>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  table.getRowModel().rows.map((row, index) => (
+                    <tr
+                      key={row.id}
+                      className={cn(
+                        'transition-all duration-200',
+                        index % 2 === 0 ? 'bg-background' : 'bg-muted/20',
+                        'hover:bg-[#31C7AD]/5 hover:shadow-sm',
+                        row.getIsSelected() && 'bg-[#2063F0]/5 hover:bg-[#2063F0]/10'
+                      )}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className="px-4 py-3 text-sm border-r border-border/40"
+                          style={{ width: cell.column.getSize() }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
             <div className="h-4" /> {/* Spacer for bottom padding */}

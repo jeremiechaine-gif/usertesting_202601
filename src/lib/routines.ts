@@ -33,15 +33,44 @@ export interface Routine {
 
 const STORAGE_KEY = 'pelico-routines';
 
+/**
+ * Validate routine data structure
+ */
+function isValidRoutine(routine: unknown): routine is Routine {
+  if (!routine || typeof routine !== 'object') return false;
+  const r = routine as Record<string, unknown>;
+  return (
+    typeof r.id === 'string' &&
+    typeof r.name === 'string' &&
+    Array.isArray(r.filters) &&
+    Array.isArray(r.sorting) &&
+    typeof r.createdBy === 'string' &&
+    typeof r.createdAt === 'string' &&
+    typeof r.updatedAt === 'string'
+  );
+}
+
 export const getRoutines = (): Routine[] => {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    const routines: Routine[] = stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+    
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      console.warn('Invalid routines data format: expected array');
+      return [];
+    }
+    
+    // Validate and filter out invalid routines
+    const validRoutines = parsed.filter(isValidRoutine);
+    if (validRoutines.length !== parsed.length) {
+      console.warn(`Filtered out ${parsed.length - validRoutines.length} invalid routines`);
+    }
     
     // Migrate old routines with teamId to teamIds
     let needsMigration = false;
-    const migratedRoutines = routines.map((routine) => {
+    const migratedRoutines = validRoutines.map((routine) => {
       if (routine.teamId && !routine.teamIds) {
         needsMigration = true;
         return {
@@ -65,7 +94,7 @@ export const getRoutines = (): Routine[] => {
       return migratedRoutines;
     }
     
-    return routines;
+    return migratedRoutines;
   } catch {
     return [];
   }

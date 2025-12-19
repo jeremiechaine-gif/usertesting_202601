@@ -47,7 +47,7 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
   const renderRoutineGroup = (
     title: string,
     routines: ScoredRoutine[],
-    frequency: 'Daily' | 'Weekly' | 'Monthly'
+    _frequency: 'Daily' | 'Weekly' | 'Monthly'
   ) => {
     if (routines.length === 0) return null;
 
@@ -72,7 +72,6 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
         <div className="space-y-3">
           {selectedRoutines.map((scored) => {
             const routine = scored.routine;
-            const isSelected = selectedRoutineIds.includes(routine.id);
             return (
               <div
                 key={routine.id}

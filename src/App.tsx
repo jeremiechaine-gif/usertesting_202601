@@ -3,6 +3,7 @@ import { PurchaseOrderBookPage } from './components/PurchaseOrderBookPage';
 import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
 import { HomePage } from './components/HomePage';
 import { UsersPage } from './components/UsersPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
 import { createUser, getUsers, getCurrentUserId } from './lib/users';
 import { getRoutines, createRoutine, updateRoutine } from './lib/routines';
@@ -187,23 +188,44 @@ function App() {
     }
   };
 
+  // Wrap pages in ErrorBoundary for graceful error handling
   if (currentPage === 'home') {
-    return <HomePage onNavigate={handleNavigate} />;
+    return (
+      <ErrorBoundary>
+        <HomePage onNavigate={handleNavigate} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'scope-routines') {
-    return <ScopeAndRoutinesPage onNavigate={handleNavigate} />;
+    return (
+      <ErrorBoundary>
+        <ScopeAndRoutinesPage onNavigate={handleNavigate} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'users') {
-    return <UsersPage onNavigate={handleNavigate} />;
+    return (
+      <ErrorBoundary>
+        <UsersPage onNavigate={handleNavigate} />
+      </ErrorBoundary>
+    );
   }
 
   if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
-    return <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />;
+    return (
+      <ErrorBoundary>
+        <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />
+      </ErrorBoundary>
+    );
   }
 
-  return <PurchaseOrderBookPage onNavigate={handleNavigate} />;
+  return (
+    <ErrorBoundary>
+      <PurchaseOrderBookPage onNavigate={handleNavigate} />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

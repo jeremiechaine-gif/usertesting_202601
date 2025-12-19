@@ -28,7 +28,7 @@ import {
   type Routine 
 } from '@/lib/routines';
 import { getCurrentUserId, getCurrentUser, getUser } from '@/lib/users';
-import { getTeam, getTeams } from '@/lib/teams';
+import { getTeam, getTeams, type Team } from '@/lib/teams';
 import { useScope } from '@/contexts/ScopeContext';
 import { 
   Plus, 
@@ -481,8 +481,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                     // Combine and deduplicate teams
                     const allSharedTeams = [...sharedTeams, ...assignedTeams]
                       .filter((team, index, self) => 
-                        index === self.findIndex(t => t.id === team.id)
-                      );
+                        team && index === self.findIndex(t => t && t.id === team.id)
+                      )
+                      .filter((team): team is Team => team !== null);
                     
                     return (
                     <div

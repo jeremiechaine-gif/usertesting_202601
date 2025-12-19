@@ -10,6 +10,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +54,8 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
   onRoutineToggle,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  // Debounce search query to avoid excessive filtering on every keystroke
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
   const [selectedObjectives, setSelectedObjectives] = useState<Objective[]>([]);
   const [selectedHorizons, setSelectedHorizons] = useState<Horizon[]>([]);
@@ -87,9 +90,9 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
   const filteredRoutines = useMemo(() => {
     let filtered: RoutineLibraryEntry[] = ROUTINE_LIBRARY;
 
-    // Search by keywords
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Search by keywords (using debounced value)
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
         (r) =>
           r.label.toLowerCase().includes(query) ||
@@ -138,7 +141,7 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
 
     return filtered;
   }, [
-    searchQuery,
+    debouncedSearchQuery,
     selectedPersonas,
     selectedObjectives,
     selectedHorizons,

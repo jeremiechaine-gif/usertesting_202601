@@ -3,7 +3,7 @@
  * Manages global scope state across the application
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   getScopes, 
   getCurrentScopeId, 
@@ -96,9 +96,12 @@ export const ScopeProvider: React.FC<ScopeProviderProps> = ({ children }) => {
     }
   }, [currentScopeId, setCurrentScopeId]);
 
-  const currentScope = currentScopeId 
-    ? scopes.find((s) => s.id === currentScopeId) || null
-    : null;
+  // Memoize currentScope to prevent unnecessary recalculations
+  const currentScope = useMemo(() => {
+    return currentScopeId 
+      ? scopes.find((s) => s.id === currentScopeId) || null
+      : null;
+  }, [currentScopeId, scopes]);
 
   const getScopeFilters = useCallback((): ColumnFiltersState => {
     if (!currentScope || currentScope.filters.length === 0) {

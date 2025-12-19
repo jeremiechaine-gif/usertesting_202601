@@ -12,13 +12,8 @@
 
 import type {
   RoutineLibraryEntry,
-  Persona,
-  Objective,
-  Horizon,
-  ImpactZone,
-  Frequency,
-  PelicoView,
   PersonaDefaultSets,
+  Persona,
 } from './types';
 
 export const ROUTINE_LIBRARY: RoutineLibraryEntry[] = [
