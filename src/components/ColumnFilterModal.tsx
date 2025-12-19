@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -193,9 +192,9 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
           <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
             {category && (
-              <p className="text-xs text-muted-foreground/80 mb-2 uppercase tracking-wide">{category}</p>
+              <p className="text-xs text-muted-foreground/80 mb-3 uppercase tracking-wide">{category}</p>
             )}
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Filter className="h-5 w-5 text-white" />
               </div>
@@ -203,9 +202,6 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                 {columnLabel}
               </DialogTitle>
             </div>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Select values to filter the {columnLabel} column
-            </DialogDescription>
           </DialogHeader>
         </div>
 
@@ -213,25 +209,20 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
         <div className="px-8 py-5 border-b border-border/50 space-y-4 shrink-0 bg-muted/10">
           {/* Top row: Condition and Display Selected Only */}
           <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Condition
-              </label>
-              <Select value={condition} onValueChange={(value) => setCondition(value)}>
-                <SelectTrigger className="w-[200px] h-9 border-border/60 hover:border-[#2063F0]/30 transition-colors">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {conditionOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={condition} onValueChange={(value) => setCondition(value)}>
+              <SelectTrigger className="w-[200px] h-10 border-border/60 hover:border-[#2063F0]/30 transition-colors">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {conditionOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-background hover:border-[#31C7AD]/30 transition-colors">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-background hover:border-[#31C7AD]/30 transition-colors h-10">
               <Checkbox
                 id="display-selected-only"
                 checked={displaySelectedOnly}
