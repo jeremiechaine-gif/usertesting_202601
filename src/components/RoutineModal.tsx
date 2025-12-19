@@ -139,8 +139,8 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle>{routine ? 'Edit Routine' : 'Create New Routine'}</DialogTitle>
           <DialogDescription>
             {routine 
@@ -149,7 +149,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
           <div className="space-y-4">
             {/* Name */}
             <div className="space-y-2">
@@ -356,7 +356,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="px-6 py-4 border-t">
+        <DialogFooter className="px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
