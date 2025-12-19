@@ -47,10 +47,18 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0">
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-6 py-4 space-y-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            Select one or more areas you want to improve. This helps us recommend the best routines for you.
-          </p>
+        <div className="px-8 py-6 space-y-6">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+            <div className="p-2 rounded-lg bg-[#2063F0]/10">
+              <Target className="h-5 w-5 text-[#2063F0]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-1">Select your goals</p>
+              <p className="text-xs text-muted-foreground">
+                Choose one or more areas to focus on. We'll prioritize routines that match your objectives.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {INTENTS.map(({ id, label, icon: Icon }) => {
@@ -60,32 +68,39 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
                   key={id}
                   onClick={() => handleToggleIntent(id)}
                   className={cn(
-                    'flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left',
-                    'hover:border-[#2063F0] hover:bg-[#2063F0]/5',
+                    'group relative flex items-start gap-3 p-4 rounded-xl transition-all text-left',
+                    'border-2 hover:shadow-md',
                     isSelected
-                      ? 'border-[#2063F0] bg-[#2063F0]/10'
-                      : 'border-border bg-background'
+                      ? 'border-[#2063F0] bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5 shadow-lg shadow-[#2063F0]/10'
+                      : 'border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent'
                   )}
                   aria-pressed={isSelected}
                 >
                   <div
                     className={cn(
-                      'p-2 rounded-lg shrink-0',
-                      isSelected ? 'bg-[#2063F0]' : 'bg-muted'
+                      'p-2.5 rounded-lg shrink-0 transition-all',
+                      isSelected 
+                        ? 'bg-gradient-to-br from-[#2063F0] to-[#1a54d8] shadow-md' 
+                        : 'bg-muted group-hover:bg-[#31C7AD]/10'
                     )}
                   >
                     <Icon
                       className={cn(
-                        'h-5 w-5',
-                        isSelected ? 'text-white' : 'text-muted-foreground'
+                        'h-5 w-5 transition-colors',
+                        isSelected ? 'text-white' : 'text-muted-foreground group-hover:text-[#31C7AD]'
                       )}
                     />
                   </div>
-                  <div className="flex-1">
-                    <span className="font-medium text-sm block">{label}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className={cn(
+                      "font-medium text-sm block transition-colors",
+                      isSelected && "text-[#2063F0]"
+                    )}>
+                      {label}
+                    </span>
                   </div>
                   {isSelected && (
-                    <CheckCircle2 className="h-5 w-5 text-[#2063F0] shrink-0" />
+                    <CheckCircle2 className="h-5 w-5 text-[#2063F0] shrink-0 animate-in zoom-in duration-200" />
                   )}
                 </button>
               );
@@ -93,23 +108,28 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
           </div>
 
           {localIntents.length > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-              <p className="text-sm text-green-900 dark:text-green-300">
-                {localIntents.length} intent{localIntents.length > 1 ? 's' : ''} selected
-              </p>
+            <div className="p-4 rounded-xl bg-gradient-to-r from-[#31C7AD]/10 to-[#31C7AD]/5 border border-[#31C7AD]/30 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-[#31C7AD]/20">
+                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD]" />
+                </div>
+                <p className="text-sm font-medium text-[#31C7AD]">
+                  {localIntents.length} goal{localIntents.length > 1 ? 's' : ''} selected
+                </p>
+              </div>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="px-6 py-4 border-t flex items-center justify-between shrink-0 bg-muted/20">
-        <Button variant="outline" onClick={onBack}>
+      <div className="px-8 py-5 border-t bg-gradient-to-b from-muted/30 to-background flex items-center justify-between shrink-0">
+        <Button variant="outline" onClick={onBack} className="h-10 px-6">
           Back
         </Button>
         <Button
           onClick={handleContinue}
           disabled={localIntents.length === 0}
-          className="bg-[#2063F0] hover:bg-[#1a54d8]"
+          className="h-10 px-8 bg-gradient-to-r from-[#2063F0] to-[#1a54d8] hover:from-[#1a54d8] hover:to-[#164ab8] shadow-lg shadow-[#2063F0]/30"
         >
           Continue
         </Button>

@@ -166,47 +166,69 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b shrink-0">
-          <DialogTitle className="text-2xl font-bold">
-            Create Your Routines
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            {step === 1 && 'Start by selecting your primary role'}
-            {step === 2 && 'What do you want to improve first?'}
-            {step === 3 && 'Review and customize your routines'}
-          </DialogDescription>
-          
-          {/* Progress indicator */}
-          <div className="flex items-center gap-2 mt-4">
-            {[1, 2, 3].map((s) => (
-              <React.Fragment key={s}>
-                <div
-                  className={`
-                    flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
-                    ${s === step
-                      ? 'bg-[#2063F0] text-white'
-                      : s < step
-                      ? 'bg-green-500 text-white'
-                      : 'bg-muted text-muted-foreground'}
-                  `}
-                >
-                  {s < step ? '✓' : s}
-                </div>
-                {s < 3 && (
-                  <div
-                    className={`h-1 flex-1 rounded ${
-                      s < step ? 'bg-green-500' : 'bg-muted'
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-            <span className="ml-2 text-sm text-muted-foreground">
-              Step {step}/3
-            </span>
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        {/* Hero Header with Gradient */}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+          <div className="relative px-8 pt-8 pb-6 border-b border-border/50">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <DialogTitle className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  Create Your Routines
+                </DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground">
+                  {step === 1 && 'Start by selecting your primary role to get personalized recommendations'}
+                  {step === 2 && 'Select areas you want to improve to refine your routine selection'}
+                  {step === 3 && 'Review and finalize your routine collection'}
+                </DialogDescription>
+              </div>
+            </div>
+            
+            {/* Enhanced Progress indicator */}
+            <div className="flex items-center gap-2">
+              {[1, 2, 3].map((s) => (
+                <React.Fragment key={s}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`
+                        relative flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold
+                        transition-all duration-300
+                        ${s === step
+                          ? 'bg-gradient-to-br from-[#2063F0] to-[#1a54d8] text-white shadow-lg shadow-[#2063F0]/30 scale-110'
+                          : s < step
+                          ? 'bg-gradient-to-br from-[#31C7AD] to-[#2ab89a] text-white shadow-md'
+                          : 'bg-muted/50 text-muted-foreground border-2 border-border'}
+                      `}
+                    >
+                      {s < step ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        s
+                      )}
+                      {s === step && (
+                        <div className="absolute inset-0 rounded-full bg-[#2063F0] animate-ping opacity-20" />
+                      )}
+                    </div>
+                    <span className={`text-xs font-medium ${s === step ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {s === 1 ? 'Role' : s === 2 ? 'Goals' : 'Review'}
+                    </span>
+                  </div>
+                  {s < 3 && (
+                    <div
+                      className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                        s < step 
+                          ? 'bg-gradient-to-r from-[#31C7AD] to-[#2ab89a]' 
+                          : 'bg-muted/30'
+                      }`}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
-        </DialogHeader>
+        </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
           {step === 1 && (

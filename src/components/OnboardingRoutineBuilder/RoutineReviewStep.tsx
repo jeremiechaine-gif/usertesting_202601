@@ -56,16 +56,18 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
     if (selectedRoutines.length === 0) return null;
 
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            {title}
-          </h3>
-          <Badge variant="secondary" className="text-xs">
-            {selectedRoutines.length}
-          </Badge>
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-muted/50 to-muted/30 border border-border/50">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              {title}
+            </span>
+            <Badge variant="secondary" className="text-xs h-5 px-2 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20">
+              {selectedRoutines.length}
+            </Badge>
+          </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {selectedRoutines.map((scored) => {
             const routine = scored.routine;
             const isSelected = selectedRoutineIds.includes(routine.id);
@@ -73,43 +75,44 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
               <div
                 key={routine.id}
                 className={cn(
-                  'flex items-start justify-between p-3 rounded-lg border bg-background',
-                  'hover:border-[#2063F0] transition-colors'
+                  'group relative flex items-start justify-between p-4 rounded-xl transition-all',
+                  'border-2 bg-gradient-to-br from-background to-muted/20',
+                  'hover:border-[#31C7AD]/50 hover:shadow-md hover:from-[#31C7AD]/5'
                 )}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 mb-1">
-                    <h4 className="font-medium text-sm">{routine.label}</h4>
-                    {isSelected && (
-                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                    )}
+                <div className="flex-1 min-w-0 pr-4">
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="p-1 rounded-md bg-[#31C7AD]/10 shrink-0">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-[#31C7AD]" />
+                    </div>
+                    <h4 className="font-semibold text-sm leading-tight">{routine.label}</h4>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
                     {routine.description}
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {routine.pelicoViews.slice(0, 2).map((view) => (
                       <Badge
                         key={view}
                         variant="outline"
-                        className="text-xs"
+                        className="text-xs h-5 px-2 bg-background/50"
                       >
                         {view}
                       </Badge>
                     ))}
                     {routine.pelicoViews.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{routine.pelicoViews.length - 2}
+                      <Badge variant="outline" className="text-xs h-5 px-2 bg-[#2063F0]/5 text-[#2063F0] border-[#2063F0]/20">
+                        +{routine.pelicoViews.length - 2} more
                       </Badge>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={() => handleRemoveRoutine(routine.id)}
-                  className="ml-3 p-1 rounded hover:bg-muted shrink-0"
+                  className="shrink-0 p-2 rounded-lg hover:bg-destructive/10 transition-all group/btn"
                   aria-label={`Remove ${routine.label}`}
                 >
-                  <X className="h-4 w-4 text-muted-foreground" />
+                  <X className="h-4 w-4 text-muted-foreground group-hover/btn:text-destructive transition-colors" />
                 </button>
               </div>
             );
@@ -125,60 +128,75 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
     <>
       <div className="flex flex-col h-full min-h-0">
         <ScrollArea className="flex-1 min-h-0">
-          <div className="px-6 py-4 space-y-6">
+          <div className="px-8 py-6 space-y-6">
             {hasSelectedRoutines ? (
               <>
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+                  <div className="p-2 rounded-lg bg-[#31C7AD]/10">
+                    <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">
+                      {selectedRoutineIds.length} routine{selectedRoutineIds.length > 1 ? 's' : ''} ready to create
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Review your selection and remove any you don't need
+                    </p>
+                  </div>
+                </div>
+
                 {renderRoutineGroup('Daily', groupedRoutines.Daily, 'Daily')}
                 {renderRoutineGroup('Weekly', groupedRoutines.Weekly, 'Weekly')}
                 {renderRoutineGroup('Monthly', groupedRoutines.Monthly, 'Monthly')}
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="p-4 rounded-full bg-muted mb-4">
-                  <X className="h-8 w-8 text-muted-foreground" />
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 mb-6">
+                  <Plus className="h-12 w-12 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold mb-2">No routines selected</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add routines from the library to get started
+                <h3 className="text-lg font-semibold mb-2">No routines selected</h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                  Browse our library to discover and add routines that match your needs
                 </p>
                 <Button
                   onClick={() => setShowBrowseModal(true)}
-                  className="bg-[#2063F0] hover:bg-[#1a54d8]"
+                  className="h-11 px-8 bg-gradient-to-r from-[#2063F0] to-[#1a54d8] hover:from-[#1a54d8] hover:to-[#164ab8] shadow-lg shadow-[#2063F0]/30"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-5 w-5 mr-2" />
                   Browse All Routines
                 </Button>
               </div>
             )}
 
             {hasSelectedRoutines && (
-              <div className="pt-4 border-t">
+              <div className="pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setShowBrowseModal(true)}
-                  className="w-full"
+                  className="w-full h-11 border-2 border-dashed hover:border-[#31C7AD] hover:bg-[#31C7AD]/5"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Browse All Routines
+                  Add More Routines
                 </Button>
               </div>
             )}
           </div>
         </ScrollArea>
 
-        <div className="px-6 py-4 border-t flex items-center justify-between shrink-0 bg-muted/20">
-          <Button variant="outline" onClick={onBack}>
+        <div className="px-8 py-5 border-t bg-gradient-to-b from-muted/30 to-background flex items-center justify-between shrink-0">
+          <Button variant="outline" onClick={onBack} className="h-10 px-6">
             Back
           </Button>
-          <div className="flex items-center gap-3">
-            <p className="text-xs text-muted-foreground">
-              You can change this anytime later
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-muted-foreground italic">
+              You can customize these anytime
             </p>
             <Button
               onClick={onComplete}
               disabled={!hasSelectedRoutines}
-              className="bg-[#2063F0] hover:bg-[#1a54d8]"
+              className="h-11 px-8 bg-gradient-to-r from-[#31C7AD] to-[#2ab89a] hover:from-[#2ab89a] hover:to-[#249582] shadow-lg shadow-[#31C7AD]/30 font-semibold"
             >
+              <CheckCircle2 className="h-5 w-5 mr-2" />
               Complete Setup
             </Button>
           </div>
