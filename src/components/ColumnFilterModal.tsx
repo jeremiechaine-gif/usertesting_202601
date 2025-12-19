@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -193,6 +194,9 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
             <p className="text-sm text-muted-foreground mb-1">{category}</p>
           )}
           <DialogTitle className="text-xl font-bold">{columnLabel}</DialogTitle>
+          <DialogDescription>
+            Select values to filter the {columnLabel} column
+          </DialogDescription>
         </DialogHeader>
 
         {/* Filter Controls */}

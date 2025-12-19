@@ -31,6 +31,7 @@ import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
+import { getColumnIdFromFilterId } from './sorting-filters/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu, Link as LinkIcon, ChevronDown, Save } from 'lucide-react';
 
 export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
@@ -137,8 +138,20 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         setSorting(routine.sorting);
         setSelectedGroupBy(routine.groupBy || null);
         
+        // Normalize filter column IDs from routine (convert 'part-name' to 'partName', etc.)
+        const normalizedFilters = routine.filters.map((filter: any) => {
+          // If filter.id looks like a filter definition ID (contains '-'), convert it
+          if (filter.id && filter.id.includes('-')) {
+            const columnId = getColumnIdFromFilterId(filter.id);
+            if (columnId) {
+              return { ...filter, id: columnId };
+            }
+          }
+          return filter;
+        });
+        
         // Set user filters from routine (scope filters are separate and already applied)
-        setUserFilters(routine.filters);
+        setUserFilters(normalizedFilters);
         setScopeOverridden(false);
       }
     } else {

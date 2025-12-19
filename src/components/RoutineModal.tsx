@@ -95,7 +95,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     }
 
     // Handle new team creation if manager
-    let finalTeamId: string | null = selectedTeamId;
+    let finalTeamId: string | null = selectedTeamId === '__none__' ? null : selectedTeamId;
     if (showNewTeamInput && newTeamName.trim() && isManager) {
       // Check if team already exists
       const existingTeam = getTeamByName(newTeamName.trim());
@@ -232,13 +232,17 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               <Label htmlFor="share-team">Share with Team (optional)</Label>
               <div className="space-y-2">
                 <Select 
-                  value={selectedTeamId || ''} 
+                  value={selectedTeamId || '__none__'} 
                   onValueChange={(value) => {
                     if (value === '__new__') {
                       setShowNewTeamInput(true);
                       setSelectedTeamId(null);
+                    } else if (value === '__none__') {
+                      setSelectedTeamId(null);
+                      setShowNewTeamInput(false);
+                      setNewTeamName('');
                     } else {
-                      setSelectedTeamId(value || null);
+                      setSelectedTeamId(value);
                       setShowNewTeamInput(false);
                       setNewTeamName('');
                     }
@@ -248,7 +252,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                     <SelectValue placeholder="No team (private)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No team (private)</SelectItem>
+                    <SelectItem value="__none__">No team (private)</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
