@@ -34,7 +34,7 @@ const IMPACT_ZONE_MATCH_SCORE = 2;
 const FREQUENCY_MATCH_SCORE = 1; // Currently not used but available for future
 
 export interface ScoringParams {
-  persona: Persona | null;
+  personas: Persona[];
   intents: Intent[];
   preferredFrequency?: Frequency | null;
 }
@@ -52,14 +52,15 @@ export function scoreRoutine(
   routine: RoutineLibraryEntry,
   params: ScoringParams
 ): ScoredRoutine {
-  const { persona, intents, preferredFrequency } = params;
+  const { personas, intents, preferredFrequency } = params;
   let score = 0;
   const reasons: string[] = [];
 
-  // 1. Persona match (+5)
-  if (persona && routine.personas.includes(persona)) {
-    score += PERSONA_MATCH_SCORE;
-    reasons.push(`Persona match: ${persona} (+${PERSONA_MATCH_SCORE})`);
+  // 1. Persona match (+5 for EACH matching persona)
+  const matchedPersonas = personas.filter(p => routine.personas.includes(p));
+  if (matchedPersonas.length > 0) {
+    score += PERSONA_MATCH_SCORE * matchedPersonas.length;
+    reasons.push(`Persona match: ${matchedPersonas.join(', ')} (+${PERSONA_MATCH_SCORE * matchedPersonas.length})`);
   }
 
   // 2. Objective match from intents (+3 per match)

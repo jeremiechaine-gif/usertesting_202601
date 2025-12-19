@@ -24,16 +24,25 @@ describe('scoring', () => {
   describe('scoreRoutine', () => {
     it('should give +5 for persona match', () => {
       const result = scoreRoutine(mockRoutine, {
-        persona: 'Approvisionneur',
+        personas: ['Approvisionneur'],
         intents: [],
       });
       expect(result.score).toBe(5);
       expect(result.reasons).toContain('Persona match: Approvisionneur (+5)');
     });
 
+    it('should give +5 per matched persona (multiple personas)', () => {
+      const result = scoreRoutine(mockRoutine, {
+        personas: ['Approvisionneur', 'Acheteur'],
+        intents: [],
+      });
+      // Only 'Approvisionneur' matches, so +5
+      expect(result.score).toBe(5);
+    });
+
     it('should give +3 per matched objective from intents', () => {
       const result = scoreRoutine(mockRoutine, {
-        persona: null,
+        personas: [],
         intents: ['Gérer des retards'], // Maps to 'Corriger' objective and 'Supplier' impact zone
       });
       // Should get 3 (objective) + 2 (impact zone) = 5
@@ -43,7 +52,7 @@ describe('scoring', () => {
 
     it('should give +2 per matched impact zone from intents', () => {
       const result = scoreRoutine(mockRoutine, {
-        persona: null,
+        personas: [],
         intents: ['Gérer des retards'], // Maps to ['Supplier', 'Production', 'Customer']
       });
       // Should match 'Supplier' impact zone
@@ -52,7 +61,7 @@ describe('scoring', () => {
 
     it('should accumulate scores correctly', () => {
       const result = scoreRoutine(mockRoutine, {
-        persona: 'Approvisionneur', // +5
+        personas: ['Approvisionneur'], // +5
         intents: ['Gérer des retards'], // +3 (Corriger) + 2 (Supplier impact zone)
       });
       expect(result.score).toBeGreaterThanOrEqual(10); // 5 + 3 + 2
@@ -60,7 +69,7 @@ describe('scoring', () => {
 
     it('should return 0 score if no matches', () => {
       const result = scoreRoutine(mockRoutine, {
-        persona: 'Master Planner', // Not in personas
+        personas: ['Master Planner'], // Not in personas
         intents: ['Vision business / KPIs'], // No matching objectives
       });
       expect(result.score).toBe(0);
@@ -72,7 +81,7 @@ describe('scoring', () => {
       const results = scoreAndRankRoutines(
         ROUTINE_LIBRARY.slice(0, 20), // Test with first 20 routines
         {
-          persona: 'Approvisionneur',
+          personas: ['Approvisionneur'],
           intents: ['Gérer des retards'],
         },
         5
@@ -89,7 +98,7 @@ describe('scoring', () => {
       const results = scoreAndRankRoutines(
         ROUTINE_LIBRARY,
         {
-          persona: 'Master Planner',
+          personas: ['Master Planner'],
           intents: ['Tenir la promesse client'],
         },
         7
@@ -100,10 +109,24 @@ describe('scoring', () => {
 
     it('should handle empty routines array', () => {
       const results = scoreAndRankRoutines([], {
-        persona: 'Approvisionneur',
+        personas: ['Approvisionneur'],
         intents: [],
       });
       expect(results).toEqual([]);
+    });
+
+    it('should handle multiple personas and boost matching routines', () => {
+      const results = scoreAndRankRoutines(
+        ROUTINE_LIBRARY.slice(0, 20),
+        {
+          personas: ['Approvisionneur', 'Acheteur'],
+          intents: [],
+        },
+        10
+      );
+
+      // Routines matching both personas should have higher scores
+      expect(results.length).toBeGreaterThan(0);
     });
   });
 

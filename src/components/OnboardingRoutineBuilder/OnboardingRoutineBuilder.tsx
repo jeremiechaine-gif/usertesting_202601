@@ -28,7 +28,7 @@ import type { ScoredRoutine } from '@/lib/onboarding/scoring';
 const STORAGE_KEY = 'pelico-onboarding-state';
 
 interface OnboardingState {
-  selectedPersona: Persona | null;
+  selectedPersonas: Persona[];
   selectedIntents: Intent[];
   selectedRoutineIds: string[];
   isUnsureOfRole?: boolean;
@@ -47,7 +47,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   onComplete,
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
   const [selectedIntents, setSelectedIntents] = useState<Intent[]>([]);
   const [selectedRoutineIds, setSelectedRoutineIds] = useState<string[]>([]);
   const [scoredRoutines, setScoredRoutines] = useState<ScoredRoutine[]>([]);
@@ -61,16 +61,16 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
       if (stored) {
         try {
           const state: OnboardingState = JSON.parse(stored);
-          setSelectedPersona(state.selectedPersona);
+          setSelectedPersonas(state.selectedPersonas || []);
           setSelectedIntents(state.selectedIntents || []);
           setSelectedRoutineIds(state.selectedRoutineIds || []);
           setIsUnsureOfRole(state.isUnsureOfRole || false);
           setShowAllRoutines(state.showAllRoutines || false);
           
           // Determine step based on state
-          if (state.selectedPersona && state.selectedIntents.length > 0) {
+          if (state.selectedPersonas && state.selectedPersonas.length > 0 && state.selectedIntents.length > 0) {
             setStep(3);
-          } else if (state.selectedPersona) {
+          } else if (state.selectedPersonas && state.selectedPersonas.length > 0) {
             setStep(2);
           } else {
             setStep(1);
@@ -85,7 +85,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   // Save state to localStorage
   const saveState = () => {
     const state: OnboardingState = {
-      selectedPersona,
+      selectedPersonas,
       selectedIntents,
       selectedRoutineIds,
       isUnsureOfRole,
@@ -94,11 +94,21 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   };
 
-  // Handle role selection (Step 1 → Step 2)
-  const handleRoleSelect = (persona: Persona) => {
-    setSelectedPersona(persona);
+  // Handle role toggle (Step 1)
+  const handleRoleToggle = (persona: Persona) => {
+    if (selectedPersonas.includes(persona)) {
+      setSelectedPersonas(selectedPersonas.filter(p => p !== persona));
+    } else {
+      setSelectedPersonas([...selectedPersonas, persona]);
+    }
     saveState();
-    setStep(2);
+  };
+
+  // Handle continue to step 2
+  const handleContinueToStep2 = () => {
+    if (selectedPersonas.length > 0 || isUnsureOfRole) {
+      setStep(2);
+    }
   };
 
   // Handle intent selection (Step 2 → Step 3)
@@ -109,11 +119,11 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     // Otherwise, score and limit to top 7
     const limit = (isUnsureOfRole || showAllRoutines) ? undefined : 7;
     
-    // Score and rank routines
+    // Score and rank routines with multiple personas
     const scored = scoreAndRankRoutines(
       ROUTINE_LIBRARY,
       {
-        persona: selectedPersona,
+        personas: selectedPersonas,
         intents,
       },
       limit
@@ -165,11 +175,11 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     setShowAllRoutines(true);
     setIsUnsureOfRole(false);
     
-    // Score ALL routines with no persona/intents
+    // Score ALL routines with no personas/intents
     const scored = scoreAndRankRoutines(
       ROUTINE_LIBRARY,
       {
-        persona: null,
+        personas: [],
         intents: [],
       },
       undefined // No limit, show all
@@ -190,7 +200,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     if (!open) {
       // Reset state when closing
       setStep(1);
-      setSelectedPersona(null);
+      setSelectedPersonas([]);
       setSelectedIntents([]);
       setSelectedRoutineIds([]);
       setScoredRoutines([]);
@@ -278,11 +288,12 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
         <div className="flex-1 min-h-0 overflow-hidden">
           {step === 1 && (
             <RoleSelectionStep
-              selectedPersona={selectedPersona}
-              onSelect={handleRoleSelect}
+              selectedPersonas={selectedPersonas}
+              onToggle={handleRoleToggle}
               isUnsure={isUnsureOfRole}
               onUnsureChange={setIsUnsureOfRole}
               onSkipToAll={handleSkipToAll}
+              onNext={handleContinueToStep2}
             />
           )}
           {step === 2 && (

@@ -27,20 +27,23 @@ const ROLES: Persona[] = [
 ];
 
 interface RoleSelectionStepProps {
-  selectedPersona: Persona | null;
-  onSelect: (persona: Persona) => void;
+  selectedPersonas: Persona[];
+  onToggle: (persona: Persona) => void;
   isUnsure: boolean;
   onUnsureChange: (unsure: boolean) => void;
   onSkipToAll: () => void;
+  onNext: () => void;
 }
 
 export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
-  selectedPersona,
-  onSelect,
+  selectedPersonas,
+  onToggle,
   isUnsure,
   onUnsureChange,
   onSkipToAll,
+  onNext,
 }) => {
+  const canContinue = selectedPersonas.length > 0 || isUnsure;
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <ScrollArea className="flex-1">
@@ -49,22 +52,31 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
             <div className="p-2 rounded-lg bg-[#31C7AD]/10">
               <User className="h-5 w-5 text-[#31C7AD]" />
             </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Choose your role</p>
+            <div className="flex-1">
+              <p className="text-sm font-medium mb-1">Choose your role(s)</p>
               <p className="text-xs text-muted-foreground">
-                We'll recommend the most relevant routines for your daily work
+                Select one or more roles. We'll recommend the most relevant routines for your daily work
               </p>
             </div>
+            {selectedPersonas.length > 0 && (
+              <div className="shrink-0">
+                <div className="px-2.5 py-1 rounded-full bg-[#2063F0]/10 border border-[#2063F0]/20">
+                  <span className="text-xs font-semibold text-[#2063F0]">
+                    {selectedPersonas.length} selected
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {ROLES.map((role) => {
-            const isSelected = selectedPersona === role;
+            const isSelected = selectedPersonas.includes(role);
             return (
               <button
                 key={role}
                 onClick={() => {
-                  onSelect(role);
+                  onToggle(role);
                   if (isUnsure) {
                     onUnsureChange(false);
                   }
@@ -104,9 +116,10 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
                   </span>
                 </div>
                 {isSelected && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium text-[#2063F0]">Selected</span>
-                    <ChevronRight className="h-5 w-5 text-[#2063F0]" />
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-[#2063F0] shadow-md">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
                   </div>
                 )}
               </button>
@@ -119,18 +132,12 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
             <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                  onClick={() => {
                    onUnsureChange(!isUnsure);
-                   if (!isUnsure) {
-                     onSelect('Autre / Mixte' as Persona);
-                   }
                  }}>
               <Checkbox
                 id="unsure-role"
                 checked={isUnsure}
                 onCheckedChange={(checked) => {
                   onUnsureChange(checked === true);
-                  if (checked) {
-                    onSelect('Autre / Mixte' as Persona);
-                  }
                 }}
                 className="mt-0.5 data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
               />
@@ -150,18 +157,29 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Option A: Skip to all routines link - Fixed at bottom */}
+      {/* Footer with Next and Skip buttons */}
       <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onSkipToAll}
-          className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5 w-full justify-center"
-        >
-          <List className="h-4 w-4" />
-          Skip to all routines
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSkipToAll}
+            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+          >
+            <List className="h-4 w-4" />
+            Skip to all routines
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            onClick={onNext}
+            disabled={!canContinue}
+            className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
