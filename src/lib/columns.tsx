@@ -78,12 +78,13 @@ const formatDaysDelta = (days: number): string => {
 };
 
 // Escalation level indicator with badge
+// Coherent color system: progressive severity scale complementing teal brand
 const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
   const badgeConfig = {
-    1: { color: '#E3F2FD', textColor: '#1976D2', label: '1' }, // Blue pale
-    2: { color: '#FFF9C4', textColor: '#F57F17', label: '2' }, // Yellow pale
-    3: { color: '#FFEBEE', textColor: '#C62828', label: '3' }, // Red pale
-    4: { color: '#212121', textColor: '#FFFFFF', label: '4' }, // Black
+    1: { color: '#EFF6FF', textColor: '#1E88E5', label: '1' }, // Soft blue (info)
+    2: { color: '#FFF3E0', textColor: '#FB8C00', label: '2' }, // Warm amber (caution)
+    3: { color: '#FFE9E5', textColor: '#F4511E', label: '3' }, // Coral (warning)
+    4: { color: '#263238', textColor: '#FFFFFF', label: '4' }, // Charcoal (critical)
   };
   
   const config = badgeConfig[level as keyof typeof badgeConfig] || badgeConfig[1];
@@ -103,17 +104,18 @@ const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
 };
 
 // OTD Status indicator
+// Coherent color system: aligned with escalation severity scale
 const OTDStatusIndicator: React.FC<{ status: string }> = ({ status }) => {
   const statusConfig = {
-    'on-time': { color: '#4caf50', label: 'On Time' },
-    'at-risk': { color: '#FFEB3B', label: 'At Risk' },
-    'late': { color: '#f44336', label: 'Late' },
+    'on-time': { color: '#10B981', label: 'On Time' }, // Emerald green (success, complements teal)
+    'at-risk': { color: '#FB8C00', label: 'At Risk' }, // Warm amber (caution)
+    'late': { color: '#F4511E', label: 'Late' }, // Coral (warning)
   };
   const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['on-time'];
   
   return (
     <div
-      className="w-5 h-5 rounded-full border-2 border-white"
+      className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
       style={{ backgroundColor: config.color }}
       title={config.label}
     />
@@ -164,7 +166,16 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         id: 'type',
         header: 'Type',
         cell: (info) => (
-          <Badge variant="secondary">{info.getValue()}</Badge>
+          <Badge 
+            className="text-xs font-medium"
+            style={{
+              backgroundColor: '#F1F5F9',
+              color: '#475569',
+              border: '1px solid #CBD5E1',
+            }}
+          >
+            {info.getValue()}
+          </Badge>
         ),
         size: 70,
         filterFn: customFilterFn,
@@ -199,9 +210,24 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Delivery status',
         cell: (info) => {
           const status = info.getValue();
-          const variant = status === 'Delivered' ? 'default' : status === 'Shipped' ? 'secondary' : status === 'Cancelled' ? 'destructive' : 'outline';
+          // Coherent semantic color system
+          const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+            'Delivered': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120' }, // Success green
+            'Shipped': { bg: '#F0F9FF', text: '#0EA5E9', border: '#0EA5E920' }, // Sky blue (active)
+            'In Progress': { bg: '#FFF3E0', text: '#FB8C00', border: '#FB8C0020' }, // Warm amber
+            'Cancelled': { bg: '#F1F5F9', text: '#64748B', border: '#64748B20' }, // Neutral grey
+          };
+          const config = statusConfig[status] || statusConfig['In Progress'];
+          
           return (
-            <Badge variant={variant as any}>
+            <Badge 
+              className="text-xs font-medium"
+              style={{
+                backgroundColor: config.bg,
+                color: config.text,
+                border: `1px solid ${config.border}`,
+              }}
+            >
               {status}
             </Badge>
           );
