@@ -220,30 +220,33 @@ export const ScopeAndRoutinesPage: React.FC<{
           </div>
         </div>
 
-        {/* Main Header */}
-        <div className="border-b bg-background">
-          <div className="px-6 py-4">
+        {/* Main Header with Gradient */}
+        <div className="relative border-b bg-background">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
+          <div className="relative px-6 py-5">
             {/* Top Header Row */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               {/* Left Side */}
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
                     variant="ghost" 
-                    className="h-8 px-3 gap-2"
+                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
-                    <span className="text-sm">Menu</span>
+                    <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
                 {/* Pelico small logo */}
-                <img 
-                  src="/images/Pelico-small-logo.svg" 
-                  alt="Pelico" 
-                  className="w-6 h-6 shrink-0"
-                />
-                <h1 className="text-2xl font-bold tracking-tight">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
+                  <img 
+                    src="/images/Pelico-small-logo.svg" 
+                    alt="Pelico" 
+                    className="w-5 h-5 shrink-0 brightness-0 invert"
+                  />
+                </div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                   {viewMode === 'my-routines' ? 'My Routines' : 
                    viewMode === 'shared-routines' ? 'Shared Routines' : 
                    'Scope & Routines'}
@@ -255,9 +258,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                 {/* Link Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
                       <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3 ml-1" />
+                      <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -277,24 +280,40 @@ export const ScopeAndRoutinesPage: React.FC<{
             <div className="flex flex-col min-w-0">
               {/* Header Section */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-2">Scopes</h2>
-                <p className="text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                    <Settings className="h-5 w-5 text-[#31C7AD]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Scopes</h2>
+                    <p className="text-xs text-muted-foreground">Personal data perimeter</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   Your <em>personal</em> data perimeter (e.g., plants, cells, codes) applied by default to see what is relevant to you.
                 </p>
-                <Button onClick={handleCreateScope} className="gap-2">
+                <Button
+                  onClick={handleCreateScope}
+                  className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                >
                   <Plus className="h-4 w-4" />
                   Create Scope
                 </Button>
               </div>
 
               {scopes.length === 0 ? (
-                <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#31C7AD]/5 to-transparent">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 mb-4">
+                    <Settings className="h-8 w-8 text-[#31C7AD]" />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">No scopes yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-5 max-w-sm text-center">
                     Create your first scope to filter data across the application
                   </p>
-                  <Button onClick={handleCreateScope} className="gap-2">
+                  <Button
+                    onClick={handleCreateScope}
+                    className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                  >
                     <Plus className="h-4 w-4" />
                     Create Scope
                   </Button>
@@ -305,50 +324,50 @@ export const ScopeAndRoutinesPage: React.FC<{
                     <div
                       key={scope.id}
                       className={cn(
-                        'border rounded-lg p-4 hover:shadow-md transition-shadow bg-background',
-                        currentScopeId === scope.id && 'ring-2 ring-[#2063F0]'
+                        'group border border-border/60 rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#31C7AD]/30',
+                        currentScopeId === scope.id && 'ring-2 ring-[#31C7AD] shadow-md bg-[#31C7AD]/5'
                       )}
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate">{scope.name}</h3>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-bold text-lg truncate">{scope.name}</h3>
                             {scope.isDefault && (
-                              <Star className="h-4 w-4 text-[#2063F0] fill-[#2063F0] shrink-0" />
+                              <Star className="h-4 w-4 text-[#31C7AD] fill-[#31C7AD] shrink-0" />
                             )}
                             {currentScopeId === scope.id && (
-                              <Badge variant="outline" className="text-xs shrink-0">
+                              <Badge className="text-xs shrink-0 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/20">
                                 Active
                               </Badge>
                             )}
                           </div>
                           {scope.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                               {scope.description}
                             </p>
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex items-center gap-2 mt-4 flex-wrap">
+                        <Badge variant="outline" className="text-xs bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
                           {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
                         </Badge>
                         {scope.isGlobal && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs bg-muted/50">
                             Global
                           </Badge>
                         )}
                         
-                        <div className="flex items-center gap-1 ml-auto">
+                        <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
                               >
-                                <Share2 className="h-3 w-3" />
+                                <Share2 className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -372,19 +391,19 @@ export const ScopeAndRoutinesPage: React.FC<{
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
                             onClick={() => handleEditScope(scope)}
                           >
-                            <Edit className="h-3 w-3" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDeleteScope(scope.id)}
                             disabled={scope.isDefault}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -401,24 +420,40 @@ export const ScopeAndRoutinesPage: React.FC<{
             <div className="flex flex-col min-w-0">
               {/* Header Section */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-2">Routines</h2>
-                <p className="text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
+                    <Zap className="h-5 w-5 text-[#2063F0]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Routines</h2>
+                    <p className="text-xs text-muted-foreground">Standard ways of working</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   A <em>generic</em> view (filters + display configuration) that standardizes a way of working, and can be shared and used by a team.
                 </p>
-                <Button onClick={handleCreateRoutine} className="gap-2">
+                <Button
+                  onClick={handleCreateRoutine}
+                  className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+                >
                   <Plus className="h-4 w-4" />
                   Create Routine
                 </Button>
               </div>
 
               {routines.length === 0 ? (
-                <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-4">
+                    <Zap className="h-8 w-8 text-[#2063F0]" />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">No routines yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-5 max-w-sm text-center">
                     Create your first routine to save view configurations
                   </p>
-                  <Button onClick={handleCreateRoutine} className="gap-2">
+                  <Button
+                    onClick={handleCreateRoutine}
+                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+                  >
                     <Plus className="h-4 w-4" />
                     Create Routine
                   </Button>
@@ -452,35 +487,35 @@ export const ScopeAndRoutinesPage: React.FC<{
                     return (
                     <div
                       key={routine.id}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-background"
+                      className="group border border-border/60 rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#2063F0]/30"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">{routine.name}</h3>
+                          <h3 className="font-bold text-lg truncate">{routine.name}</h3>
                           {routine.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-2">
                               {routine.description}
                             </p>
                           )}
                           {creator && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Created by {creator.name}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Created by <span className="font-medium">{creator.name}</span>
                             </p>
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex flex-wrap items-center gap-2 mt-4">
+                        <Badge variant="outline" className="text-xs bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
                           {routine.filters.length} filter{routine.filters.length !== 1 ? 's' : ''}
                         </Badge>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
                           {routine.sorting.length} sort{routine.sorting.length !== 1 ? 's' : ''}
                         </Badge>
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-xs',
+                            'text-xs bg-background/50',
                             routine.scopeMode === 'scope-aware' && 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-300',
                             routine.scopeMode === 'scope-fixed' && 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-300'
                           )}
@@ -488,20 +523,20 @@ export const ScopeAndRoutinesPage: React.FC<{
                           {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
                         </Badge>
                         {allSharedTeams.map((team) => (
-                          <Badge key={team.id} variant="secondary" className="text-xs">
+                          <Badge key={team.id} className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/20">
                             {team.name}
                           </Badge>
                         ))}
                         
-                        <div className="flex items-center gap-1 ml-auto">
+                        <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
                               >
-                                <Share2 className="h-3 w-3" />
+                                <Share2 className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -521,18 +556,18 @@ export const ScopeAndRoutinesPage: React.FC<{
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
                                 onClick={() => handleEditRoutine(routine)}
                               >
-                                <Edit className="h-3 w-3" />
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => handleDeleteRoutine(routine.id)}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
                           )}
