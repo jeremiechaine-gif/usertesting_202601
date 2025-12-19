@@ -166,7 +166,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
         {/* Hero Header with Gradient */}
         <div className="relative shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
