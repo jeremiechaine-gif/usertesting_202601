@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
+import { ScopeModal } from './ScopeModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
+import { type Scope } from '@/lib/scopes';
 import { 
   Bell, 
   Menu, 
@@ -46,6 +48,8 @@ interface AcademyResource {
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
+  const [scopeModalOpen, setScopeModalOpen] = useState(false);
+  const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const userName = 'Jérémie';
 
   // Mock onboarding tasks - in real app, these would come from API/state
@@ -62,7 +66,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       label: 'Define scope',
       action: 'Define scope',
       completed: false,
-      onClick: () => onNavigate?.('scope-routines'),
+      onClick: () => {
+        setEditingScope(null);
+        setScopeModalOpen(true);
+      },
     },
     {
       id: 'create-routine',
@@ -265,7 +272,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-sm h-auto py-1 px-2"
+                        className="text-sm h-auto py-1 px-2 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
                         onClick={() => handleTaskAction(task)}
                       >
                         {task.action}
@@ -308,6 +315,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Scope Creation Modal */}
+      <ScopeModal
+        open={scopeModalOpen}
+        onOpenChange={setScopeModalOpen}
+        scope={editingScope}
+        onSave={() => {
+          setScopeModalOpen(false);
+          setEditingScope(null);
+        }}
+      />
     </div>
   );
 };
