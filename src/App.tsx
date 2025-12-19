@@ -93,7 +93,7 @@ const initializeTeamsAndUsers = () => {
         sorting: [],
         scopeMode,
         createdBy: currentUserId,
-        teamId: null,
+        teamIds: [],
       });
     } else if (routine.scopeMode !== scopeMode) {
       updateRoutine(routine.id, { scopeMode });

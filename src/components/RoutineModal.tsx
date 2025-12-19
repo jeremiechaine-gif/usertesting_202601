@@ -20,6 +20,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { createRoutine, updateRoutine, type Routine } from '@/lib/routines';
 import { getScopes, type Scope } from '@/lib/scopes';
 import { getCurrentUserId, getCurrentUser } from '@/lib/users';
@@ -54,7 +56,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const [linkedScopeId, setLinkedScopeId] = useState<string | null>(null);
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
   const [showNewTeamInput, setShowNewTeamInput] = useState(false);
   const currentUser = getCurrentUser();
@@ -71,13 +73,14 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setDescription(routine.description || '');
       setScopeMode(routine.scopeMode);
       setLinkedScopeId(routine.linkedScopeId || null);
-      setSelectedTeamId(routine.teamId || null);
+      // Support both new teamIds and legacy teamId
+      setSelectedTeamIds(routine.teamIds || (routine.teamId ? [routine.teamId] : []));
     } else {
       setName('');
       setDescription('');
       setScopeMode('scope-aware');
       setLinkedScopeId(null);
-      setSelectedTeamId(null);
+      setSelectedTeamIds([]);
       setNewTeamName('');
       setShowNewTeamInput(false);
     }
@@ -95,16 +98,19 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     }
 
     // Handle new team creation if manager
-    let finalTeamId: string | null = selectedTeamId === '__none__' ? null : selectedTeamId;
+    let finalTeamIds: string[] = [...selectedTeamIds];
     if (showNewTeamInput && newTeamName.trim() && isManager) {
       // Check if team already exists
       const existingTeam = getTeamByName(newTeamName.trim());
       if (existingTeam) {
-        finalTeamId = existingTeam.id;
+        // Add existing team if not already selected
+        if (!finalTeamIds.includes(existingTeam.id)) {
+          finalTeamIds.push(existingTeam.id);
+        }
       } else {
         // Create new team
         const newTeam = createTeam({ name: newTeamName.trim() });
-        finalTeamId = newTeam.id;
+        finalTeamIds.push(newTeam.id);
         setTeams(getTeams()); // Refresh teams list
       }
     }
@@ -120,7 +126,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       scopeMode,
       linkedScopeId: scopeMode === 'scope-fixed' ? linkedScopeId : null,
       createdBy: routine?.createdBy || currentUserId,
-      teamId: finalTeamId,
+      teamIds: finalTeamIds.length > 0 ? finalTeamIds : [],
     };
 
     if (routine) {
@@ -227,68 +233,108 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               </div>
             )}
 
-            {/* Share with Team */}
+            {/* Share with Teams */}
             <div className="space-y-2">
-              <Label htmlFor="share-team">Share with Team (optional)</Label>
-              <div className="space-y-2">
-                <Select 
-                  value={selectedTeamId || '__none__'} 
-                  onValueChange={(value) => {
-                    if (value === '__new__') {
-                      setShowNewTeamInput(true);
-                      setSelectedTeamId(null);
-                    } else if (value === '__none__') {
-                      setSelectedTeamId(null);
-                      setShowNewTeamInput(false);
-                      setNewTeamName('');
-                    } else {
-                      setSelectedTeamId(value);
-                      setShowNewTeamInput(false);
-                      setNewTeamName('');
-                    }
-                  }}
-                >
-                  <SelectTrigger id="share-team">
-                    <SelectValue placeholder="No team (private)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No team (private)</SelectItem>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                    {isManager && (
-                      <SelectItem value="__new__">
+              <Label>Share with Teams (optional)</Label>
+              <div className="space-y-3">
+                <div className="rounded-md border p-4 space-y-3 max-h-[200px] overflow-y-auto">
+                  {teams.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No teams available</p>
+                  ) : (
+                    teams.map((team) => {
+                      const isSelected = selectedTeamIds.includes(team.id);
+                      return (
+                        <div key={team.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`team-${team.id}`}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTeamIds([...selectedTeamIds, team.id]);
+                              } else {
+                                setSelectedTeamIds(selectedTeamIds.filter(id => id !== team.id));
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`team-${team.id}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            {team.name}
+                          </Label>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                {isManager && (
+                  <div className="space-y-2">
+                    {showNewTeamInput ? (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Enter team name"
+                          value={newTeamName}
+                          onChange={(e) => setNewTeamName(e.target.value)}
+                          className="flex-1"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newTeamName.trim()) {
+                              const existingTeam = getTeamByName(newTeamName.trim());
+                              if (existingTeam) {
+                                if (!selectedTeamIds.includes(existingTeam.id)) {
+                                  setSelectedTeamIds([...selectedTeamIds, existingTeam.id]);
+                                }
+                              } else {
+                                const newTeam = createTeam({ name: newTeamName.trim() });
+                                setSelectedTeamIds([...selectedTeamIds, newTeam.id]);
+                                setTeams(getTeams());
+                              }
+                              setShowNewTeamInput(false);
+                              setNewTeamName('');
+                            } else if (e.key === 'Escape') {
+                              setShowNewTeamInput(false);
+                              setNewTeamName('');
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowNewTeamInput(false);
+                            setNewTeamName('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setShowNewTeamInput(true)}
+                      >
                         + Create new team
-                      </SelectItem>
+                      </Button>
                     )}
-                  </SelectContent>
-                </Select>
-                {showNewTeamInput && isManager && (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter team name"
-                      value={newTeamName}
-                      onChange={(e) => setNewTeamName(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowNewTeamInput(false);
-                        setNewTeamName('');
-                      }}
-                    >
-                      Cancel
-                    </Button>
                   </div>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Sharing with a team allows all team members to view this routine. Only you can edit it.
+                Select one or more teams to share this routine with. All team members will be able to view it. Only you can edit it.
               </p>
+              {selectedTeamIds.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedTeamIds.map((teamId) => {
+                    const team = teams.find(t => t.id === teamId);
+                    return team ? (
+                      <Badge key={teamId} variant="secondary" className="text-xs">
+                        {team.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Current Configuration Summary */}

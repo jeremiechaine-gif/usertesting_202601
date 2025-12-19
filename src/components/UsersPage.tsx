@@ -357,9 +357,11 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
                                 const individualRoutineIds = user.assignedRoutineIds || [];
                                 const teamRoutineIds = userTeam?.assignedRoutineIds || [];
                                 const accessibleRoutineIds = [...new Set([...individualRoutineIds, ...teamRoutineIds])];
-                                const accessibleRoutines = allRoutines.filter(r => 
-                                  accessibleRoutineIds.includes(r.id) || r.teamId === userTeam?.id
-                                );
+                                const accessibleRoutines = allRoutines.filter(r => {
+                                  const routineTeamIds = r.teamIds || (r.teamId ? [r.teamId] : []);
+                                  return accessibleRoutineIds.includes(r.id) || 
+                                         (userTeam && routineTeamIds.includes(userTeam.id));
+                                });
                                 
                                 return (
                                 <div

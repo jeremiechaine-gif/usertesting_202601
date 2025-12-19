@@ -429,15 +429,23 @@ export const ScopeAndRoutinesPage: React.FC<{
                     const isOwner = routine.createdBy === currentUserId;
                     const canEdit = isOwner; // Only owner can edit
                     
-                    // Find team that shares this routine (via teamId or assignedRoutineIds)
-                    let sharedTeam = routine.teamId ? getTeam(routine.teamId) : null;
-                    if (!sharedTeam) {
-                      // Check if routine is assigned to any team via assignedRoutineIds
-                      const allTeams = getTeams();
-                      sharedTeam = allTeams.find(team => 
-                        team.assignedRoutineIds?.includes(routine.id)
-                      ) || null;
-                    }
+                    // Find teams that share this routine (via teamIds or legacy teamId or assignedRoutineIds)
+                    const allTeams = getTeams();
+                    const sharedTeamIds = routine.teamIds || (routine.teamId ? [routine.teamId] : []);
+                    const sharedTeams = sharedTeamIds
+                      .map(teamId => getTeam(teamId))
+                      .filter(Boolean);
+                    
+                    // Also check if routine is assigned to any team via assignedRoutineIds
+                    const assignedTeams = allTeams.filter(team => 
+                      team.assignedRoutineIds?.includes(routine.id)
+                    );
+                    
+                    // Combine and deduplicate teams
+                    const allSharedTeams = [...sharedTeams, ...assignedTeams]
+                      .filter((team, index, self) => 
+                        index === self.findIndex(t => t.id === team.id)
+                      );
                     
                     return (
                     <div
@@ -477,11 +485,11 @@ export const ScopeAndRoutinesPage: React.FC<{
                         >
                           {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
                         </Badge>
-                        {sharedTeam && (
-                          <Badge variant="secondary" className="text-xs">
-                            {sharedTeam.name}
+                        {allSharedTeams.map((team) => (
+                          <Badge key={team.id} variant="secondary" className="text-xs">
+                            {team.name}
                           </Badge>
-                        )}
+                        ))}
                         
                         <div className="flex items-center gap-1 ml-auto">
                           <DropdownMenu>

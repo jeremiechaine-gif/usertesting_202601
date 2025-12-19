@@ -24,7 +24,9 @@ export interface Routine {
   
   // Métadonnées
   createdBy: string; // userId du créateur
-  teamId?: string | null; // null = privée, valeur = partagée à l'équipe
+  teamIds?: string[]; // [] ou undefined = privée, [teamId1, teamId2, ...] = partagée à plusieurs équipes
+  // Legacy: teamId is kept for backward compatibility but deprecated
+  teamId?: string | null; // @deprecated Use teamIds instead
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +37,35 @@ export const getRoutines = (): Routine[] => {
   if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    const routines: Routine[] = stored ? JSON.parse(stored) : [];
+    
+    // Migrate old routines with teamId to teamIds
+    let needsMigration = false;
+    const migratedRoutines = routines.map((routine) => {
+      if (routine.teamId && !routine.teamIds) {
+        needsMigration = true;
+        return {
+          ...routine,
+          teamIds: [routine.teamId],
+          teamId: undefined, // Remove old field
+        };
+      }
+      // Ensure teamIds is always an array (even if empty)
+      if (!routine.teamIds && !routine.teamId) {
+        return {
+          ...routine,
+          teamIds: [],
+        };
+      }
+      return routine;
+    });
+    
+    if (needsMigration) {
+      saveRoutines(migratedRoutines);
+      return migratedRoutines;
+    }
+    
+    return routines;
   } catch {
     return [];
   }
@@ -138,7 +168,7 @@ export const duplicateRoutine = (id: string, newCreatedBy?: string): Routine | n
     scopeMode: routine.scopeMode,
     linkedScopeId: routine.linkedScopeId,
     createdBy: newCreatedBy || routine.createdBy,
-    teamId: null, // Duplicated routine is private by default
+    teamIds: [], // Duplicated routine is private by default
   });
 };
 
@@ -155,7 +185,14 @@ export const getRoutinesByCreator = (userId: string): Routine[] => {
  */
 export const getRoutinesByTeam = (teamId: string): Routine[] => {
   const routines = getRoutines();
-  return routines.filter(r => r.teamId === teamId);
+  return routines.filter(r => {
+    // Check new teamIds array
+    if (r.teamIds && r.teamIds.length > 0) {
+      return r.teamIds.includes(teamId);
+    }
+    // Fallback to legacy teamId for backward compatibility
+    return r.teamId === teamId;
+  });
 };
 
 /**
@@ -167,7 +204,14 @@ export const getAccessibleRoutines = (userId: string, userTeamId?: string | null
     // User's own routines
     if (r.createdBy === userId) return true;
     // Routines shared with user's team
-    if (userTeamId && r.teamId === userTeamId) return true;
+    if (userTeamId) {
+      // Check new teamIds array
+      if (r.teamIds && r.teamIds.length > 0) {
+        return r.teamIds.includes(userTeamId);
+      }
+      // Fallback to legacy teamId for backward compatibility
+      if (r.teamId === userTeamId) return true;
+    }
     return false;
   });
 };
