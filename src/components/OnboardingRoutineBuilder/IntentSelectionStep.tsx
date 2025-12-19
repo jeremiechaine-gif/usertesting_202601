@@ -11,13 +11,48 @@ import { CheckCircle2, AlertTriangle, Target, TrendingUp, Users, BarChart3 } fro
 import type { Intent } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
 
-const INTENTS: Array<{ id: Intent; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { id: 'Gérer des retards', label: 'Gérer des retards', icon: AlertTriangle },
-  { id: 'Anticiper des risques', label: 'Anticiper des risques', icon: Target },
-  { id: 'Prioriser des actions', label: 'Prioriser des actions', icon: CheckCircle2 },
-  { id: 'Tenir la promesse client', label: 'Tenir la promesse client', icon: Users },
-  { id: 'Piloter la charge / la prod', label: 'Piloter la charge / la prod', icon: TrendingUp },
-  { id: 'Vision business / KPIs', label: 'Vision business / KPIs', icon: BarChart3 },
+const INTENTS: Array<{ 
+  id: Intent; 
+  label: string; 
+  description: string;
+  icon: React.ComponentType<{ className?: string }> 
+}> = [
+  { 
+    id: 'Gérer des retards', 
+    label: 'Gérer des retards', 
+    description: 'Traiter les POs en retard, escalader et corriger les problèmes de livraison',
+    icon: AlertTriangle 
+  },
+  { 
+    id: 'Anticiper des risques', 
+    label: 'Anticiper des risques', 
+    description: 'Identifier proactivement les risques supply chain avant qu\'ils ne deviennent critiques',
+    icon: Target 
+  },
+  { 
+    id: 'Prioriser des actions', 
+    label: 'Prioriser des actions', 
+    description: 'Déterminer quelles commandes et actions traiter en priorité selon leur impact',
+    icon: CheckCircle2 
+  },
+  { 
+    id: 'Tenir la promesse client', 
+    label: 'Tenir la promesse client', 
+    description: 'Assurer les dates de livraison promises et maintenir la satisfaction client',
+    icon: Users 
+  },
+  { 
+    id: 'Piloter la charge / la prod', 
+    label: 'Piloter la charge / la prod', 
+    description: 'Optimiser la planification de production et l\'équilibrage des capacités',
+    icon: TrendingUp 
+  },
+  { 
+    id: 'Vision business / KPIs', 
+    label: 'Vision business / KPIs', 
+    description: 'Suivre la performance globale et les indicateurs clés de votre supply chain',
+    icon: BarChart3 
+  },
 ];
 
 interface IntentSelectionStepProps {
@@ -61,7 +96,7 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {INTENTS.map(({ id, label, icon: Icon }) => {
+            {INTENTS.map(({ id, label, description, icon: Icon }) => {
               const isSelected = localIntents.includes(id);
               return (
                 <button
@@ -91,13 +126,16 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
                       )}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-2">
                     <span className={cn(
-                      "font-medium text-sm block transition-colors",
+                      "font-semibold text-sm block mb-1 transition-colors",
                       isSelected && "text-[#2063F0]"
                     )}>
                       {label}
                     </span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {description}
+                    </p>
                   </div>
                   {isSelected && (
                     <CheckCircle2 className="h-5 w-5 text-[#2063F0] shrink-0 animate-in zoom-in duration-200" />
