@@ -26,6 +26,7 @@ import { getScopes, type Scope } from '@/lib/scopes';
 import { getCurrentUserId, getCurrentUser } from '@/lib/users';
 import { getTeams, createTeam, getTeamByName, type Team } from '@/lib/teams';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
+import { Sparkles, Zap } from 'lucide-react';
 
 interface RoutineModalProps {
   open: boolean;
@@ -139,40 +140,55 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b shrink-0">
-          <DialogTitle>{routine ? 'Edit Routine' : 'Create New Routine'}</DialogTitle>
-          <DialogDescription>
-            {routine 
-              ? 'Update routine configuration' 
-              : 'Save current view configuration as a reusable routine'}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden">
+        {/* Hero Header with Gradient */}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+          <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                {routine ? 'Edit Routine' : 'Create New Routine'}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {routine 
+                ? 'Update routine configuration' 
+                : 'Save current view configuration as a reusable routine'}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-8 py-6 space-y-5">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="routine-name">
+              <Label htmlFor="routine-name" className="text-sm font-semibold">
                 Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="routine-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter routine name"
+                placeholder="Enter routine name..."
+                className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="routine-description">Description (optional)</Label>
+              <Label htmlFor="routine-description" className="text-sm font-semibold">
+                Description <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+              </Label>
               <Textarea
                 id="routine-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter routine description"
+                placeholder="Enter routine description..."
                 rows={3}
+                className="border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20 resize-none"
               />
             </div>
 
@@ -208,16 +224,18 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
             {/* Share with Teams */}
             <div className="space-y-2">
-              <div className="space-y-1">
-                <Label>Share with Teams (optional)</Label>
-                <p className="text-xs text-muted-foreground">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold">
+                  Share with Teams <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   Select one or more teams to share this routine with. All team members will be able to view it. Only you can edit it.
                 </p>
               </div>
               <div className="space-y-3">
-                <div className="rounded-md border p-4 space-y-3 max-h-[200px] overflow-y-auto">
+                <div className="rounded-lg border border-border/60 p-4 space-y-3 max-h-[200px] overflow-y-auto bg-muted/10">
                   {teams.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No teams available</p>
+                    <p className="text-sm text-muted-foreground text-center py-2">No teams available</p>
                   ) : (
                     teams.map((team) => {
                       const isSelected = selectedTeamIds.includes(team.id);
@@ -233,10 +251,11 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                                 setSelectedTeamIds(selectedTeamIds.filter(id => id !== team.id));
                               }
                             }}
+                            className="data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
                           />
                           <Label
                             htmlFor={`team-${team.id}`}
-                            className="text-sm font-normal cursor-pointer flex-1"
+                            className="text-sm font-medium cursor-pointer flex-1"
                           >
                             {team.name}
                           </Label>
@@ -250,10 +269,10 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                     {showNewTeamInput ? (
                       <div className="flex gap-2">
                         <Input
-                          placeholder="Enter team name"
+                          placeholder="Enter team name..."
                           value={newTeamName}
                           onChange={(e) => setNewTeamName(e.target.value)}
-                          className="flex-1"
+                          className="flex-1 h-9 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && newTeamName.trim()) {
                               const existingTeam = getTeamByName(newTeamName.trim());
@@ -273,6 +292,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                               setNewTeamName('');
                             }
                           }}
+                          autoFocus
                         />
                         <Button
                           variant="outline"
@@ -281,6 +301,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                             setShowNewTeamInput(false);
                             setNewTeamName('');
                           }}
+                          className="h-9 border-border/60"
                         >
                           Cancel
                         </Button>
@@ -290,6 +311,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => setShowNewTeamInput(true)}
+                        className="h-9 border-border/60 hover:border-[#31C7AD] hover:bg-[#31C7AD]/5 hover:text-[#31C7AD] transition-all"
                       >
                         + Create new team
                       </Button>
@@ -302,7 +324,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                   {selectedTeamIds.map((teamId) => {
                     const team = teams.find(t => t.id === teamId);
                     return team ? (
-                      <Badge key={teamId} variant="secondary" className="text-xs">
+                      <Badge key={teamId} variant="secondary" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/20">
                         {team.name}
                       </Badge>
                     ) : null;
@@ -313,17 +335,26 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
             {/* Current Configuration Summary */}
             <div className="space-y-2">
-              <Label>Current Configuration</Label>
-              <div className="rounded-md border p-4 space-y-2 bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{currentFilters.length} filters</Badge>
-                  <Badge variant="outline">{currentSorting.length} sorts</Badge>
+              <Label className="text-sm font-semibold">Current Configuration</Label>
+              <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                    <Zap className="h-3 w-3 mr-1" />
+                    {currentFilters.length} filters
+                  </Badge>
+                  <Badge variant="outline" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                    {currentSorting.length} sorts
+                  </Badge>
                   {currentGroupBy && (
-                    <Badge variant="outline">Group by: {currentGroupBy}</Badge>
+                    <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                      Group by: {currentGroupBy}
+                    </Badge>
                   )}
-                  <Badge variant="outline">Page size: {currentPageSize}</Badge>
+                  <Badge variant="outline" className="bg-background/50 border-border/60">
+                    Page size: {currentPageSize}
+                  </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   This routine will save the current view configuration (filters, sorting, grouping, page size).
                 </p>
               </div>
@@ -331,11 +362,19 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
           </div>
         </ScrollArea>
 
-        <DialogFooter className="px-6 py-4 border-t shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="h-9 border-border/60 hover:bg-muted"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} className="bg-[#2063F0] hover:bg-[#1a54d8]">
+          <Button
+            onClick={handleSave}
+            disabled={!name.trim()}
+            className="h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {routine ? 'Update' : 'Create'} Routine
           </Button>
         </DialogFooter>
