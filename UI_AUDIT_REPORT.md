@@ -171,6 +171,46 @@ Complete UI audit and revamp of the application with a focus on maintaining cons
 - Routine review with frequency grouping
 - Browse all routines modal
 
+### 11. **Scope & Routines Page**
+**File:** `src/components/ScopeAndRoutinesPage.tsx`
+
+**Status:** ✅ REDESIGNED
+
+**Changes:**
+- **Main Header:**
+  - Gradient background (teal/blue)
+  - Pelico logo in gradient container
+  - Title with gradient text
+  - Enhanced menu button with teal hover
+  
+- **Scopes Section:**
+  - Icon header with Settings icon in teal gradient container
+  - Section title and subtitle
+  - Create Scope button with gradient (teal → blue)
+  - Premium empty state with gradient background
+  - Enhanced scope cards:
+    - Rounded-xl borders
+    - Hover shadow-lg and teal border
+    - Active scope with teal ring
+    - Bold titles (text-lg)
+    - Teal badges for filters
+    - Actions visible on hover
+    - Teal hover states on action buttons
+  
+- **Routines Section:**
+  - Icon header with Zap icon in blue gradient container
+  - Section title and subtitle
+  - Create Routine button with gradient (blue → teal)
+  - Premium empty state with gradient background
+  - Enhanced routine cards:
+    - Rounded-xl borders
+    - Hover shadow-lg and blue border
+    - Bold titles (text-lg)
+    - Blue badges for filters/sorts
+    - Teal badges for shared teams
+    - Actions visible on hover
+    - Blue hover states on action buttons
+
 ---
 
 ## 🎨 Design System Adherence
@@ -229,7 +269,7 @@ The following components were reviewed and deemed appropriate as-is:
 ### Page Components
 - ✅ **HomePage** - Dashboard layout, integrates modals correctly
 - ✅ **PurchaseOrderBookPage** - Complex table page, already has premium styling
-- ✅ **ScopeAndRoutinesPage** - Main content, modals updated separately
+- ✅ **ScopeAndRoutinesPage** - REDESIGNED with premium style
 
 ### Table Components
 - ✅ **ColumnHeader** - Functional table header, consistent styling
@@ -367,6 +407,7 @@ Both documents serve as:
 7. `design: complete UI revamp with premium style across all modals`
 8. `docs: add comprehensive UI audit report`
 9. `design: revamp Routine Modal with premium UI`
+10. `design: revamp Scope & Routines page with premium UI`
 
 All changes are tracked, documented, and reversible if needed.
 
