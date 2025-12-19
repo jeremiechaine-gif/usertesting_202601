@@ -21,7 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { createRoutine, updateRoutine, type Routine } from '@/lib/routines';
 import { getScopes, type Scope } from '@/lib/scopes';
 import { getCurrentUserId, getCurrentUser } from '@/lib/users';
