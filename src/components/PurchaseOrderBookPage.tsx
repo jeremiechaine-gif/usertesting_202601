@@ -232,6 +232,24 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
+          activeRoutineId={selectedRoutineId}
+          onRoutineClick={(routineId) => {
+            // Apply routine to table
+            setSelectedRoutineId(routineId);
+            const routine = getRoutine(routineId);
+            if (routine) {
+              setSorting(routine.sorting);
+              // Convert routine filters to user filters (excluding scope filters)
+              setUserFilters(routine.filters);
+              if (routine.groupBy) {
+                setSelectedGroupBy(routine.groupBy);
+              }
+            }
+            // Navigate to supply page if not already there
+            if (onNavigate) {
+              onNavigate('supply');
+            }
+          }}
         />
       )}
       
