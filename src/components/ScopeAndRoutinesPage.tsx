@@ -70,6 +70,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
+  const [viewSelectionModalOpen, setViewSelectionModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -154,7 +155,14 @@ export const ScopeAndRoutinesPage: React.FC<{
 
   const handleCreateRoutine = () => {
     setEditingRoutine(null);
-    setRoutineModalOpen(true);
+    setViewSelectionModalOpen(true);
+  };
+
+  const handleSelectView = (view: string) => {
+    setViewSelectionModalOpen(false);
+    if (view === 'supply') {
+      onNavigate?.('supply');
+    }
   };
 
   const handleEditRoutine = (routine: Routine) => {
@@ -529,6 +537,42 @@ export const ScopeAndRoutinesPage: React.FC<{
           </div>
         </div>
       </div>
+
+      {/* View Selection Modal */}
+      <Dialog open={viewSelectionModalOpen} onOpenChange={setViewSelectionModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create a new routine</DialogTitle>
+            <DialogDescription>
+              Choose a view to configure your routine settings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <button
+              onClick={() => handleSelectView('supply')}
+              className="w-full group relative rounded-xl border-2 border-border hover:border-[#31C7AD] bg-background p-6 transition-all hover:shadow-lg"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-[#31C7AD]/10 group-hover:bg-[#31C7AD]/20 transition-colors shrink-0">
+                  <Settings className="h-6 w-6 text-[#31C7AD]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h3 className="font-semibold text-lg mb-1">Supply</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure filters, sorting, and display options for your supply chain data
+                  </p>
+                </div>
+                <ChevronDown className="h-5 w-5 text-muted-foreground -rotate-90 group-hover:text-[#31C7AD] transition-colors shrink-0" />
+              </div>
+            </button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewSelectionModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Scope Modal */}
       {scopeModalOpen && (
