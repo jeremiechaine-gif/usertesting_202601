@@ -176,38 +176,12 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               />
             </div>
 
-            {/* Scope Mode */}
-            <div className="space-y-3">
-              <Label>Scope Mode</Label>
-              <RadioGroup value={scopeMode} onValueChange={(value) => setScopeMode(value as 'scope-aware' | 'scope-fixed')}>
-                <div className="flex items-start space-x-2 space-y-0 rounded-md border p-4">
-                  <RadioGroupItem value="scope-aware" id="scope-aware" className="mt-1" />
-                  <div className="flex-1 space-y-1">
-                    <Label htmlFor="scope-aware" className="font-medium cursor-pointer">
-                      Scope-aware
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Routine uses each user's own scope. Shared routine adapts to each user's data context.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2 space-y-0 rounded-md border p-4">
-                  <RadioGroupItem value="scope-fixed" id="scope-fixed" className="mt-1" />
-                  <div className="flex-1 space-y-1">
-                    <Label htmlFor="scope-fixed" className="font-medium cursor-pointer">
-                      Scope-fixed
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Routine is linked to a specific scope. All users see the same data context.
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Linked Scope (only if scope-fixed) */}
+            {/* Scope Mode - Hidden */}
+            {/* Scope Mode section is hidden but scopeMode state is still used internally */}
+            
+            {/* Linked Scope (only if scope-fixed) - Hidden but still functional */}
             {scopeMode === 'scope-fixed' && (
-              <div className="space-y-2">
+              <div className="space-y-2 hidden">
                 <Label htmlFor="linked-scope">
                   Linked Scope <span className="text-destructive">*</span>
                 </Label>
@@ -234,7 +208,12 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
             {/* Share with Teams */}
             <div className="space-y-2">
-              <Label>Share with Teams (optional)</Label>
+              <div className="space-y-1">
+                <Label>Share with Teams (optional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Select one or more teams to share this routine with. All team members will be able to view it. Only you can edit it.
+                </p>
+              </div>
               <div className="space-y-3">
                 <div className="rounded-md border p-4 space-y-3 max-h-[200px] overflow-y-auto">
                   {teams.length === 0 ? (
@@ -310,7 +289,6 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full"
                         onClick={() => setShowNewTeamInput(true)}
                       >
                         + Create new team
@@ -319,9 +297,6 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                   </div>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Select one or more teams to share this routine with. All team members will be able to view it. Only you can edit it.
-              </p>
               {selectedTeamIds.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {selectedTeamIds.map((teamId) => {
