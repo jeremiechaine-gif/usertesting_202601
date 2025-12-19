@@ -106,7 +106,7 @@ const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
 const OTDStatusIndicator: React.FC<{ status: string }> = ({ status }) => {
   const statusConfig = {
     'on-time': { color: '#4caf50', label: 'On Time' },
-    'at-risk': { color: '#ff9800', label: 'At Risk' },
+    'at-risk': { color: '#FFEB3B', label: 'At Risk' },
     'late': { color: '#f44336', label: 'Late' },
   };
   const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['on-time'];

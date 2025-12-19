@@ -45,27 +45,31 @@ const SortRowComponent: React.FC<SortRowProps> = ({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 min-w-0 w-full p-2 rounded-md transition-colors",
-      isNotInRoutine && "bg-[#ff9800]/10 ring-1 ring-[#ff9800]"
+      "flex items-center gap-2 min-w-0 w-full rounded-md transition-colors relative"
     )}>
-      <button
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
-        title="Drag to reorder"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <Select value={sort.columnId} onValueChange={handleColumnChange}>
-        <SelectTrigger className="flex-1 h-8 min-w-0 max-w-[200px]">
-          <SelectValue placeholder="Select column" />
-        </SelectTrigger>
-        <SelectContent>
-          {sortableColumns.map((col) => (
-            <SelectItem key={col.id} value={col.id}>
-              {col.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {isNotInRoutine && (
+        <span className="absolute top-1 left-1 h-2 w-2 bg-red-500 rounded-full z-10" />
+      )}
+      <div className="flex items-center gap-2 flex-1 min-w-0 bg-muted/50 p-2 rounded-md">
+        <button
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <Select value={sort.columnId} onValueChange={handleColumnChange}>
+          <SelectTrigger className="flex-1 h-8 min-w-0 max-w-[200px]">
+            <SelectValue placeholder="Select column" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortableColumns.map((col) => (
+              <SelectItem key={col.id} value={col.id}>
+                {col.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <SortChip
         label=""
         direction={sort.direction}
@@ -74,7 +78,7 @@ const SortRowComponent: React.FC<SortRowProps> = ({
         showDragHandle={false}
         onToggleDirection={handleToggleDirection}
         onRemove={handleRemove}
-        className={cn("shrink-0", isNotInRoutine && "ring-1 ring-[#ff9800] bg-[#ff9800]/20")}
+        className="shrink-0"
       />
     </div>
   );

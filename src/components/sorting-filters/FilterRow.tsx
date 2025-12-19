@@ -66,9 +66,11 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
 
   return (
     <div className={cn(
-      "w-full min-w-0 p-1 rounded-md transition-colors",
-      isNotInRoutine && "bg-[#ff9800]/10 ring-1 ring-[#ff9800]"
+      "w-full min-w-0 p-1 rounded-md transition-colors relative"
     )}>
+      {isNotInRoutine && (
+        <span className="absolute top-1 left-1 h-2 w-2 bg-red-500 rounded-full z-10" />
+      )}
       <FilterChip
         label={columnLabel}
         values={filter.values}
@@ -81,10 +83,7 @@ const FilterRowComponent: React.FC<FilterRowProps> = ({
         onEdit={handleEdit}
         enableInlineEdit={false}
         showEditButton={true}
-        className={cn(
-          "w-full min-w-0",
-          isNotInRoutine && "ring-1 ring-[#ff9800]"
-        )}
+        className="w-full min-w-0"
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban } from 'lucide-react';
+import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban, UserCircle, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -23,8 +23,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onTog
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'upload', label: 'Upload Data', icon: Upload },
     { id: 'config', label: 'Config Editor', icon: Settings },
-    { id: 'users', label: 'Users', icon: Users },
+    { id: 'users', label: 'Teams & members', icon: Users },
     { id: 'scope-routines', label: 'Scope & Routines', icon: FolderKanban },
+    { id: 'my-routines', label: 'My Routines', icon: UserCircle },
+    { id: 'shared-routines', label: 'Shared Routines', icon: UsersRound },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -66,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, isCollapsed, onTog
                 variant={isActive ? 'secondary' : 'ghost'}
                 className={cn(
                   'w-full justify-start gap-3',
-                  isActive && 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  isActive && 'bg-[#31C7AD] text-white hover:bg-[#2ab89a]'
                 )}
                 onClick={() => onNavigate?.(item.id)}
               >

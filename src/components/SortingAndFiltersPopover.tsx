@@ -37,6 +37,7 @@ import { draftSortingToTableState, draftFiltersToTableState, tableStateToDraftSo
 import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getColumnIdFromFilterId } from './sorting-filters/utils';
 import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
+import { filterDefinitions } from '@/lib/filterDefinitions';
 
 // Types
 export interface SortConfig {
@@ -104,6 +105,10 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const [view, setView] = useState<'main' | 'add-filter'>('main');
   const [dismissedTip, setDismissedTip] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
+  // Session-only favorites state
+  const [sessionFavorites, setSessionFavorites] = useState<Set<string>>(
+    new Set(filterDefinitions.filter(f => f.isFavorite).map(f => f.id))
+  );
 
   // Use custom hook for draft state management
   const {
@@ -165,13 +170,21 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   // Get sortable columns (memoized)
   const sortableColumns = useMemo(() => getSortableColumns(columns), [columns]);
 
-  // Group filter definitions (memoized)
-  const groupedFilters = useMemo(() => groupFilterDefinitions(filterDefinitions), [filterDefinitions]);
+  // Group filter definitions (memoized) - update favorites based on session state
+  const filterDefinitionsWithFavorites = useMemo(() => {
+    return filterDefinitions.map(f => ({
+      ...f,
+      isFavorite: sessionFavorites.has(f.id),
+      category: sessionFavorites.has(f.id) ? 'favorites' : f.category,
+    }));
+  }, [sessionFavorites]);
 
-  // Filter search results (memoized)
+  const groupedFilters = useMemo(() => groupFilterDefinitions(filterDefinitionsWithFavorites), [filterDefinitionsWithFavorites]);
+
+  // Filter search results (memoized) - use updated filter definitions with favorites
   const filteredFilterDefs = useMemo(
-    () => filterSearchResults(filterDefinitions, filterSearch),
-    [filterDefinitions, filterSearch]
+    () => filterSearchResults(filterDefinitionsWithFavorites, filterSearch),
+    [filterDefinitionsWithFavorites, filterSearch]
   );
 
   // Apply draft changes to table
@@ -291,8 +304,33 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const totalActiveCount = activeSortCount + activeFilterCount;
 
 
+  // Calculate hasUnsavedChanges using the same logic as PurchaseOrderBookPage
+  // This determines when routine creation/update buttons should be enabled
+  const hasUnsavedChanges = useMemo(() => {
+    // If no routine selected, check if there are any sorts or filters in draft state
+    if (!selectedRoutineId) {
+      return draftSorting.length > 0 || draftFilters.length > 0;
+    }
+    
+    const routine = getRoutine(selectedRoutineId);
+    if (!routine) return false;
+    
+    // Compare draft sorting with routine sorting
+    const routineSorting = tableStateToDraftSorting(routine.sorting);
+    const sortingMatches = JSON.stringify(draftSorting.sort((a, b) => a.id.localeCompare(b.id))) === 
+                          JSON.stringify(routineSorting.sort((a, b) => a.id.localeCompare(b.id)));
+    
+    // Compare draft filters with routine filters
+    const routineFilters = tableStateToDraftFilters(routine.filters);
+    const filtersMatches = JSON.stringify(draftFilters.sort((a, b) => a.id.localeCompare(b.id))) === 
+                          JSON.stringify(routineFilters.sort((a, b) => a.id.localeCompare(b.id)));
+    
+    // Return true if there are changes
+    return !sortingMatches || !filtersMatches;
+  }, [selectedRoutineId, draftSorting, draftFilters]);
+
   const defaultTrigger = (
-    <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5">
+    <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5 relative">
       <Filter className="w-4 h-4" />
       Sorting and filters
       {totalActiveCount > 0 ? (
@@ -300,6 +338,9 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
           {totalActiveCount}
         </Badge>
       ) : null}
+      {hasUnsavedChanges && (
+        <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+      )}
     </Button>
   );
 
@@ -334,7 +375,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             draftSorting={draftSorting}
             draftFilters={draftFilters}
             sortableColumns={sortableColumns}
-            filterDefinitions={filterDefinitions}
+            filterDefinitions={filterDefinitionsWithFavorites}
             hasDraftChanges={hasDraftChanges}
             dismissedTip={dismissedTip}
             onDismissTip={() => setDismissedTip(true)}
@@ -351,6 +392,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             onUpdateRoutine={onUpdateRoutine}
             onSave={handleSave}
             onClearAll={handleClearAll}
+            hasUnsavedChanges={hasUnsavedChanges}
             hasAnyActive={hasAnyActive}
             onClose={() => setOpen(false)}
             columns={columns}
@@ -363,6 +405,19 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
             filteredFilterDefs={filteredFilterDefs}
             groupedFilters={groupedFilters}
             onSelectFilter={handleAddFilter}
+            onToggleFavorite={(filterId) => {
+              setSessionFavorites(prev => {
+                const newSet = new Set(prev);
+                if (newSet.has(filterId)) {
+                  newSet.delete(filterId);
+                } else {
+                  newSet.add(filterId);
+                }
+                return newSet;
+              });
+            }}
+            onOpenFilterModal={onOpenFilterModal}
+            getColumnIdFromFilterId={getColumnIdFromFilterId}
             onBack={() => {
               setView('main');
               setFilterSearch('');
@@ -397,6 +452,7 @@ interface MainViewProps {
   hasAnyActive: boolean;
   onClose: () => void;
   hasDraftChanges: boolean;
+  hasUnsavedChanges: boolean;
   onAddFilter: () => void;
   onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
   onRemoveFilter: (filterId: string) => void;
@@ -424,6 +480,7 @@ const MainView: React.FC<MainViewProps> = ({
   hasAnyActive,
   onClose,
   hasDraftChanges,
+  hasUnsavedChanges,
   onAddFilter,
   onUpdateFilterValues,
   onRemoveFilter,
@@ -502,10 +559,10 @@ const MainView: React.FC<MainViewProps> = ({
             <div className="flex items-center">
               {/* Main Button (left segment) - Default action */}
               <Button 
-                variant="default" 
+                variant="secondary" 
                 size="sm" 
-                className="bg-[#ff9800] hover:bg-[#f57c00] rounded-r-none border-r border-r-[#f57c00]"
-                disabled={!hasDraftChanges}
+                className="rounded-r-none border-r"
+                disabled={!hasUnsavedChanges}
                 onClick={() => {
                   onSave();
                   if (selectedRoutineId && onUpdateRoutine) {
@@ -521,10 +578,10 @@ const MainView: React.FC<MainViewProps> = ({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
-                    variant="default" 
+                    variant="secondary" 
                     size="sm" 
-                    className="bg-[#ff9800] hover:bg-[#f57c00] rounded-l-none px-2"
-                    disabled={!hasDraftChanges}
+                    className="rounded-l-none px-2"
+                    disabled={!hasUnsavedChanges}
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -536,7 +593,7 @@ const MainView: React.FC<MainViewProps> = ({
                         onSave();
                         onUpdateRoutine();
                       }}
-                      disabled={!hasDraftChanges}
+                      disabled={!hasUnsavedChanges}
                     >
                       <Save className="mr-2 h-4 w-4" />
                       Update current routine
@@ -548,7 +605,7 @@ const MainView: React.FC<MainViewProps> = ({
                         onSave();
                         onSaveAsRoutine();
                       }}
-                      disabled={!hasDraftChanges}
+                      disabled={!hasUnsavedChanges}
                     >
                       <Save className="mr-2 h-4 w-4" />
                       {selectedRoutineId ? 'Save as new routine' : 'Create routine'}
@@ -590,6 +647,9 @@ export interface AddFilterViewProps {
     producedParts: FilterDefinition[];
   };
   onSelectFilter: (filterDef: FilterDefinition) => void;
+  onToggleFavorite: (filterId: string) => void;
+  onOpenFilterModal?: (columnId: string) => void;
+  getColumnIdFromFilterId: (filterId: string) => string | null;
   onBack: () => void;
   onClose: () => void;
 }
@@ -600,9 +660,28 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
   filteredFilterDefs,
   groupedFilters,
   onSelectFilter,
+  onToggleFavorite,
+  onOpenFilterModal,
+  getColumnIdFromFilterId,
   onBack,
   onClose,
 }) => {
+  const handleStarClick = (e: React.MouseEvent, filterId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onToggleFavorite(filterId);
+  };
+
+  const handleFilterClick = (filterDef: FilterDefinition) => {
+    // Map filter ID to column ID and open the filter modal
+    const columnId = getColumnIdFromFilterId(filterDef.id);
+    if (columnId && onOpenFilterModal) {
+      onOpenFilterModal(columnId);
+    } else {
+      // Fallback: use onSelectFilter if no column mapping
+      onSelectFilter(filterDef);
+    }
+  };
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
@@ -618,21 +697,23 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
         </Button>
       </div>
 
+      {/* Search Bar */}
+      <div className="px-4 py-3 border-b shrink-0">
+        <div className="flex items-center border rounded-md px-3 bg-background">
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <input
+            placeholder="Search filter…"
+            value={filterSearch}
+            onChange={(e) => onFilterSearchChange(e.target.value)}
+            className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+      </div>
+
       {/* Filter List */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Command className="rounded-lg border-0 h-full flex flex-col">
-          <div className="px-4 py-3 border-b shrink-0">
-            <div className="flex items-center border rounded-md px-3 bg-background">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <input
-                placeholder="Search filter…"
-                value={filterSearch}
-                onChange={(e) => onFilterSearchChange(e.target.value)}
-                className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          </div>
-          <CommandList className="flex-1 min-h-0 overflow-auto">
+          <CommandList className="h-full overflow-y-auto !max-h-none">
             {filterSearch ? (
               // Search results
               <>
@@ -641,14 +722,15 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                   {filteredFilterDefs.map((filterDef) => (
                     <CommandItem
                       key={filterDef.id}
-                      onSelect={() => onSelectFilter(filterDef)}
+                      onSelect={() => handleFilterClick(filterDef)}
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <Star
                         className={cn(
-                          'h-4 w-4 shrink-0',
+                          'h-4 w-4 shrink-0 cursor-pointer',
                           filterDef.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
                         )}
+                        onClick={(e) => handleStarClick(e, filterDef.id)}
                       />
                       <span className="flex-1">{filterDef.label}</span>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -664,10 +746,13 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                     {groupedFilters.favorites.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
-                        onSelect={() => onSelectFilter(filterDef)}
+                        onSelect={() => handleFilterClick(filterDef)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <Star className="h-4 w-4 shrink-0 fill-yellow-400 text-yellow-400" />
+                        <Star 
+                          className="h-4 w-4 shrink-0 fill-yellow-400 text-yellow-400 cursor-pointer" 
+                          onClick={(e) => handleStarClick(e, filterDef.id)}
+                        />
                         <span className="flex-1">{filterDef.label}</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </CommandItem>
@@ -680,10 +765,13 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                     {groupedFilters.general.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
-                        onSelect={() => onSelectFilter(filterDef)}
+                        onSelect={() => handleFilterClick(filterDef)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <Star className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <Star 
+                          className="h-4 w-4 shrink-0 text-muted-foreground cursor-pointer" 
+                          onClick={(e) => handleStarClick(e, filterDef.id)}
+                        />
                         <span className="flex-1">{filterDef.label}</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </CommandItem>
@@ -696,10 +784,13 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                     {groupedFilters.consumedParts.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
-                        onSelect={() => onSelectFilter(filterDef)}
+                        onSelect={() => handleFilterClick(filterDef)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <Star className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <Star 
+                          className="h-4 w-4 shrink-0 text-muted-foreground cursor-pointer" 
+                          onClick={(e) => handleStarClick(e, filterDef.id)}
+                        />
                         <span className="flex-1">{filterDef.label}</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </CommandItem>
@@ -712,10 +803,13 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                     {groupedFilters.producedParts.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
-                        onSelect={() => onSelectFilter(filterDef)}
+                        onSelect={() => handleFilterClick(filterDef)}
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <Star className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <Star 
+                          className="h-4 w-4 shrink-0 text-muted-foreground cursor-pointer" 
+                          onClick={(e) => handleStarClick(e, filterDef.id)}
+                        />
                         <span className="flex-1">{filterDef.label}</span>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </CommandItem>

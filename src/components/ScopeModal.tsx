@@ -21,6 +21,7 @@ import { FilterChip } from '@/components/ui/filter-chip';
 import { X } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
 import { filterDefinitions } from '@/lib/filterDefinitions';
+import { getColumnIdFromFilterId } from './sorting-filters/utils';
 // Lazy load heavy components to reduce bundle size
 const AddFilterView = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.AddFilterView })));
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
@@ -44,6 +45,10 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   const [showAddFilter, setShowAddFilter] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
   const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
+  // Session-only favorites state
+  const [sessionFavorites, setSessionFavorites] = useState<Set<string>>(
+    new Set(filterDefinitions.filter(f => f.isFavorite).map(f => f.id))
+  );
 
   useEffect(() => {
     if (scope) {
@@ -113,6 +118,13 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     return def?.label || filterId;
   };
 
+  // Update filter definitions with session favorites
+  const filterDefinitionsWithFavorites = filterDefinitions.map(f => ({
+    ...f,
+    isFavorite: sessionFavorites.has(f.id),
+    category: sessionFavorites.has(f.id) ? 'favorites' : f.category,
+  }));
+
   // Group filters for AddFilterView - same structure as in SortingAndFiltersPopover
   const groupedFilters: {
     favorites: typeof filterDefinitions;
@@ -120,13 +132,13 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     consumedParts: typeof filterDefinitions;
     producedParts: typeof filterDefinitions;
   } = {
-    favorites: filterDefinitions.filter((def) => def.isFavorite),
-    general: filterDefinitions.filter((def) => !def.isFavorite && (!def.category || def.category === 'general')),
-    consumedParts: filterDefinitions.filter((def) => def.category === 'consumed-parts'),
-    producedParts: filterDefinitions.filter((def) => def.category === 'produced-parts'),
+    favorites: filterDefinitionsWithFavorites.filter((def) => def.isFavorite),
+    general: filterDefinitionsWithFavorites.filter((def) => !def.isFavorite && (!def.category || def.category === 'general')),
+    consumedParts: filterDefinitionsWithFavorites.filter((def) => def.category === 'consumed-parts'),
+    producedParts: filterDefinitionsWithFavorites.filter((def) => def.category === 'produced-parts'),
   };
 
-  const filteredFilterDefs = filterDefinitions.filter((def) =>
+  const filteredFilterDefs = filterDefinitionsWithFavorites.filter((def) =>
     def.label.toLowerCase().includes(filterSearch.toLowerCase())
   );
 
@@ -192,6 +204,19 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                       filteredFilterDefs={filteredFilterDefs}
                       groupedFilters={groupedFilters}
                       onSelectFilter={handleAddFilter}
+                      onToggleFavorite={(filterId) => {
+                        setSessionFavorites(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(filterId)) {
+                            newSet.delete(filterId);
+                          } else {
+                            newSet.add(filterId);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      onOpenFilterModal={undefined}
+                      getColumnIdFromFilterId={getColumnIdFromFilterId}
                       onBack={() => {
                         setShowAddFilter(false);
                         setFilterSearch('');

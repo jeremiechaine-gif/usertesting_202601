@@ -1,21 +1,206 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PurchaseOrderBookPage } from './components/PurchaseOrderBookPage';
 import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
+import { HomePage } from './components/HomePage';
+import { UsersPage } from './components/UsersPage';
+import { createTeam, getTeamByName, updateTeam } from './lib/teams';
+import { createUser, getUsers, getCurrentUserId } from './lib/users';
+import { getRoutines, createRoutine, updateRoutine } from './lib/routines';
 import './index.css';
 
+// Initialize teams and users if they don't exist
+const initializeTeamsAndUsers = () => {
+  // Check if teams already exist
+  const procurementTeam = getTeamByName('Procurement manager');
+  const supplyPlannerTeam = getTeamByName('Supply planner');
+
+  let procurementTeamId = procurementTeam?.id;
+  let supplyPlannerTeamId = supplyPlannerTeam?.id;
+
+  // Create teams if they don't exist
+  if (!procurementTeam) {
+    const newTeam = createTeam({
+      name: 'Procurement manager',
+      description: 'Team responsible for procurement management',
+    });
+    procurementTeamId = newTeam.id;
+  }
+
+  if (!supplyPlannerTeam) {
+    const newTeam = createTeam({
+      name: 'Supply planner',
+      description: 'Team responsible for supply planning',
+    });
+    supplyPlannerTeamId = newTeam.id;
+  }
+
+  // Check if users already exist
+  const existingUsers = getUsers();
+  const lucasExists = existingUsers.find(u => u.name === 'Lucas Belbeoch');
+  const reginaExists = existingUsers.find(u => u.name === 'Regina Bulatova');
+  const julienExists = existingUsers.find(u => u.name === 'Julien Calviac');
+  const jeremieExists = existingUsers.find(u => u.name === 'Jeremie Chaine');
+
+  // Create admin user if doesn't exist
+  if (!lucasExists) {
+    createUser({
+      name: 'Lucas Belbeoch',
+      email: 'lucas.belbeoch@pelico.com',
+      role: 'manager',
+      teamId: null,
+    });
+  }
+
+  // Create users if they don't exist
+  if (!reginaExists && procurementTeamId) {
+    createUser({
+      name: 'Regina Bulatova',
+      email: 'regina.bulatova@pelico.com',
+      role: 'user',
+      teamId: procurementTeamId,
+    });
+  }
+
+  if (!julienExists && supplyPlannerTeamId) {
+    createUser({
+      name: 'Julien Calviac',
+      email: 'julien.calviac@pelico.com',
+      role: 'user',
+      teamId: supplyPlannerTeamId,
+    });
+  }
+
+  if (!jeremieExists && supplyPlannerTeamId) {
+    createUser({
+      name: 'Jeremie Chaine',
+      email: 'jeremie.chaine@pelico.com',
+      role: 'user',
+      teamId: supplyPlannerTeamId,
+    });
+  }
+
+  // Initialize routines and assign them to teams
+  const currentUserId = getCurrentUserId();
+  const allRoutines = getRoutines();
+  
+  // Helper function to get or create routine
+  const getOrCreateRoutine = (name: string, scopeMode: 'scope-aware' | 'scope-fixed' = 'scope-aware') => {
+    let routine = allRoutines.find(r => r.name === name);
+    if (!routine) {
+      routine = createRoutine({
+        name,
+        filters: [],
+        sorting: [],
+        scopeMode,
+        createdBy: currentUserId,
+        teamId: null,
+      });
+    } else if (routine.scopeMode !== scopeMode) {
+      updateRoutine(routine.id, { scopeMode });
+    }
+    return routine;
+  };
+
+  // Update routine names if they exist with old names
+  const oldRoutine1 = allRoutines.find(r => r.name === 'Missing part' && r.scopeMode === 'scope-fixed');
+  const oldRoutine2 = allRoutines.find(r => r.name === 'Missing part' && r.scopeMode === 'scope-aware');
+  const oldRoutine3 = allRoutines.find(r => r.name === 'test routine');
+
+  let routine1, routine2, routine3;
+
+  if (oldRoutine1) {
+    updateRoutine(oldRoutine1.id, { name: 'POs Missing Acknowledgement Review' });
+    routine1 = getRoutines().find(r => r.id === oldRoutine1.id)!;
+  } else {
+    routine1 = getOrCreateRoutine('POs Missing Acknowledgement Review', 'scope-fixed');
+  }
+
+  if (oldRoutine2) {
+    updateRoutine(oldRoutine2.id, { name: 'Overdue POs' });
+    routine2 = getRoutines().find(r => r.id === oldRoutine2.id)!;
+  } else {
+    routine2 = getOrCreateRoutine('Overdue POs', 'scope-aware');
+  }
+
+  if (oldRoutine3) {
+    updateRoutine(oldRoutine3.id, { name: 'Unapproved Purchase Requisitions' });
+    routine3 = getRoutines().find(r => r.id === oldRoutine3.id)!;
+  } else {
+    routine3 = getOrCreateRoutine('Unapproved Purchase Requisitions', 'scope-aware');
+  }
+
+  // Assign routines to teams
+  if (supplyPlannerTeamId) {
+    const supplyTeam = getTeamByName('Supply planner');
+    if (supplyTeam) {
+      const currentRoutineIds = supplyTeam.assignedRoutineIds || [];
+      const newRoutineIds = [
+        ...new Set([
+          ...currentRoutineIds,
+          routine1.id,
+          routine2.id,
+        ]),
+      ];
+      if (JSON.stringify(newRoutineIds.sort()) !== JSON.stringify(currentRoutineIds.sort())) {
+        updateTeam(supplyTeam.id, { assignedRoutineIds: newRoutineIds });
+      }
+    }
+  }
+
+  if (procurementTeamId) {
+    const procurementTeam = getTeamByName('Procurement manager');
+    if (procurementTeam) {
+      const currentRoutineIds = procurementTeam.assignedRoutineIds || [];
+      const newRoutineIds = [
+        ...new Set([
+          ...currentRoutineIds,
+          routine3.id,
+        ]),
+      ];
+      if (JSON.stringify(newRoutineIds.sort()) !== JSON.stringify(currentRoutineIds.sort())) {
+        updateTeam(procurementTeam.id, { assignedRoutineIds: newRoutineIds });
+      }
+    }
+  }
+};
+
 function App() {
-  const [currentPage, setCurrentPage] = useState<'supply' | 'scope-routines'>('supply');
+  useEffect(() => {
+    // Initialize teams and users on app start
+    initializeTeamsAndUsers();
+  }, []);
+  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines'>('home');
 
   const handleNavigate = (page: string) => {
-    if (page === 'scope-routines') {
+    if (page === 'home') {
+      setCurrentPage('home');
+    } else if (page === 'scope-routines') {
       setCurrentPage('scope-routines');
     } else if (page === 'supply') {
       setCurrentPage('supply');
+    } else if (page === 'users') {
+      setCurrentPage('users');
+    } else if (page === 'my-routines') {
+      setCurrentPage('my-routines');
+    } else if (page === 'shared-routines') {
+      setCurrentPage('shared-routines');
     }
   };
 
+  if (currentPage === 'home') {
+    return <HomePage onNavigate={handleNavigate} />;
+  }
+
   if (currentPage === 'scope-routines') {
     return <ScopeAndRoutinesPage onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'users') {
+    return <UsersPage onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
+    return <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />;
   }
 
   return <PurchaseOrderBookPage onNavigate={handleNavigate} />;

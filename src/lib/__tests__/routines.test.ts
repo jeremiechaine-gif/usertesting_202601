@@ -26,6 +26,7 @@ describe('Routine Management', () => {
         filters: [],
         sorting: [],
         scopeMode: 'scope-aware',
+        createdBy: 'test-user-id',
       });
 
       expect(routine.id).toBeDefined();
@@ -40,6 +41,7 @@ describe('Routine Management', () => {
         filters: [],
         sorting: [],
         scopeMode: 'scope-aware',
+        createdBy: 'test-user-id',
       });
 
       const retrieved = getRoutine(routine.id);
@@ -52,6 +54,7 @@ describe('Routine Management', () => {
         filters: [],
         sorting: [],
         scopeMode: 'scope-aware',
+        createdBy: 'test-user-id',
       });
 
       const originalUpdatedAt = routine.updatedAt;
@@ -76,6 +79,7 @@ describe('Routine Management', () => {
         filters: [],
         sorting: [],
         scopeMode: 'scope-aware',
+        createdBy: 'test-user-id',
       });
 
       const deleted = deleteRoutine(routine.id);

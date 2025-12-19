@@ -23,9 +23,8 @@ export interface Routine {
   linkedScopeId?: string | null; // Scope lié (si scope-fixed)
   
   // Métadonnées
-  createdBy?: string;
-  sharedWith?: string[];
-  isShared?: boolean;
+  createdBy: string; // userId du créateur
+  teamId?: string | null; // null = privée, valeur = partagée à l'équipe
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +54,7 @@ export const createRoutine = (routine: Omit<Routine, 'id' | 'createdAt' | 'updat
   const routines = getRoutines();
   const newRoutine: Routine = {
     ...routine,
+    createdBy: routine.createdBy || '', // Must be provided
     id: `routine-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -122,7 +122,7 @@ export const shareRoutine = (id: string): string | null => {
   return `${window.location.origin}/share/${shareToken}`;
 };
 
-export const duplicateRoutine = (id: string): Routine | null => {
+export const duplicateRoutine = (id: string, newCreatedBy?: string): Routine | null => {
   const routine = getRoutine(id);
   if (!routine) return null;
   
@@ -137,9 +137,38 @@ export const duplicateRoutine = (id: string): Routine | null => {
     pageSize: routine.pageSize,
     scopeMode: routine.scopeMode,
     linkedScopeId: routine.linkedScopeId,
-    createdBy: routine.createdBy,
-    sharedWith: [],
-    isShared: false,
+    createdBy: newCreatedBy || routine.createdBy,
+    teamId: null, // Duplicated routine is private by default
+  });
+};
+
+/**
+ * Get routines created by a specific user
+ */
+export const getRoutinesByCreator = (userId: string): Routine[] => {
+  const routines = getRoutines();
+  return routines.filter(r => r.createdBy === userId);
+};
+
+/**
+ * Get routines shared with a team
+ */
+export const getRoutinesByTeam = (teamId: string): Routine[] => {
+  const routines = getRoutines();
+  return routines.filter(r => r.teamId === teamId);
+};
+
+/**
+ * Get routines accessible to a user (created by them or shared with their team)
+ */
+export const getAccessibleRoutines = (userId: string, userTeamId?: string | null): Routine[] => {
+  const routines = getRoutines();
+  return routines.filter(r => {
+    // User's own routines
+    if (r.createdBy === userId) return true;
+    // Routines shared with user's team
+    if (userTeamId && r.teamId === userTeamId) return true;
+    return false;
   });
 };
 

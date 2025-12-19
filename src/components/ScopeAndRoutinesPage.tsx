@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { ScopeModal } from './ScopeModal';
 import { RoutineModal } from './RoutineModal';
 import { Sidebar } from './Sidebar';
@@ -23,8 +23,12 @@ import {
   deleteRoutine, 
   shareRoutine, 
   duplicateRoutine,
+  getRoutinesByCreator,
+  getAccessibleRoutines,
   type Routine 
 } from '@/lib/routines';
+import { getCurrentUserId, getCurrentUser, getUser } from '@/lib/users';
+import { getTeam, getTeams } from '@/lib/teams';
 import { useScope } from '@/contexts/ScopeContext';
 import { 
   Plus, 
@@ -57,7 +61,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+export const ScopeAndRoutinesPage: React.FC<{ 
+  onNavigate?: (page: string) => void;
+  viewMode?: 'scope-routines' | 'my-routines' | 'shared-routines';
+}> = ({ onNavigate, viewMode = 'scope-routines' }) => {
   const { refreshScopes, currentScopeId, setCurrentScopeId } = useScope();
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -74,7 +81,7 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
   useEffect(() => {
     loadScopes();
     loadRoutines();
-  }, []);
+  }, [viewMode]);
 
   const loadScopes = () => {
     setScopes(getScopes());
@@ -82,7 +89,16 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
   };
 
   const loadRoutines = () => {
-    setRoutines(getRoutines());
+    const currentUserId = getCurrentUserId();
+    const currentUser = getCurrentUser();
+    
+    if (viewMode === 'my-routines') {
+      setRoutines(getRoutinesByCreator(currentUserId));
+    } else if (viewMode === 'shared-routines') {
+      setRoutines(getAccessibleRoutines(currentUserId, currentUser?.teamId || null).filter(r => r.createdBy !== currentUserId));
+    } else {
+      setRoutines(getRoutines());
+    }
   };
 
   const handleCreateScope = () => {
@@ -164,7 +180,8 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
   };
 
   const handleDuplicateRoutine = (routine: Routine) => {
-    duplicateRoutine(routine.id);
+    const currentUserId = getCurrentUserId();
+    duplicateRoutine(routine.id, currentUserId);
     loadRoutines();
   };
 
@@ -177,7 +194,7 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
       {!sidebarCollapsed && (
         <Sidebar 
-          activeItem="scope-routines" 
+          activeItem={viewMode} 
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
@@ -216,7 +233,11 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                   alt="Pelico" 
                   className="w-6 h-6 shrink-0"
                 />
-                <h1 className="text-2xl font-bold tracking-tight">Scope & Routines</h1>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {viewMode === 'my-routines' ? 'My Routines' : 
+                   viewMode === 'shared-routines' ? 'Shared Routines' : 
+                   'Scope & Routines'}
+                </h1>
               </div>
 
               {/* Right Side */}
@@ -241,21 +262,15 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <Tabs defaultValue="scopes" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="scopes">Scopes</TabsTrigger>
-              <TabsTrigger value="routines">Routines</TabsTrigger>
-            </TabsList>
-
-            {/* Scopes Tab */}
-            <TabsContent value="scopes" className="mt-0">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Scopes</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Manage your data scopes and filters
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6">
+            {/* Scopes Section */}
+            <div className="flex flex-col min-w-0">
+              {/* Header Section */}
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Scopes</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your <em>personal</em> data perimeter (e.g., plants, cells, codes) applied by default to see what is relevant to you.
+                </p>
                 <Button onClick={handleCreateScope} className="gap-2">
                   <Plus className="h-4 w-4" />
                   Create Scope
@@ -275,7 +290,7 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4">
                   {scopes.map((scope) => (
                     <div
                       key={scope.id}
@@ -367,17 +382,19 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                   ))}
                 </div>
               )}
-            </TabsContent>
+            </div>
 
-            {/* Routines Tab */}
-            <TabsContent value="routines" className="mt-0">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold">Routines</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Manage your saved view configurations
-                  </p>
-                </div>
+            {/* Separator */}
+            <Separator orientation="vertical" className="hidden lg:block h-auto" />
+
+            {/* Routines Section */}
+            <div className="flex flex-col min-w-0">
+              {/* Header Section */}
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2">Routines</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  A <em>generic</em> view (filters + display configuration) that standardizes a way of working, and can be shared and used by a team.
+                </p>
                 <Button onClick={handleCreateRoutine} className="gap-2">
                   <Plus className="h-4 w-4" />
                   Create Routine
@@ -397,8 +414,24 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {routines.map((routine) => (
+                <div className="grid gap-4">
+                  {routines.map((routine) => {
+                    const creator = getUser(routine.createdBy);
+                    const currentUserId = getCurrentUserId();
+                    const isOwner = routine.createdBy === currentUserId;
+                    const canEdit = isOwner; // Only owner can edit
+                    
+                    // Find team that shares this routine (via teamId or assignedRoutineIds)
+                    let sharedTeam = routine.teamId ? getTeam(routine.teamId) : null;
+                    if (!sharedTeam) {
+                      // Check if routine is assigned to any team via assignedRoutineIds
+                      const allTeams = getTeams();
+                      sharedTeam = allTeams.find(team => 
+                        team.assignedRoutineIds?.includes(routine.id)
+                      ) || null;
+                    }
+                    
+                    return (
                     <div
                       key={routine.id}
                       className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-background"
@@ -409,6 +442,11 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                           {routine.description && (
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               {routine.description}
+                            </p>
+                          )}
+                          {creator && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Created by {creator.name}
                             </p>
                           )}
                         </div>
@@ -431,9 +469,9 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                         >
                           {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
                         </Badge>
-                        {routine.isShared && (
+                        {sharedTeam && (
                           <Badge variant="secondary" className="text-xs">
-                            Shared
+                            {sharedTeam.name}
                           </Badge>
                         )}
                         
@@ -460,30 +498,35 @@ export const ScopeAndRoutinesPage: React.FC<{ onNavigate?: (page: string) => voi
                             </DropdownMenuContent>
                           </DropdownMenu>
                           
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleEditRoutine(routine)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteRoutine(routine.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {canEdit && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleEditRoutine(routine)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteRoutine(routine.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
         </div>
       </div>
 

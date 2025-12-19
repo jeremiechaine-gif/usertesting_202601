@@ -413,7 +413,8 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           key={header.id}
                           colSpan={colSpan}
                           className={cn(
-                            'px-4 py-3 text-left text-sm font-medium text-muted-foreground border-r transition-colors',
+                            'px-4 text-left text-sm font-medium text-muted-foreground border-r transition-colors',
+                            isGroupHeader ? 'py-1.5' : 'py-3',
                             bgColor,
                             header.column.getCanSort() && !isGroupHeader && 'hover:bg-muted cursor-pointer'
                           )}
@@ -423,7 +424,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           }}
                         >
                           {header.isPlaceholder ? null : isGroupHeader ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-[10px] uppercase">
                               {flexRender(header.column.columnDef.header, header.getContext())}
                             </div>
                           ) : (

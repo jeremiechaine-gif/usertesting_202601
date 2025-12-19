@@ -50,7 +50,7 @@ export const tokens = {
     status: {
       success: '#4caf50',
       successBg: '#e8f5e9',
-      warning: '#ff9800',
+      warning: '#FFEB3B',
       warningBg: '#fff3e0',
       error: '#f44336',
       errorBg: '#ffebee',

@@ -22,6 +22,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { createRoutine, updateRoutine, type Routine } from '@/lib/routines';
 import { getScopes, type Scope } from '@/lib/scopes';
+import { getCurrentUserId, getCurrentUser } from '@/lib/users';
+import { getTeams, createTeam, getTeamByName, type Team } from '@/lib/teams';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
 
 interface RoutineModalProps {
@@ -51,9 +53,16 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const [scopeMode, setScopeMode] = useState<'scope-aware' | 'scope-fixed'>('scope-aware');
   const [linkedScopeId, setLinkedScopeId] = useState<string | null>(null);
   const [scopes, setScopes] = useState<Scope[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [showNewTeamInput, setShowNewTeamInput] = useState(false);
+  const currentUser = getCurrentUser();
+  const isManager = currentUser?.role === 'manager';
 
   useEffect(() => {
     setScopes(getScopes());
+    setTeams(getTeams());
   }, []);
 
   useEffect(() => {
@@ -62,11 +71,15 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setDescription(routine.description || '');
       setScopeMode(routine.scopeMode);
       setLinkedScopeId(routine.linkedScopeId || null);
+      setSelectedTeamId(routine.teamId || null);
     } else {
       setName('');
       setDescription('');
       setScopeMode('scope-aware');
       setLinkedScopeId(null);
+      setSelectedTeamId(null);
+      setNewTeamName('');
+      setShowNewTeamInput(false);
     }
   }, [routine, open]);
 
@@ -81,6 +94,22 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       return;
     }
 
+    // Handle new team creation if manager
+    let finalTeamId: string | null = selectedTeamId;
+    if (showNewTeamInput && newTeamName.trim() && isManager) {
+      // Check if team already exists
+      const existingTeam = getTeamByName(newTeamName.trim());
+      if (existingTeam) {
+        finalTeamId = existingTeam.id;
+      } else {
+        // Create new team
+        const newTeam = createTeam({ name: newTeamName.trim() });
+        finalTeamId = newTeam.id;
+        setTeams(getTeams()); // Refresh teams list
+      }
+    }
+
+    const currentUserId = getCurrentUserId();
     const routineData: Omit<Routine, 'id' | 'createdAt' | 'updatedAt'> = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -90,6 +119,8 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       pageSize: currentPageSize,
       scopeMode,
       linkedScopeId: scopeMode === 'scope-fixed' ? linkedScopeId : null,
+      createdBy: routine?.createdBy || currentUserId,
+      teamId: finalTeamId,
     };
 
     if (routine) {
@@ -195,6 +226,66 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                 </Select>
               </div>
             )}
+
+            {/* Share with Team */}
+            <div className="space-y-2">
+              <Label htmlFor="share-team">Share with Team (optional)</Label>
+              <div className="space-y-2">
+                <Select 
+                  value={selectedTeamId || ''} 
+                  onValueChange={(value) => {
+                    if (value === '__new__') {
+                      setShowNewTeamInput(true);
+                      setSelectedTeamId(null);
+                    } else {
+                      setSelectedTeamId(value || null);
+                      setShowNewTeamInput(false);
+                      setNewTeamName('');
+                    }
+                  }}
+                >
+                  <SelectTrigger id="share-team">
+                    <SelectValue placeholder="No team (private)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No team (private)</SelectItem>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                    {isManager && (
+                      <SelectItem value="__new__">
+                        + Create new team
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {showNewTeamInput && isManager && (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter team name"
+                      value={newTeamName}
+                      onChange={(e) => setNewTeamName(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowNewTeamInput(false);
+                        setNewTeamName('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sharing with a team allows all team members to view this routine. Only you can edit it.
+              </p>
+            </div>
 
             {/* Current Configuration Summary */}
             <div className="space-y-2">
