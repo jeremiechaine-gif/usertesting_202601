@@ -45,9 +45,9 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
 }) => {
   const canContinue = selectedPersonas.length > 0 || isUnsure;
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
-      <ScrollArea className="flex-1">
-        <div className="px-8 py-6 space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-8 py-6 space-y-6 pb-0">
           <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
             <div className="p-2 rounded-lg bg-[#31C7AD]/10">
               <User className="h-5 w-5 text-[#31C7AD]" />
