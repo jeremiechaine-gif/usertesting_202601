@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Info } from 'lucide-react';
+import { Search, Info, Filter } from 'lucide-react';
 
 type ColumnType = 'text' | 'number' | 'date';
 
@@ -187,45 +187,61 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
-        {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          {category && (
-            <p className="text-sm text-muted-foreground mb-1">{category}</p>
-          )}
-          <DialogTitle className="text-xl font-bold">{columnLabel}</DialogTitle>
-          <DialogDescription>
-            Select values to filter the {columnLabel} column
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 overflow-hidden">
+        {/* Hero Header with Gradient */}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+          <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
+            {category && (
+              <p className="text-xs text-muted-foreground/80 mb-2 uppercase tracking-wide">{category}</p>
+            )}
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                <Filter className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                {columnLabel}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Select values to filter the {columnLabel} column
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
         {/* Filter Controls */}
-        <div className="px-6 py-4 border-b space-y-3">
+        <div className="px-8 py-5 border-b border-border/50 space-y-4 shrink-0 bg-muted/10">
           {/* Top row: Condition and Display Selected Only */}
           <div className="flex items-center justify-between gap-4">
-            <Select value={condition} onValueChange={(value) => setCondition(value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {conditionOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Condition
+              </label>
+              <Select value={condition} onValueChange={(value) => setCondition(value)}>
+                <SelectTrigger className="w-[200px] h-9 border-border/60 hover:border-[#2063F0]/30 transition-colors">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {conditionOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-background hover:border-[#31C7AD]/30 transition-colors">
               <Checkbox
                 id="display-selected-only"
                 checked={displaySelectedOnly}
                 disabled={selectedCount === 0}
                 onCheckedChange={(checked) => setDisplaySelectedOnly(checked === true)}
+                className="data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
               />
               <label
                 htmlFor="display-selected-only"
-                className={`text-sm select-none ${
+                className={`text-sm select-none font-medium ${
                   selectedCount === 0
                     ? 'text-muted-foreground cursor-not-allowed'
                     : 'cursor-pointer'
@@ -234,7 +250,9 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                 Display Selected only
               </label>
               {selectedCount > 0 && (
-                <span className="text-sm text-muted-foreground">({selectedCount})</span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#31C7AD]/10 text-[#31C7AD] border border-[#31C7AD]/20">
+                  {selectedCount}
+                </span>
               )}
             </div>
           </div>
@@ -243,26 +261,30 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder="Search values..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
             />
           </div>
         </div>
 
         {/* Options List */}
-        <ScrollArea className="flex-1 px-6 py-4 min-h-[300px] max-h-[400px]">
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-8 py-5 space-y-2">
             {displayedOptions.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground py-8">
-                No results found
+              <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-muted/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-3">
+                  <Search className="h-6 w-6 text-[#2063F0]/60" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">No results found</p>
+                <p className="text-xs text-muted-foreground/70">Try adjusting your search</p>
               </div>
             ) : (
               <>
                 {/* Select All / Deselect All */}
                 {displayedOptions.length > 0 && (
-                  <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="flex items-center gap-2 pb-3 mb-2 border-b border-border/60">
                     <Checkbox
                       checked={displayedOptions.every((opt) => selectedValues.includes(opt.value))}
                       onCheckedChange={(checked) => {
@@ -272,8 +294,9 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                           deselectAllVisible();
                         }
                       }}
+                      className="data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
                     />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm font-semibold text-muted-foreground">
                       {displayedOptions.every((opt) => selectedValues.includes(opt.value))
                         ? 'Deselect all'
                         : 'Select all'}
@@ -282,21 +305,30 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                 )}
 
                 {/* Options */}
-                {displayedOptions.map((option) => (
-                  <div key={option.value} className="flex items-center gap-2 py-1">
-                    <Checkbox
-                      id={`filter-${option.value}`}
-                      checked={selectedValues.includes(option.value)}
-                      onCheckedChange={() => toggleValue(option.value)}
-                    />
-                    <label
-                      htmlFor={`filter-${option.value}`}
-                      className="text-sm cursor-pointer select-none flex-1"
+                {displayedOptions.map((option) => {
+                  const isChecked = selectedValues.includes(option.value);
+                  return (
+                    <div
+                      key={option.value}
+                      className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all hover:bg-muted/50 ${
+                        isChecked ? 'bg-[#31C7AD]/5 border border-[#31C7AD]/20' : ''
+                      }`}
                     >
-                      {option.label}
-                    </label>
-                  </div>
-                ))}
+                      <Checkbox
+                        id={`filter-${option.value}`}
+                        checked={isChecked}
+                        onCheckedChange={() => toggleValue(option.value)}
+                        className="data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
+                      />
+                      <label
+                        htmlFor={`filter-${option.value}`}
+                        className="text-sm cursor-pointer select-none flex-1 font-medium"
+                      >
+                        {option.label}
+                      </label>
+                    </div>
+                  );
+                })}
               </>
             )}
           </div>
@@ -304,20 +336,31 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
 
         {/* Info Message */}
         {hasMoreResults && (
-          <div className="px-6 py-3 border-t bg-muted/30">
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <Info className="h-4 w-4 mt-0.5 shrink-0" />
-              <p>
-                Showing <strong>{maxDisplayResults}</strong>/{totalResults} results. The display is
-                limited to {maxDisplayResults} results. Refine your search to find the desired entry.
-              </p>
+          <div className="px-8 py-4 border-t border-border/50 shrink-0 bg-gradient-to-r from-blue-50/50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/20">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50 shrink-0">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-blue-900 dark:text-blue-300">
+                  Showing <span className="font-semibold">{maxDisplayResults}</span> of{' '}
+                  <span className="font-semibold">{totalResults}</span> results
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
+                  Refine your search to find more entries
+                </p>
+              </div>
             </div>
           </div>
         )}
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t">
-          <Button variant="outline" onClick={handleCancel}>
+        <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            className="border-border/60 hover:bg-muted"
+          >
             Cancel
           </Button>
           <Button 
@@ -326,7 +369,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
               e.preventDefault();
               handleApply(e);
             }} 
-            className="bg-[#2063F0] hover:bg-[#1a54d8]"
+            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
           >
             Apply
           </Button>
