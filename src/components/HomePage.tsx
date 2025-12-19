@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { ScopeModal } from './ScopeModal';
+import { OnboardingRoutineBuilder } from './OnboardingRoutineBuilder/OnboardingRoutineBuilder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
@@ -50,6 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
+  const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
   const userName = 'Jérémie';
 
   // Mock onboarding tasks - in real app, these would come from API/state
@@ -76,7 +78,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       label: 'Create routine',
       action: 'Create routine',
       completed: false,
-      onClick: () => onNavigate?.('scope-routines'),
+      onClick: () => setRoutineBuilderOpen(true),
     },
     {
       id: 'manage-team',
@@ -325,6 +327,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         onSave={() => {
           setScopeModalOpen(false);
           setEditingScope(null);
+        }}
+      />
+
+      {/* Onboarding Routine Builder */}
+      <OnboardingRoutineBuilder
+        open={routineBuilderOpen}
+        onOpenChange={setRoutineBuilderOpen}
+        onComplete={(selectedRoutineIds) => {
+          // TODO: Create routines from selected IDs
+          // For now, navigate to scope-routines page
+          console.log('Selected routine IDs:', selectedRoutineIds);
+          onNavigate?.('scope-routines');
         }}
       />
     </div>
