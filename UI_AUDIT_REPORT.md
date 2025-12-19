@@ -211,6 +211,97 @@ Complete UI audit and revamp of the application with a focus on maintaining cons
     - Actions visible on hover
     - Blue hover states on action buttons
 
+### 12. **Home Page**
+**File:** `src/components/HomePage.tsx`
+
+**Status:** ✅ REDESIGNED
+
+**Changes:**
+- **Main Header:**
+  - Gradient background (teal/blue/5)
+  - Pelico logo in gradient container
+  - Title with gradient text
+  - Enhanced buttons with teal hover
+  - Better spacing (h-9, py-5)
+
+- **Welcome Section:**
+  - Larger title (text-3xl) with gradient
+  - Better subtitle (text-base)
+  - Improved spacing (mb-8)
+
+- **Main Hero Card:**
+  - Relative positioning with gradient overlay
+  - Sparkles icon in gradient container
+  - Enhanced typography (text-2xl)
+  - Better padding (p-8)
+  - Shadow and border improvements
+
+- **Pelico Onboarding Card:**
+  - Icon header with CheckCircle2 in teal gradient container
+  - Title with icon (text-xl font-bold)
+  - Enhanced task items:
+    - Better spacing (p-4)
+    - Teal background for completed tasks
+    - Border with hover states
+    - Shadow on hover
+    - Font-medium for text
+
+- **Pelico Academy Card:**
+  - Icon header with Sparkles in blue gradient container
+  - Title with icon (text-xl font-bold)
+  - Enhanced resource items:
+    - Icon containers with gradient backgrounds
+    - Better hover states
+    - Font-medium for text
+    - Blue badge for new items
+
+### 13. **Supply Page (Purchase Order Book)**
+**File:** `src/components/PurchaseOrderBookPage.tsx`
+
+**Status:** ✅ REDESIGNED
+
+**Changes:**
+- **Main Header:**
+  - Gradient background (teal/blue/5)
+  - Pelico logo in gradient container
+  - Title with gradient text
+  - Enhanced buttons with teal hover (gap-1.5)
+  - Better spacing (py-5)
+
+- **Tabs:**
+  - Font-semibold instead of font-medium
+  - Blue hover background (bg-[#2063F0]/5)
+  - Better visual feedback
+
+### 14. **Teams & Members Page**
+**File:** `src/components/UsersPage.tsx`
+
+**Status:** ✅ REDESIGNED
+
+**Changes:**
+- **Main Header:**
+  - Gradient background (teal/blue/5)
+  - Pelico logo in gradient container
+  - Title with gradient text
+  - Enhanced menu button with teal hover
+
+- **Hero Section:**
+  - Relative positioning with gradient overlay
+  - Users2 icon in gradient container (teal to blue)
+  - Enhanced title (text-2xl font-bold)
+  - Better padding (p-8)
+  - Shadow and border improvements
+
+- **Teams Section:**
+  - Icon header with Building2 in teal gradient container
+  - Section title and subtitle (text-xl font-bold)
+  - Create Team button with gradient (teal → blue)
+  - Premium empty state:
+    - Gradient background
+    - Icon in gradient container
+    - Better text hierarchy
+    - Gradient button
+
 ---
 
 ## 🎨 Design System Adherence
@@ -267,9 +358,10 @@ The following components were reviewed and deemed appropriate as-is:
 - ✅ **ThemeToggle** - Simple icon button, no update needed
 
 ### Page Components
-- ✅ **HomePage** - Dashboard layout, integrates modals correctly
-- ✅ **PurchaseOrderBookPage** - Complex table page, already has premium styling
+- ✅ **HomePage** - REDESIGNED with premium style
+- ✅ **PurchaseOrderBookPage (Supply)** - REDESIGNED with premium style
 - ✅ **ScopeAndRoutinesPage** - REDESIGNED with premium style
+- ✅ **UsersPage (Teams & Members)** - REDESIGNED with premium style
 
 ### Table Components
 - ✅ **ColumnHeader** - Functional table header, consistent styling
@@ -408,6 +500,7 @@ Both documents serve as:
 8. `docs: add comprehensive UI audit report`
 9. `design: revamp Routine Modal with premium UI`
 10. `design: revamp Scope & Routines page with premium UI`
+11. `design: revamp Home, Supply, and Teams & Members pages with premium UI`
 
 All changes are tracked, documented, and reversible if needed.
 
