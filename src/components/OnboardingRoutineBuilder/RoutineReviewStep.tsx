@@ -23,6 +23,7 @@ interface RoutineReviewStepProps {
   onRoutineToggle: (routineId: string, selected: boolean) => void;
   onComplete: () => void;
   onBack: () => void;
+  onClearAll: () => void;
 }
 
 export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
@@ -31,6 +32,7 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
   onRoutineToggle,
   onComplete,
   onBack,
+  onClearAll,
 }) => {
   const [showBrowseModal, setShowBrowseModal] = useState(false);
 
@@ -184,9 +186,18 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
         </ScrollArea>
 
         <div className="px-8 py-5 border-t bg-gradient-to-b from-muted/30 to-background flex items-center justify-between shrink-0">
-          <Button variant="outline" onClick={onBack} className="h-10 px-6">
-            Back
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={onBack} className="h-10 px-6">
+              Back
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={onClearAll}
+              className="h-10 px-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              Clear All
+            </Button>
+          </div>
           <div className="flex items-center gap-4">
             <p className="text-xs text-muted-foreground italic">
               You can customize these anytime

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { ScopeModal } from './ScopeModal';
 import { OnboardingRoutineBuilder } from './OnboardingRoutineBuilder/OnboardingRoutineBuilder';
@@ -47,13 +47,17 @@ interface AcademyResource {
   onClick: () => void;
 }
 
+const ONBOARDING_TASKS_STORAGE_KEY = 'pelico-onboarding-tasks-status';
+
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
-  const [onboardingTasks, setOnboardingTasks] = useState<OnboardingTask[]>([
+  
+  // Initialize tasks with default values
+  const getInitialTasks = (): OnboardingTask[] => [
     {
       id: 'complete-profile',
       label: 'Complete company profile',
@@ -85,8 +89,46 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       completed: false,
       onClick: () => onNavigate?.('users'),
     },
-  ]);
+  ];
+  
+  const [onboardingTasks, setOnboardingTasks] = useState<OnboardingTask[]>(getInitialTasks);
   const userName = 'Jérémie';
+
+  // Load task completion status from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ONBOARDING_TASKS_STORAGE_KEY);
+      if (stored) {
+        const completionStatus: Record<string, boolean> = JSON.parse(stored);
+        setOnboardingTasks((tasks) =>
+          tasks.map((task) => ({
+            ...task,
+            completed: completionStatus[task.id] ?? task.completed,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load onboarding tasks status:', error);
+    }
+  }, []);
+
+  // Helper to update task status and persist to localStorage
+  const updateTaskStatus = (taskId: string, completed: boolean) => {
+    setOnboardingTasks((tasks) => {
+      const updatedTasks = tasks.map((task) =>
+        task.id === taskId ? { ...task, completed } : task
+      );
+      
+      // Persist completion status to localStorage
+      const completionStatus: Record<string, boolean> = {};
+      updatedTasks.forEach((task) => {
+        completionStatus[task.id] = task.completed;
+      });
+      localStorage.setItem(ONBOARDING_TASKS_STORAGE_KEY, JSON.stringify(completionStatus));
+      
+      return updatedTasks;
+    });
+  };
 
 
   // Mock academy resources
@@ -369,17 +411,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             if (created.length > 0) {
               console.log(`Created ${created.length} routine${created.length > 1 ? 's' : ''} from onboarding${skipped > 0 ? ` (${skipped} skipped - already exist)` : ''}`);
               
-              // Mark onboarding task as completed
-              setOnboardingTasks((tasks) =>
-                tasks.map((task) =>
-                  task.id === 'create-routine'
-                    ? { ...task, completed: true }
-                    : task
-                )
-              );
+              // Mark onboarding task as completed and persist to localStorage
+              updateTaskStatus('create-routine', true);
               
-              // Navigate to scope-routines page to see the created routines
-              onNavigate?.('scope-routines');
+              // Navigate to scope-routines page after modal closes
+              // Small delay to ensure modal closing animation completes
+              setTimeout(() => {
+                onNavigate?.('scope-routines');
+              }, 300);
             } else {
               console.log('All selected routines already exist');
             }

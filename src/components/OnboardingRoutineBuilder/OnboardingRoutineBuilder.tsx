@@ -195,6 +195,18 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     setStep(3);
   };
 
+  // Handle clear all (reset wizard and go back to step 1)
+  const handleClearAll = () => {
+    setStep(1);
+    setSelectedPersonas([]);
+    setSelectedIntents([]);
+    setSelectedRoutineIds([]);
+    setScoredRoutines([]);
+    setIsUnsureOfRole(false);
+    setShowAllRoutines(false);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   // Handle close/reset
   const handleClose = (open: boolean) => {
     if (!open) {
@@ -310,6 +322,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
               onRoutineToggle={handleRoutineToggle}
               onComplete={handleComplete}
               onBack={handleBack}
+              onClearAll={handleClearAll}
             />
           )}
         </div>
