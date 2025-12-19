@@ -35,8 +35,8 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
   onSelect,
 }) => {
   return (
-    <ScrollArea className="flex-1 px-6 py-4">
-      <div className="space-y-4">
+    <ScrollArea className="flex-1 min-h-0">
+      <div className="px-6 py-4 space-y-4">
         <p className="text-sm text-muted-foreground mb-4">
           Select your primary role to get started with recommended routines
         </p>

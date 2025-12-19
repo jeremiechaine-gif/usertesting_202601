@@ -123,9 +123,9 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
 
   return (
     <>
-      <div className="flex flex-col h-full">
-        <ScrollArea className="flex-1 px-6 py-4">
-          <div className="space-y-6">
+      <div className="flex flex-col h-full min-h-0">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 py-4 space-y-6">
             {hasSelectedRoutines ? (
               <>
                 {renderRoutineGroup('Daily', groupedRoutines.Daily, 'Daily')}

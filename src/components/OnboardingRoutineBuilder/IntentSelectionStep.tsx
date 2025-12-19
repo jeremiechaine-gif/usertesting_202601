@@ -45,9 +45,9 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 px-6 py-4">
-        <div className="space-y-4">
+    <div className="flex flex-col h-full min-h-0">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-6 py-4 space-y-4">
           <p className="text-sm text-muted-foreground mb-4">
             Select one or more areas you want to improve. This helps us recommend the best routines for you.
           </p>

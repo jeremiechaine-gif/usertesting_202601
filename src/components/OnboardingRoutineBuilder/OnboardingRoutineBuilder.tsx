@@ -208,7 +208,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {step === 1 && (
             <RoleSelectionStep
               selectedPersona={selectedPersona}
