@@ -230,16 +230,16 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         </div>
 
         {/* Main Header */}
-        <div className="border-b bg-background">
-          <div className="px-6 py-4">
+        <div className="border-b bg-background shadow-sm">
+          <div className="px-6 py-5">
             {/* Top Header Row */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               {/* Left Side */}
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
                     variant="ghost" 
-                    className="h-8 px-3 gap-2"
+                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
@@ -253,7 +253,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                   className="w-6 h-6 shrink-0"
                 />
                 <h1 className="text-2xl font-bold tracking-tight">Supply</h1>
-                <div className="h-6 w-px bg-border" />
+                <div className="h-7 w-px bg-border/60" />
                 <PlanDropdown
                   selectedPlan={selectedPlan}
                   onPlanSelect={setSelectedPlan}
@@ -277,12 +277,12 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               </div>
 
               {/* Right Side */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
 
                 {/* Save/Download Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-muted/80 transition-colors">
                       <Save className="w-4 h-4" />
                       <ChevronDown className="w-3 h-3 ml-1" />
                     </Button>
@@ -296,7 +296,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 {/* Link Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 px-2">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-muted/80 transition-colors">
                       <LinkIcon className="w-4 h-4" />
                       <ChevronDown className="w-3 h-3 ml-1" />
                     </Button>
@@ -307,10 +307,10 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <div className="h-6 w-px bg-border" />
+                <div className="h-6 w-px bg-border/60" />
 
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
@@ -318,29 +318,29 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="h-auto p-0 bg-transparent border-b border-transparent">
+              <TabsList className="h-auto p-0 bg-transparent border-b border-border/50">
                 <TabsTrigger 
                   value="purchase-order-book" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
                 >
                   Purchase Order Book
                 </TabsTrigger>
                 <TabsTrigger 
                   value="line-of-balance" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
                 >
                   Line of Balance
                 </TabsTrigger>
                 <TabsTrigger 
                   value="planning" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
                 >
                   Planning
-                  <Badge variant="secondary" className="ml-2 text-xs">Beta</Badge>
+                  <Badge variant="secondary" className="ml-2 text-xs bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">Beta</Badge>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="opportunities" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] rounded-none px-4 py-2"
+                  className="data-[state=active]:bg-transparent data-[state=active]:text-[#2063F0] data-[state=active]:border-b-2 data-[state=active]:border-[#2063F0] data-[state=active]:shadow-sm hover:bg-muted/30 transition-all rounded-none px-5 py-2.5 text-sm font-medium"
                 >
                   Opportunities
                 </TabsTrigger>
@@ -350,7 +350,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         </div>
 
         {/* Table Controls */}
-        <div className="px-6 py-3.5 bg-muted/50 border-b flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-b shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
             <SortingAndFiltersPopover
               sorting={sorting}
@@ -369,7 +369,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             <Button 
               variant="outline" 
               size="sm"
-              className="gap-2 h-auto px-3 py-1.5"
+              className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all"
               onClick={() => {
                 // TODO: Open search functionality
                 setGlobalFilter('');
@@ -381,7 +381,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               selectedGroupBy={selectedGroupBy}
               onGroupBySelect={setSelectedGroupBy}
             />
-            <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5">Columns</Button>
+            <Button variant="outline" size="sm" className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all">Columns</Button>
           </div>
         </div>
 
@@ -389,11 +389,11 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         <div className="flex-1 overflow-auto px-6 pb-4">
           <div className="inline-block min-w-full align-middle">
             <table
-              className="min-w-full divide-y divide-[var(--color-table-border)] border-collapse"
+              className="min-w-full divide-y divide-border/60 border-collapse"
               style={{ width: table.getCenterTotalSize() || '100%' }}
             >
               {/* Header */}
-              <thead className="bg-muted/50 sticky top-0 z-10">
+              <thead className="bg-muted/40 sticky top-0 z-10 shadow-sm border-b border-border/60">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
@@ -403,7 +403,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                         ? 'bg-green-50 dark:bg-green-950/20' 
                         : headerTint === 'purple'
                         ? 'bg-purple-50 dark:bg-purple-950/20'
-                        : 'bg-muted/50';
+                        : 'bg-muted/40';
                       
                       const colSpan = header.colSpan || 1;
                       const isGroupHeader = header.subHeaders && header.subHeaders.length > 0;
@@ -413,10 +413,10 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           key={header.id}
                           colSpan={colSpan}
                           className={cn(
-                            'px-4 text-left text-sm font-medium text-muted-foreground border-r transition-colors',
-                            isGroupHeader ? 'py-1.5' : 'py-3',
+                            'px-4 text-left text-sm font-medium text-muted-foreground border-r border-border/40 transition-colors',
+                            isGroupHeader ? 'py-1.5' : 'py-3.5',
                             bgColor,
-                            header.column.getCanSort() && !isGroupHeader && 'hover:bg-muted cursor-pointer'
+                            header.column.getCanSort() && !isGroupHeader && 'hover:bg-[#31C7AD]/10 cursor-pointer'
                           )}
                           style={{
                             width: header.getSize(),
@@ -468,21 +468,21 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               </thead>
 
               {/* Body */}
-              <tbody className="bg-background divide-y">
+              <tbody className="bg-background divide-y divide-border/40">
                 {table.getRowModel().rows.map((row, index) => (
                   <tr
                     key={row.id}
                     className={cn(
-                      'transition-colors duration-150',
-                      index % 2 === 0 ? 'bg-background' : 'bg-muted/30',
-                      'hover:bg-muted',
-                      row.getIsSelected() && 'bg-primary/5 hover:bg-primary/10'
+                      'transition-all duration-200',
+                      index % 2 === 0 ? 'bg-background' : 'bg-muted/20',
+                      'hover:bg-[#31C7AD]/5 hover:shadow-sm',
+                      row.getIsSelected() && 'bg-[#2063F0]/5 hover:bg-[#2063F0]/10'
                     )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
                         key={cell.id}
-                        className="px-4 py-3 text-sm border-r"
+                        className="px-4 py-3 text-sm border-r border-border/40"
                         style={{ width: cell.column.getSize() }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -497,10 +497,10 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-4 bg-background border-t flex items-center justify-between">
+        <div className="px-6 py-4 bg-gradient-to-t from-muted/30 to-background border-t shadow-inner flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <span>Σ</span>
+            <Button variant="ghost" size="sm" className="gap-2 hover:bg-accent transition-colors">
+              <span className="text-base">Σ</span>
               Show Page Totals
             </Button>
           </div>
@@ -512,7 +512,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 value={String(table.getState().pagination.pageSize)}
                 onValueChange={(value) => table.setPageSize(Number(value))}
               >
-                <SelectTrigger className="w-[100px]">
+                <SelectTrigger className="w-[100px] border-border/60 hover:border-[#31C7AD]/40 transition-colors">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -524,21 +524,22 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               </Select>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40">
               <span className="text-sm font-medium">
                 {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
                 {Math.min(
                   (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                   table.getFilteredRowModel().rows.length
                 )}{' '}
-                of <span className="font-semibold">{table.getFilteredRowModel().rows.length}</span>
+                of <span className="font-semibold text-[#2063F0]">{table.getFilteredRowModel().rows.length}</span>
               </span>
             </div>
             
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
+            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border/60 shadow-sm">
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
@@ -547,17 +548,19 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="px-3 text-sm font-medium text-foreground min-w-[80px] text-center">
+              <span className="px-3 text-sm font-semibold text-foreground min-w-[80px] text-center">
                 {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
               >
@@ -566,6 +569,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
               >
