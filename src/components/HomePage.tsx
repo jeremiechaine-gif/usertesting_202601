@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
 import { type Scope } from '@/lib/scopes';
+import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
 import { 
   Bell, 
   Menu, 
@@ -52,10 +53,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
-  const userName = 'Jérémie';
-
-  // Mock onboarding tasks - in real app, these would come from API/state
-  const [onboardingTasks] = useState<OnboardingTask[]>([
+  const [onboardingTasks, setOnboardingTasks] = useState<OnboardingTask[]>([
     {
       id: 'complete-profile',
       label: 'Complete company profile',
@@ -88,6 +86,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       onClick: () => onNavigate?.('users'),
     },
   ]);
+  const userName = 'Jérémie';
+
 
   // Mock academy resources
   const academyResources: AcademyResource[] = [
@@ -335,10 +335,28 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         open={routineBuilderOpen}
         onOpenChange={setRoutineBuilderOpen}
         onComplete={(selectedRoutineIds) => {
-          // TODO: Create routines from selected IDs
-          // For now, navigate to scope-routines page
-          console.log('Selected routine IDs:', selectedRoutineIds);
-          onNavigate?.('scope-routines');
+          // Create routines from selected library entry IDs
+          if (selectedRoutineIds.length > 0) {
+            const { created, skipped } = createRoutinesFromLibraryEntries(selectedRoutineIds);
+            
+            if (created.length > 0) {
+              console.log(`Created ${created.length} routine${created.length > 1 ? 's' : ''} from onboarding${skipped > 0 ? ` (${skipped} skipped - already exist)` : ''}`);
+              
+              // Mark onboarding task as completed
+              setOnboardingTasks((tasks) =>
+                tasks.map((task) =>
+                  task.id === 'create-routine'
+                    ? { ...task, completed: true }
+                    : task
+                )
+              );
+              
+              // Navigate to scope-routines page to see the created routines
+              onNavigate?.('scope-routines');
+            } else {
+              console.log('All selected routines already exist');
+            }
+          }
         }}
       />
     </div>
