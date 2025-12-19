@@ -31,6 +31,10 @@ import {
   Trash2, 
   Menu,
   Building2,
+  Users2,
+  Shield,
+  Layers,
+  FolderKanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -196,16 +200,34 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-4xl">
+          <div className="max-w-6xl">
+            {/* Hero Section */}
+            <div className="mb-8 rounded-lg p-6 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-800">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-gray-900/80">
+                  <Users2 className="h-6 w-6 text-[#31C7AD]" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-semibold mb-2">Manage your teams and members</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl">
+                    Organize users into teams to share routines and collaborate effectively. 
+                    Assign scopes and routines to streamline workflows and ensure everyone has access to the right tools.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Teams Section */}
             <div className="flex flex-col min-w-0">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-2">Teams</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Organize users into teams to share routines and collaborate.
-                </p>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold mb-1">Teams</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {sortedTeams.length} {sortedTeams.length === 1 ? 'team' : 'teams'} • {users.length} {users.length === 1 ? 'member' : 'members'}
+                  </p>
+                </div>
                 {isManager && sortedTeams.length > 0 && (
-                  <Button variant="outline" onClick={handleCreateTeam} className="gap-2">
+                  <Button onClick={handleCreateTeam} className="gap-2">
                     <Plus className="h-4 w-4" />
                     Create Team
                   </Button>
@@ -213,243 +235,287 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
               </div>
 
               {sortedTeams.length === 0 ? (
-                <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <div className="border-2 border-dashed rounded-xl p-16 text-center bg-muted/20">
+                  <div className="inline-flex p-4 rounded-full bg-muted mb-4">
+                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Create your first team to organize users
+                  <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Create your first team to organize users and enable collaboration across your organization
                   </p>
                   {isManager && (
-                    <Button variant="outline" onClick={handleCreateTeam} className="gap-2">
+                    <Button onClick={handleCreateTeam} className="gap-2">
                       <Plus className="h-4 w-4" />
                       Create Team
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {sortedTeams.map((team) => {
                     const teamUsers = users.filter(u => u.teamId === team.id);
+                    const isAdminTeam = team.name === 'Admin';
                     return (
                       <div
                         key={team.id}
-                        className="group border rounded-lg p-4 hover:shadow-md transition-shadow bg-background"
+                        className={cn(
+                          "group border rounded-xl overflow-hidden transition-all",
+                          isAdminTeam 
+                            ? "bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-900/10 border-purple-200 dark:border-purple-800" 
+                            : "bg-background hover:shadow-lg hover:border-[#31C7AD]/30"
+                        )}
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold truncate">{team.name}</h3>
-                            {team.description && (
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                {team.description}
-                              </p>
+                        {/* Team Header */}
+                        <div className={cn(
+                          "px-5 py-4 border-b",
+                          isAdminTeam ? "bg-purple-50/50 dark:bg-purple-950/20" : "bg-muted/30"
+                        )}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <div className={cn(
+                                "p-2 rounded-lg shrink-0",
+                                isAdminTeam 
+                                  ? "bg-purple-100 dark:bg-purple-900/30" 
+                                  : "bg-[#31C7AD]/10"
+                              )}>
+                                {isAdminTeam ? (
+                                  <Shield className={cn("h-5 w-5", isAdminTeam ? "text-purple-600 dark:text-purple-400" : "text-[#31C7AD]")} />
+                                ) : (
+                                  <Building2 className="h-5 w-5 text-[#31C7AD]" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base truncate mb-1">{team.name}</h3>
+                                {team.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {team.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {teamUsers.length} {teamUsers.length === 1 ? 'member' : 'members'}
+                                  </Badge>
+                                  {isAdminTeam && (
+                                    <Badge className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                      System
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {isManager && (
+                              <div className="flex items-center gap-1 ml-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEditTeam(team)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteTeam(team.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             )}
                           </div>
-                          {isManager && (
-                            <div className="flex items-center gap-1 ml-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleEditTeam(team)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteTeam(team.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          )}
                         </div>
                         
                         {/* Team Members */}
-                        {isManager && (
-                          <div className="mt-3 mb-2">
+                        <div className="px-5 py-4">
+                          {isManager && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleCreateUser(team.id)}
-                              className="gap-2 h-8 text-xs"
+                              className="gap-2 mb-3"
                             >
-                              <Plus className="h-3 w-3" />
-                              Add User
+                              <Plus className="h-4 w-4" />
+                              Add Member
                             </Button>
-                          </div>
-                        )}
-                        {teamUsers.length > 0 ? (
-                          <div className="mt-3 space-y-2">
-                            {teamUsers.map((user) => {
-                              // Get user's team
-                              const userTeam = user.teamId ? teams.find(t => t.id === user.teamId) : null;
-                              
-                              // Get scopes accessible to user (individual + team)
-                              const allScopes = getScopes();
-                              const individualScopeIds = user.assignedScopeIds || [];
-                              const teamScopeIds = userTeam?.assignedScopeIds || [];
-                              const accessibleScopeIds = [...new Set([...individualScopeIds, ...teamScopeIds])];
-                              const accessibleScopes = allScopes.filter(s => accessibleScopeIds.includes(s.id));
-                              
-                              // Get routines accessible to user (individual + team)
-                              const allRoutines = getRoutines();
-                              const individualRoutineIds = user.assignedRoutineIds || [];
-                              const teamRoutineIds = userTeam?.assignedRoutineIds || [];
-                              const accessibleRoutineIds = [...new Set([...individualRoutineIds, ...teamRoutineIds])];
-                              const accessibleRoutines = allRoutines.filter(r => 
-                                accessibleRoutineIds.includes(r.id) || r.teamId === userTeam?.id
-                              );
-                              
-                              return (
-                              <div
-                                key={user.id}
-                                className={cn(
-                                  'rounded-lg p-3 hover:shadow-sm transition-shadow bg-muted/50 cursor-pointer',
-                                  user.id === currentUser?.id && 'ring-1 ring-[#2063F0]'
-                                )}
-                                onClick={() => {
-                                  setSelectedUserForScopesRoutines(user);
-                                  setUserScopesRoutinesModalOpen(true);
-                                }}
-                              >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-semibold text-sm truncate">{user.name}</h4>
-                                      {user.id === currentUser?.id && (
-                                        <Badge variant="outline" className="text-xs shrink-0">
-                                          You
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                                    {user.role === 'manager' && (
-                                      <Badge 
-                                        variant="default" 
-                                        className="text-xs mt-1"
-                                      >
-                                        Manager
-                                      </Badge>
-                                    )}
-                                    
-                                    {/* Scopes and Routines Sections - Horizontal Layout */}
-                                    <div className="flex items-start gap-4 mt-2">
-                                      {/* Scopes Section */}
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-muted-foreground mb-1">Scopes</p>
-                                        {accessibleScopes.length > 0 ? (
-                                          <div className="flex flex-wrap items-center gap-1">
-                                            {accessibleScopes.slice(0, 2).map((scope) => (
-                                              <Badge 
-                                                key={scope.id}
-                                                variant="secondary" 
-                                                className="text-xs"
-                                                title={scope.name}
-                                              >
-                                                {scope.name.length > 12 ? `${scope.name.substring(0, 12)}...` : scope.name}
-                                              </Badge>
-                                            ))}
-                                            {accessibleScopes.length > 2 && (
-                                              <Badge variant="outline" className="text-xs">
-                                                +{accessibleScopes.length - 2}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <Button
-                                            variant="default"
-                                            size="sm"
-                                            className="h-6 px-2 text-xs"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedUserForScopesRoutines(user);
-                                              setUserScopesRoutinesModalOpen(true);
-                                            }}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            Add
-                                          </Button>
-                                        )}
-                                      </div>
-                                      
-                                      {/* Routines Section */}
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-muted-foreground mb-1">Routines</p>
-                                        {accessibleRoutines.length > 0 ? (
-                                          <div className="flex flex-wrap items-center gap-1">
-                                            {accessibleRoutines.slice(0, 2).map((routine) => (
-                                              <Badge 
-                                                key={routine.id}
-                                                variant="secondary" 
-                                                className="text-xs"
-                                                title={routine.name}
-                                              >
-                                                {routine.name.length > 12 ? `${routine.name.substring(0, 12)}...` : routine.name}
-                                              </Badge>
-                                            ))}
-                                            {accessibleRoutines.length > 2 && (
-                                              <Badge variant="outline" className="text-xs">
-                                                +{accessibleRoutines.length - 2}
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <Button
-                                            variant="default"
-                                            size="sm"
-                                            className="h-6 px-2 text-xs"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedUserForScopesRoutines(user);
-                                              setUserScopesRoutinesModalOpen(true);
-                                            }}
-                                          >
-                                            <Plus className="h-3 w-3 mr-1" />
-                                            Add
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {isManager && (
-                                    <div className="flex items-center gap-1 ml-2 shrink-0">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEditUser(user);
-                                        }}
-                                      >
-                                        <Edit className="h-3 w-3" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-destructive hover:text-destructive"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteUser(user.id);
-                                        }}
-                                        disabled={user.id === currentUser?.id}
-                                      >
-                                        <Trash2 className="h-3 w-3" />
-                                      </Button>
-                                    </div>
+                          )}
+                          {teamUsers.length > 0 ? (
+                            <div className="space-y-3">
+                              {teamUsers.map((user) => {
+                                // Get user's team
+                                const userTeam = user.teamId ? teams.find(t => t.id === user.teamId) : null;
+                                
+                                // Get scopes accessible to user (individual + team)
+                                const allScopes = getScopes();
+                                const individualScopeIds = user.assignedScopeIds || [];
+                                const teamScopeIds = userTeam?.assignedScopeIds || [];
+                                const accessibleScopeIds = [...new Set([...individualScopeIds, ...teamScopeIds])];
+                                const accessibleScopes = allScopes.filter(s => accessibleScopeIds.includes(s.id));
+                                
+                                // Get routines accessible to user (individual + team)
+                                const allRoutines = getRoutines();
+                                const individualRoutineIds = user.assignedRoutineIds || [];
+                                const teamRoutineIds = userTeam?.assignedRoutineIds || [];
+                                const accessibleRoutineIds = [...new Set([...individualRoutineIds, ...teamRoutineIds])];
+                                const accessibleRoutines = allRoutines.filter(r => 
+                                  accessibleRoutineIds.includes(r.id) || r.teamId === userTeam?.id
+                                );
+                                
+                                return (
+                                <div
+                                  key={user.id}
+                                  className={cn(
+                                    'rounded-lg p-4 transition-all bg-muted/30 hover:bg-muted/50 cursor-pointer border border-transparent hover:border-[#31C7AD]/20',
+                                    user.id === currentUser?.id && 'ring-2 ring-[#31C7AD] ring-offset-2'
                                   )}
+                                  onClick={() => {
+                                    setSelectedUserForScopesRoutines(user);
+                                    setUserScopesRoutinesModalOpen(true);
+                                  }}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <h4 className="font-semibold text-sm truncate">{user.name}</h4>
+                                        {user.id === currentUser?.id && (
+                                          <Badge variant="outline" className="text-xs shrink-0 bg-[#31C7AD]/10 border-[#31C7AD] text-[#31C7AD]">
+                                            You
+                                          </Badge>
+                                        )}
+                                        {user.role === 'manager' && (
+                                          <Badge className="text-xs shrink-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                            Manager
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground truncate mb-3">{user.email}</p>
+                                      
+                                      {/* Scopes and Routines Sections - Horizontal Layout */}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {/* Scopes Section */}
+                                        <div className="flex flex-col gap-2">
+                                          <div className="flex items-center gap-1.5">
+                                            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <p className="text-xs font-medium text-muted-foreground">Scopes</p>
+                                          </div>
+                                          {accessibleScopes.length > 0 ? (
+                                            <div className="flex flex-wrap items-center gap-1">
+                                              {accessibleScopes.slice(0, 2).map((scope) => (
+                                                <Badge 
+                                                  key={scope.id}
+                                                  variant="secondary" 
+                                                  className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"
+                                                  title={scope.name}
+                                                >
+                                                  {scope.name.length > 10 ? `${scope.name.substring(0, 10)}...` : scope.name}
+                                                </Badge>
+                                              ))}
+                                              {accessibleScopes.length > 2 && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  +{accessibleScopes.length - 2}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <Button
+                                              variant="default"
+                                              size="sm"
+                                              className="h-7 px-2 text-xs w-fit"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedUserForScopesRoutines(user);
+                                                setUserScopesRoutinesModalOpen(true);
+                                              }}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add
+                                            </Button>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Routines Section */}
+                                        <div className="flex flex-col gap-2">
+                                          <div className="flex items-center gap-1.5">
+                                            <FolderKanban className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <p className="text-xs font-medium text-muted-foreground">Routines</p>
+                                          </div>
+                                          {accessibleRoutines.length > 0 ? (
+                                            <div className="flex flex-wrap items-center gap-1">
+                                              {accessibleRoutines.slice(0, 2).map((routine) => (
+                                                <Badge 
+                                                  key={routine.id}
+                                                  variant="secondary" 
+                                                  className="text-xs bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"
+                                                  title={routine.name}
+                                                >
+                                                  {routine.name.length > 10 ? `${routine.name.substring(0, 10)}...` : routine.name}
+                                                </Badge>
+                                              ))}
+                                              {accessibleRoutines.length > 2 && (
+                                                <Badge variant="outline" className="text-xs">
+                                                  +{accessibleRoutines.length - 2}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          ) : (
+                                            <Button
+                                              variant="default"
+                                              size="sm"
+                                              className="h-7 px-2 text-xs w-fit"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedUserForScopesRoutines(user);
+                                                setUserScopesRoutinesModalOpen(true);
+                                              }}
+                                            >
+                                              <Plus className="h-3 w-3 mr-1" />
+                                              Add
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {isManager && (
+                                      <div className="flex items-center gap-1 ml-3 shrink-0">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditUser(user);
+                                          }}
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-destructive hover:text-destructive"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteUser(user.id);
+                                          }}
+                                          disabled={user.id === currentUser?.id}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="mt-3 text-sm text-muted-foreground text-center py-2">
-                            No members in this team
-                          </div>
-                        )}
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-lg border-2 border-dashed p-8 text-center">
+                              <Users2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                              <p className="text-sm text-muted-foreground">
+                                No members in this team yet
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
