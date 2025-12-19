@@ -28,6 +28,8 @@ import {
   Search,
   ChevronDown,
   Save,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ColumnDef, SortingState, ColumnFiltersState } from '@tanstack/react-table';
@@ -490,26 +492,36 @@ const MainView: React.FC<MainViewProps> = ({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <h3 className="font-semibold text-sm">Sorting & Filters</h3>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Routine Section */}
-      <div className="px-4 py-3 border-b bg-muted/30 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs text-muted-foreground shrink-0">Active Routine:</span>
-          <span className="text-sm font-medium truncate max-w-[600px]" title={selectedRoutine?.name || 'None'}>
-            {selectedRoutine?.name || 'None'}
-          </span>
+      {/* Hero Header with Gradient */}
+      <div className="relative shrink-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+        <div className="relative px-6 pt-6 pb-5 border-b border-border/50">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                <Filter className="h-4 w-4 text-white" />
+              </div>
+              <h3 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Sorting & Filters
+              </h3>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          {/* Routine Info */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/60 bg-background/50">
+            <Zap className="h-3.5 w-3.5 text-[#2063F0] shrink-0" />
+            <span className="text-xs font-semibold text-muted-foreground shrink-0">Active Routine:</span>
+            <span className="text-sm font-semibold truncate max-w-[600px]" title={selectedRoutine?.name || 'None'}>
+              {selectedRoutine?.name || <span className="text-muted-foreground">None</span>}
+            </span>
+          </div>
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-4 min-h-0">
-        <div className="py-4 space-y-4 min-w-0">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-6 py-5 space-y-5 min-w-0">
           <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full min-w-0">
             <SortingSection
               draftSorting={draftSorting}
@@ -538,9 +550,14 @@ const MainView: React.FC<MainViewProps> = ({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/30 shrink-0 gap-2">
+      <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/20 shrink-0 gap-3">
         <div className="flex items-center gap-2 flex-1">
-          <Button variant="outline" size="sm" onClick={onClose}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="h-9 border-border/60 hover:bg-muted"
+          >
             Cancel
           </Button>
           <Button
@@ -548,7 +565,7 @@ const MainView: React.FC<MainViewProps> = ({
             size="sm"
             onClick={onClearAll}
             disabled={!hasAnyActive}
-            className="text-muted-foreground"
+            className="h-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           >
             Clear all
           </Button>
@@ -556,12 +573,12 @@ const MainView: React.FC<MainViewProps> = ({
         <div className="flex items-center gap-2">
           {/* Segmented Control: Default action based on routine status */}
           {(onSaveAsRoutine || onUpdateRoutine) && (
-            <div className="flex items-center">
+            <div className="flex items-center shadow-sm">
               {/* Main Button (left segment) - Default action */}
               <Button 
                 variant="secondary" 
                 size="sm" 
-                className="rounded-r-none border-r"
+                className="rounded-r-none border-r h-9 border-border/60"
                 disabled={!hasUnsavedChanges}
                 onClick={() => {
                   onSave();
@@ -572,6 +589,7 @@ const MainView: React.FC<MainViewProps> = ({
                   }
                 }}
               >
+                <Sparkles className="mr-2 h-3.5 w-3.5" />
                 {selectedRoutineId ? 'Update routine' : 'Create routine'}
               </Button>
               {/* Dropdown Trigger (right segment) */}
@@ -580,7 +598,7 @@ const MainView: React.FC<MainViewProps> = ({
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    className="rounded-l-none px-2"
+                    className="rounded-l-none px-2 h-9"
                     disabled={!hasUnsavedChanges}
                   >
                     <ChevronDown className="h-4 w-4" />
@@ -621,7 +639,7 @@ const MainView: React.FC<MainViewProps> = ({
             size="sm" 
             onClick={onSave} 
             disabled={!hasDraftChanges} 
-            className="bg-[#2063F0] hover:bg-[#1a54d8]"
+            className="h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
           >
             Apply
           </Button>

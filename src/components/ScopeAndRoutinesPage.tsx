@@ -41,7 +41,9 @@ import {
   Menu,
   ChevronDown,
   Link as LinkIcon,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -548,24 +550,36 @@ export const ScopeAndRoutinesPage: React.FC<{
 
       {/* View Selection Modal */}
       <Dialog open={viewSelectionModalOpen} onOpenChange={setViewSelectionModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Create a new routine</DialogTitle>
-            <DialogDescription>
-              Choose a view to configure your routine settings
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+          {/* Hero Header */}
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+            <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  Create a new routine
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Choose a view to configure your routine settings
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="px-8 py-6">
             <button
               onClick={() => handleSelectView('supply')}
-              className="w-full group relative rounded-xl border-2 border-border hover:border-[#31C7AD] bg-background p-6 transition-all hover:shadow-lg"
+              className="w-full group relative rounded-xl border-2 border-border/60 hover:border-[#31C7AD] bg-background p-6 transition-all hover:shadow-lg"
             >
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-lg bg-[#31C7AD]/10 group-hover:bg-[#31C7AD]/20 transition-colors shrink-0">
+                <div className="p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 group-hover:from-[#31C7AD]/30 group-hover:to-[#31C7AD]/20 transition-colors shrink-0 shadow-sm">
                   <Settings className="h-6 w-6 text-[#31C7AD]" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-lg mb-1">Supply</h3>
+                  <h3 className="font-semibold text-lg mb-1 group-hover:text-[#31C7AD] transition-colors">Supply</h3>
                   <p className="text-sm text-muted-foreground">
                     Configure filters, sorting, and display options for your supply chain data
                   </p>
@@ -574,8 +588,13 @@ export const ScopeAndRoutinesPage: React.FC<{
               </div>
             </button>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewSelectionModalOpen(false)}>
+
+          <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20">
+            <Button
+              variant="outline"
+              onClick={() => setViewSelectionModalOpen(false)}
+              className="border-border/60 hover:bg-muted"
+            >
               Cancel
             </Button>
           </DialogFooter>
@@ -616,37 +635,57 @@ export const ScopeAndRoutinesPage: React.FC<{
 
       {/* Share Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share {shareType === 'scope' ? 'Scope' : 'Routine'}</DialogTitle>
-            <DialogDescription>
-              Share "{shareItemName}" with others by copying the link below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="share-link">Share Link</Label>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          {/* Hero Header */}
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+            <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                  <Share2 className="h-5 w-5 text-white" />
+                </div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  Share {shareType === 'scope' ? 'Scope' : 'Routine'}
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Share "{shareItemName}" with others by copying the link below
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="px-8 py-6 space-y-3">
+            <Label htmlFor="share-link" className="text-sm font-semibold">Share Link</Label>
             <div className="flex gap-2">
               <Input
                 id="share-link"
                 value={shareLink}
                 readOnly
-                className="flex-1 font-mono text-sm"
+                className="flex-1 font-mono text-sm h-10 border-border/60 bg-muted/30"
               />
               <Button
                 variant="outline"
                 size="icon"
                 onClick={copyToClipboard}
-                className="shrink-0"
+                className="shrink-0 h-10 w-10 border-border/60 hover:bg-[#31C7AD]/10 hover:border-[#31C7AD] hover:text-[#31C7AD]"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
+
+          <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShareDialogOpen(false)}
+              className="border-border/60 hover:bg-muted"
+            >
               Close
             </Button>
-            <Button onClick={copyToClipboard} className="gap-2">
+            <Button
+              onClick={copyToClipboard}
+              className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+            >
               <CheckCircle2 className="h-4 w-4" />
               Copy Link
             </Button>

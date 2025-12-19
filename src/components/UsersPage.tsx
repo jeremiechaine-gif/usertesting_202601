@@ -623,27 +623,40 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{user ? 'Edit User' : 'Create New User'}</DialogTitle>
-          <DialogDescription>
-            {user ? 'Update user details' : 'Add a new user to the system'}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        {/* Hero Header with Gradient */}
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
+          <DialogHeader className="relative px-8 pt-8 pb-6 border-b border-border/50">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                {user ? 'Edit User' : 'Create New User'}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {user ? 'Update user details' : 'Add a new user to the system'}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="px-8 py-6 space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="user-name">
+            <Label htmlFor="user-name" className="text-sm font-semibold">
               Name <span className="text-destructive">*</span>
             </Label>
             <Input
               id="user-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter user name"
+              placeholder="Enter user name..."
+              className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="user-email">
+            <Label htmlFor="user-email" className="text-sm font-semibold">
               Email <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -651,13 +664,14 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter user email"
+              placeholder="Enter user email..."
+              className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="user-role">Role</Label>
+            <Label htmlFor="user-role" className="text-sm font-semibold">Role</Label>
             <Select value={role} onValueChange={(value: 'manager' | 'user') => setRole(value)}>
-              <SelectTrigger id="user-role">
+              <SelectTrigger id="user-role" className="h-10 border-border/60 hover:border-[#2063F0]/30 transition-colors">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -667,12 +681,14 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="user-team">Team (optional)</Label>
+            <Label htmlFor="user-team" className="text-sm font-semibold">
+              Team <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            </Label>
             <Select 
               value={teamId || ''} 
               onValueChange={(value) => setTeamId(value || null)}
             >
-              <SelectTrigger id="user-team">
+              <SelectTrigger id="user-team" className="h-10 border-border/60 hover:border-[#2063F0]/30 transition-colors">
                 <SelectValue placeholder="No team" />
               </SelectTrigger>
               <SelectContent>
@@ -686,11 +702,20 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
             </Select>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+
+        <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="border-border/60 hover:bg-muted"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button
+            onClick={handleSave}
+            disabled={!name.trim() || !email.trim()}
+            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {user ? 'Update' : 'Create'}
           </Button>
         </DialogFooter>
