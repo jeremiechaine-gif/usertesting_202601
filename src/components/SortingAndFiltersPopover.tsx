@@ -27,8 +27,6 @@ import {
   Filter,
   Search,
   ChevronDown,
-  Save,
-  Sparkles,
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -589,7 +587,6 @@ const MainView: React.FC<MainViewProps> = ({
                   }
                 }}
               >
-                <Sparkles className="mr-2 h-3.5 w-3.5" />
                 {selectedRoutineId ? 'Update routine' : 'Create routine'}
               </Button>
               {/* Dropdown Trigger (right segment) */}
@@ -613,7 +610,6 @@ const MainView: React.FC<MainViewProps> = ({
                       }}
                       disabled={!hasUnsavedChanges}
                     >
-                      <Save className="mr-2 h-4 w-4" />
                       Update current routine
                     </DropdownMenuItem>
                   )}
@@ -625,7 +621,6 @@ const MainView: React.FC<MainViewProps> = ({
                       }}
                       disabled={!hasUnsavedChanges}
                     >
-                      <Save className="mr-2 h-4 w-4" />
                       {selectedRoutineId ? 'Save as new routine' : 'Create routine'}
                     </DropdownMenuItem>
                   )}
