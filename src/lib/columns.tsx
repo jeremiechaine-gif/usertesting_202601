@@ -84,7 +84,7 @@ const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
     1: { color: '#EFF6FF', textColor: '#1E88E5', label: '1' }, // Soft blue (info)
     2: { color: '#FFF3E0', textColor: '#FB8C00', label: '2' }, // Warm amber (caution)
     3: { color: '#FFE9E5', textColor: '#F4511E', label: '3' }, // Coral (warning)
-    4: { color: '#263238', textColor: '#FFFFFF', label: '4' }, // Charcoal (critical)
+    4: { color: '#455A64', textColor: '#FFFFFF', label: '4' }, // Blue-grey (critical, less harsh)
   };
   
   const config = badgeConfig[level as keyof typeof badgeConfig] || badgeConfig[1];
