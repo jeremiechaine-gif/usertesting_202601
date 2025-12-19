@@ -6,7 +6,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { User, ChevronRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User, ChevronRight, List } from 'lucide-react';
 import type { Persona } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
 
@@ -28,11 +29,17 @@ const ROLES: Persona[] = [
 interface RoleSelectionStepProps {
   selectedPersona: Persona | null;
   onSelect: (persona: Persona) => void;
+  isUnsure: boolean;
+  onUnsureChange: (unsure: boolean) => void;
+  onSkipToAll: () => void;
 }
 
 export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
   selectedPersona,
   onSelect,
+  isUnsure,
+  onUnsureChange,
+  onSkipToAll,
 }) => {
   return (
     <ScrollArea className="flex-1 min-h-0">
@@ -55,10 +62,17 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
             return (
               <button
                 key={role}
-                onClick={() => onSelect(role)}
+                onClick={() => {
+                  onSelect(role);
+                  if (isUnsure) {
+                    onUnsureChange(false);
+                  }
+                }}
+                disabled={isUnsure}
                 className={cn(
                   'group relative flex items-center justify-between p-4 rounded-xl transition-all text-left',
                   'border-2 hover:shadow-md',
+                  isUnsure && 'opacity-50 cursor-not-allowed',
                   isSelected
                     ? 'border-[#2063F0] bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5 shadow-lg shadow-[#2063F0]/10'
                     : 'border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent'
@@ -97,6 +111,48 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
               </button>
             );
           })}
+        </div>
+
+        {/* Option B: "I'm not sure yet" checkbox */}
+        <div className="mt-6 pt-6 border-t border-border/50">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+            <Checkbox
+              id="unsure-role"
+              checked={isUnsure}
+              onCheckedChange={(checked) => {
+                onUnsureChange(checked === true);
+                if (checked) {
+                  onSelect('Autre / Mixte' as Persona); // Set a default persona
+                }
+              }}
+              className="mt-0.5 data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
+            />
+            <div className="flex-1">
+              <label
+                htmlFor="unsure-role"
+                className="text-sm font-medium cursor-pointer"
+              >
+                I'm not sure of my role yet
+              </label>
+              <p className="text-xs text-muted-foreground mt-1">
+                We'll show you all available routines to help you discover what might be useful
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Option A: Skip to all routines link */}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSkipToAll}
+            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+          >
+            <List className="h-4 w-4" />
+            Skip to all routines
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </ScrollArea>

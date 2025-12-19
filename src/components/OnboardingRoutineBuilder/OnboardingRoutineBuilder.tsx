@@ -31,6 +31,8 @@ interface OnboardingState {
   selectedPersona: Persona | null;
   selectedIntents: Intent[];
   selectedRoutineIds: string[];
+  isUnsureOfRole?: boolean;
+  showAllRoutines?: boolean;
 }
 
 interface OnboardingRoutineBuilderProps {
@@ -49,6 +51,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   const [selectedIntents, setSelectedIntents] = useState<Intent[]>([]);
   const [selectedRoutineIds, setSelectedRoutineIds] = useState<string[]>([]);
   const [scoredRoutines, setScoredRoutines] = useState<ScoredRoutine[]>([]);
+  const [isUnsureOfRole, setIsUnsureOfRole] = useState(false);
+  const [showAllRoutines, setShowAllRoutines] = useState(false);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -60,6 +64,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
           setSelectedPersona(state.selectedPersona);
           setSelectedIntents(state.selectedIntents || []);
           setSelectedRoutineIds(state.selectedRoutineIds || []);
+          setIsUnsureOfRole(state.isUnsureOfRole || false);
+          setShowAllRoutines(state.showAllRoutines || false);
           
           // Determine step based on state
           if (state.selectedPersona && state.selectedIntents.length > 0) {
@@ -82,6 +88,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
       selectedPersona,
       selectedIntents,
       selectedRoutineIds,
+      isUnsureOfRole,
+      showAllRoutines,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   };
@@ -97,6 +105,10 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   const handleIntentsSelect = (intents: Intent[]) => {
     setSelectedIntents(intents);
     
+    // If unsure or showing all routines, show ALL routines
+    // Otherwise, score and limit to top 7
+    const limit = (isUnsureOfRole || showAllRoutines) ? undefined : 7;
+    
     // Score and rank routines
     const scored = scoreAndRankRoutines(
       ROUTINE_LIBRARY,
@@ -104,13 +116,15 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
         persona: selectedPersona,
         intents,
       },
-      7 // Initial limit
+      limit
     );
     
     setScoredRoutines(scored);
     
-    // Preselect top routines
-    const topRoutineIds = scored.map((s) => s.routine.id);
+    // Preselect top routines (or all if showing all)
+    const topRoutineIds = scored
+      .slice(0, limit || scored.length)
+      .map((s) => s.routine.id);
     setSelectedRoutineIds(topRoutineIds);
     
     saveState();
@@ -146,6 +160,31 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     }
   };
 
+  // Handle "Skip to all routines"
+  const handleSkipToAll = () => {
+    setShowAllRoutines(true);
+    setIsUnsureOfRole(false);
+    
+    // Score ALL routines with no persona/intents
+    const scored = scoreAndRankRoutines(
+      ROUTINE_LIBRARY,
+      {
+        persona: null,
+        intents: [],
+      },
+      undefined // No limit, show all
+    );
+    
+    setScoredRoutines(scored);
+    
+    // Preselect top 7 routines
+    const topRoutineIds = scored.slice(0, 7).map((s) => s.routine.id);
+    setSelectedRoutineIds(topRoutineIds);
+    
+    saveState();
+    setStep(3);
+  };
+
   // Handle close/reset
   const handleClose = (open: boolean) => {
     if (!open) {
@@ -155,6 +194,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
       setSelectedIntents([]);
       setSelectedRoutineIds([]);
       setScoredRoutines([]);
+      setIsUnsureOfRole(false);
+      setShowAllRoutines(false);
     }
     onOpenChange(open);
   };
@@ -179,7 +220,11 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
                 <DialogDescription className="text-base text-muted-foreground">
                   {step === 1 && 'Start by selecting your primary role to get personalized recommendations'}
                   {step === 2 && 'Select areas you want to improve to refine your routine selection'}
-                  {step === 3 && 'Review and finalize your routine collection'}
+                  {step === 3 && (showAllRoutines 
+                    ? 'Browse and select from all available routines' 
+                    : isUnsureOfRole 
+                    ? 'Review all available routines to help you discover what might be useful'
+                    : 'Review and finalize your routine collection')}
                 </DialogDescription>
               </div>
             </div>
@@ -235,6 +280,9 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
             <RoleSelectionStep
               selectedPersona={selectedPersona}
               onSelect={handleRoleSelect}
+              isUnsure={isUnsureOfRole}
+              onUnsureChange={setIsUnsureOfRole}
+              onSkipToAll={handleSkipToAll}
             />
           )}
           {step === 2 && (
