@@ -168,11 +168,15 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Type',
         cell: (info) => (
           <Badge 
-            className="text-xs font-medium"
+            className="text-xs font-medium break-words"
             style={{
               backgroundColor: '#F1F5F9',
               color: '#475569',
               border: '1px solid #CBD5E1',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+              display: 'inline-block', // Change from inline-flex to allow wrapping
+              maxWidth: '100%',
             }}
           >
             {info.getValue()}
@@ -186,8 +190,8 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         id: 'event',
         header: 'Event',
         cell: (info) => (
-          <a href="#" className="text-link text-sm">
-            {info.getValue().length > 15 ? `${info.getValue().substring(0, 15)}...` : info.getValue()}
+          <a href="#" className="text-link text-sm break-words">
+            {info.getValue()}
           </a>
         ),
         size: 150,
@@ -225,11 +229,15 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           
           return (
             <Badge 
-              className="text-xs font-medium"
+              className="text-xs font-medium break-words"
               style={{
                 backgroundColor: config.bg,
                 color: config.text,
                 border: `1px solid ${config.border}`,
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                display: 'inline-block',
+                maxWidth: '100%',
               }}
             >
               {status}
@@ -254,11 +262,15 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           
           return (
             <Badge 
-              className="text-xs font-medium"
+              className="text-xs font-medium break-words"
               style={{
                 backgroundColor: config.bg,
                 color: config.text,
                 border: `1px solid ${config.border}`,
+                whiteSpace: 'normal',
+                wordWrap: 'break-word',
+                display: 'inline-block',
+                maxWidth: '100%',
               }}
             >
               {status || 'Pending'}
@@ -298,7 +310,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         id: 'partNumber',
         header: 'Part Number',
         cell: (info) => (
-          <a href="#" className="text-link text-sm">
+          <a href="#" className="text-link text-sm break-words">
             {info.getValue()}
           </a>
         ),
@@ -309,8 +321,8 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         id: 'partName',
         header: 'Part Name',
         cell: (info) => (
-          <a href="#" className="text-link text-sm">
-            {info.getValue().length > 20 ? `${info.getValue().substring(0, 20)}...` : info.getValue()}
+          <a href="#" className="text-link text-sm break-words">
+            {info.getValue()}
           </a>
         ),
         size: 150,
@@ -319,7 +331,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       columnHelper.accessor('plant', {
         id: 'plant',
         header: 'Plant',
-        cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+        cell: (info) => <span className="text-sm break-words">{info.getValue()}</span>,
         size: 120,
         filterFn: customFilterFn,
         enableResizing: true,
@@ -327,7 +339,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       columnHelper.accessor('buyerCode', {
         id: 'buyerCodes',
         header: 'Buyer Code',
-        cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+        cell: (info) => <span className="text-sm break-words">{info.getValue()}</span>,
         size: 120,
         filterFn: customFilterFn,
         enableResizing: true,
@@ -371,8 +383,8 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         id: 'supplier',
         header: 'Supplier',
         cell: (info) => (
-          <span className="text-sm">
-            {info.getValue().length > 20 ? `${info.getValue().substring(0, 20)}...` : info.getValue()}
+          <span className="text-sm break-words">
+            {info.getValue()}
           </span>
         ),
         size: 180,

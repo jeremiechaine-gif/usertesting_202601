@@ -10,6 +10,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
   type ColumnResizeMode,
+  type ColumnSizingState,
 } from '@tanstack/react-table';
 import { mockData } from '../lib/mockData';
 import { columns } from '../lib/columns';
@@ -40,6 +41,8 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   const { currentScopeId, setCurrentScopeId, getScopeFilters, currentScope } = useScope();
   
   const [sorting, setSorting] = useState<SortingState>([]);
+  // Column sizing state for resizing
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   // Separate scope filters (applied to table but not shown in modal) from user/routine filters
   const [scopeFilters, setScopeFilters] = useState<ColumnFiltersState>([]);
   const [userFilters, setUserFilters] = useState<ColumnFiltersState>([]);
@@ -194,10 +197,12 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
       sorting,
       columnFilters,
       globalFilter: debouncedGlobalFilter,
+      columnSizing, // Add column sizing state
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: handleColumnFiltersChange,
     onGlobalFilterChange: setGlobalFilter,
+    onColumnSizingChange: setColumnSizing, // Add column sizing handler
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -216,6 +221,103 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
       },
     },
   });
+
+  // DEBUG: Log column resizing state
+  const isDev = true; // Set to false in production
+  useEffect(() => {
+    if (isDev) {
+      console.group('🔍 TanStack Table Column Resizing Debug');
+      console.log('Table config:', {
+        enableColumnResizing: true,
+        columnResizeMode,
+        defaultColumn: {
+          minSize: 50,
+          maxSize: 800,
+          size: 150,
+        },
+      });
+      
+      console.log('\n📊 Column Resizing State:');
+      table.getAllColumns().forEach((column) => {
+        const canResize = column.getCanResize();
+        const size = column.getSize();
+        const minSize = column.columnDef.minSize ?? 50;
+        const maxSize = column.columnDef.maxSize ?? 800;
+        const enableResizing = column.columnDef.enableResizing;
+        
+        if (column.id !== 'select') {
+          console.log(`  ${column.id}:`, {
+            canResize,
+            size,
+            minSize,
+            maxSize,
+            enableResizing,
+            isGrouped: column.columns && column.columns.length > 0,
+            hasSubColumns: column.columns?.length || 0,
+          });
+          
+          // Log sub-columns if grouped
+          if (column.columns && column.columns.length > 0) {
+            column.columns.forEach((subCol) => {
+              const subCanResize = subCol.getCanResize();
+              const subSize = subCol.getSize();
+              const subEnableResizing = subCol.columnDef.enableResizing;
+              console.log(`    └─ ${subCol.id}:`, {
+                canResize: subCanResize,
+                size: subSize,
+                enableResizing: subEnableResizing,
+              });
+            });
+          }
+        }
+      });
+      
+      console.log('\n🎯 Header Groups:');
+      table.getHeaderGroups().forEach((headerGroup, groupIndex) => {
+        console.log(`  Group ${groupIndex}:`, {
+          headers: headerGroup.headers.map((header) => ({
+            id: header.id,
+            columnId: header.column.id,
+            canResize: header.column.getCanResize(),
+            size: header.column.getSize(),
+            isGroupHeader: header.subHeaders && header.subHeaders.length > 0,
+            subHeadersCount: header.subHeaders?.length || 0,
+            hasResizeHandler: !!header.getResizeHandler,
+          })),
+        });
+      });
+      
+      console.groupEnd();
+    }
+  }, [table, columnResizeMode, columnSizing]); // Add columnSizing to dependencies
+  
+  // Debug: Log column sizing changes and verify DOM widths
+  useEffect(() => {
+    if (isDev && Object.keys(columnSizing).length > 0) {
+      console.log('📐 Column sizing state changed:', columnSizing);
+      // Check actual DOM widths after a short delay to allow React to update
+      setTimeout(() => {
+        table.getAllColumns().forEach((column) => {
+          if (column.getCanResize()) {
+            const thElements = document.querySelectorAll(`th[data-column-id="${column.id}"]`);
+            thElements.forEach((th) => {
+              const computedWidth = window.getComputedStyle(th as HTMLElement).width;
+              const styleWidth = (th as HTMLElement).style.width;
+              const expectedWidth = `${column.getSize()}px`;
+              console.log(`📏 Column "${column.id}":`, {
+                getSize: column.getSize(),
+                expectedWidth,
+                computedWidth,
+                styleWidth,
+                match: computedWidth === expectedWidth,
+                isResizing: column.getIsResizing(),
+              });
+            });
+          }
+        });
+      }, 100);
+    }
+  }, [columnSizing, table, isDev]);
 
   // Handler to update current routine (memoized, defined after table)
   const handleUpdateRoutine = useCallback(() => {
@@ -413,8 +515,13 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         <div className="flex-1 overflow-auto px-6 pb-4">
           <div className="inline-block min-w-full align-middle">
             <table
-              className="min-w-full divide-y divide-border/60 border-collapse"
-              style={{ width: table.getCenterTotalSize() || '100%' }}
+              className="min-w-full divide-y divide-border/60"
+              style={{ 
+                width: table.getCenterTotalSize() || '100%',
+                tableLayout: 'fixed', // Required for column resizing to work
+                borderCollapse: 'separate', // Changed from border-collapse to separate for resizing
+                borderSpacing: 0, // Maintain visual appearance
+              }}
             >
               {/* Header */}
               <thead className="bg-muted/40 sticky top-0 z-10 shadow-sm border-b border-border/60">
@@ -438,18 +545,32 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           colSpan={colSpan}
                           data-column-id={!isGroupHeader ? header.column.id : undefined}
                           className={cn(
-                            'px-4 text-left text-sm font-medium text-muted-foreground border-r border-border/40 transition-colors group',
+                            'px-4 text-left text-sm font-medium text-muted-foreground border-r border-border/40 group',
+                            // Disable transition during resize for smooth dragging
+                            !header.column.getIsResizing() && 'transition-colors',
                             isGroupHeader ? 'py-1.5' : 'py-3.5',
                             bgColor,
+                            'break-words', // Allow text to wrap in headers
+                            'overflow-wrap-anywhere', // Break long words if needed
                             header.column.getCanSort() && !isGroupHeader && 'hover:bg-[#31C7AD]/10 cursor-pointer',
                             header.column.getCanResize() && !isGroupHeader && 'hover:border-r-[#31C7AD]/40',
                             !isGroupHeader && highlightedColumnId === header.column.id && 'bg-[#31C7AD]/10 border-r-2 border-[#31C7AD]'
                           )}
                           style={{
-                            width: header.getSize(),
-                            minWidth: header.column.columnDef.minSize || 50,
-                            maxWidth: header.column.columnDef.maxSize || undefined,
+                            width: `${header.getSize()}px`, // Explicit px unit
+                            minWidth: `${header.column.columnDef.minSize || 50}px`,
+                            maxWidth: header.column.columnDef.maxSize ? `${header.column.columnDef.maxSize}px` : undefined,
                             position: 'relative',
+                            wordWrap: 'break-word', // Allow wrapping
+                            overflowWrap: 'break-word', // Modern property
+                            // Force width update on resize - disable transition during resize
+                            ...(header.column.getIsResizing() && {
+                              transition: 'none',
+                            }),
+                            // DEBUG: Visual indicator for resizable columns
+                            ...(isDev && header.column.getCanResize() && {
+                              borderRight: '2px dashed rgba(49, 199, 173, 0.3)',
+                            }),
                           }}
                         >
                           {header.isPlaceholder ? null : isGroupHeader ? (
@@ -484,12 +605,105 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                             <div
                               data-resize-handle
                               onMouseDown={(e) => {
+                                const columnId = header.column.id;
+                                const currentSize = header.column.getSize();
+                                const minSize = header.column.columnDef.minSize || 50;
+                                const maxSize = header.column.columnDef.maxSize || 800;
+                                
+                                console.log('🖱️ Resize handle mousedown:', {
+                                  columnId,
+                                  canResize: header.column.getCanResize(),
+                                  currentSize,
+                                  minSize,
+                                  maxSize,
+                                  enableResizing: header.column.columnDef.enableResizing,
+                                  hasResizeHandler: !!header.getResizeHandler,
+                                  clientX: e.clientX,
+                                });
+                                
+                                // Store initial sizes of ALL columns (including defaults) to prevent them from changing
+                                const initialSizesSnapshot: ColumnSizingState = { ...columnSizing };
+                                
+                                // Capture current size of all resizable columns (even if not in columnSizing state)
+                                table.getAllColumns().forEach((col) => {
+                                  if (col.getCanResize() && col.id !== columnId) {
+                                    // Use current size from column, or preserve existing state value
+                                    if (!(col.id in initialSizesSnapshot)) {
+                                      initialSizesSnapshot[col.id] = col.getSize();
+                                    }
+                                  }
+                                });
+                                
+                                // Debug: Check actual DOM width before resize
+                                const thElement = e.currentTarget.closest('th') as HTMLElement | null;
+                                let beforeComputedWidth = '';
+                                if (thElement) {
+                                  beforeComputedWidth = window.getComputedStyle(thElement).width;
+                                  console.log('📏 DOM width before resize:', {
+                                    columnId,
+                                    computedWidth: beforeComputedWidth,
+                                    styleWidth: thElement.style.width,
+                                    getSize: currentSize,
+                                  });
+                                }
+                                
                                 e.stopPropagation();
-                                header.getResizeHandler()(e);
+                                e.preventDefault();
+                                
+                                // Custom resize handler that only resizes the target column
+                                const startX = e.clientX;
+                                const startSize = currentSize;
+                                
+                                const handleMouseMove = (moveEvent: MouseEvent) => {
+                                  const deltaX = moveEvent.clientX - startX;
+                                  const newSize = Math.max(minSize, Math.min(maxSize, startSize + deltaX));
+                                  
+                                  // Update only this column's size, preserve all others from snapshot
+                                  setColumnSizing((prev) => {
+                                    const updated: ColumnSizingState = {};
+                                    
+                                    // Preserve all other columns' sizes from snapshot
+                                    Object.keys(initialSizesSnapshot).forEach((colId) => {
+                                      if (colId !== columnId) {
+                                        updated[colId] = initialSizesSnapshot[colId];
+                                      }
+                                    });
+                                    
+                                    // Also preserve any columns that were added to state after snapshot
+                                    // (shouldn't happen during resize, but safety check)
+                                    Object.keys(prev).forEach((colId) => {
+                                      if (colId !== columnId && !(colId in updated)) {
+                                        updated[colId] = prev[colId];
+                                      }
+                                    });
+                                    
+                                    // Set new size ONLY for the resized column
+                                    updated[columnId] = newSize;
+                                    
+                                    return updated;
+                                  });
+                                };
+                                
+                                const handleMouseUp = () => {
+                                  document.removeEventListener('mousemove', handleMouseMove);
+                                  document.removeEventListener('mouseup', handleMouseUp);
+                                };
+                                
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
                               }}
                               onTouchStart={(e) => {
+                                console.log('👆 Resize handle touchstart:', {
+                                  columnId: header.column.id,
+                                  canResize: header.column.getCanResize(),
+                                });
                                 e.stopPropagation();
-                                header.getResizeHandler()(e);
+                                const handler = header.getResizeHandler();
+                                if (handler) {
+                                  handler(e);
+                                } else {
+                                  console.error('❌ No resize handler available for column:', header.column.id);
+                                }
                               }}
                               className={cn(
                                 'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none z-30',
@@ -500,7 +714,12 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                                 userSelect: 'none',
                                 touchAction: 'none',
                                 pointerEvents: 'auto',
+                                // Visual debug indicator in dev mode
+                                ...(isDev && {
+                                  boxShadow: '0 0 0 1px rgba(49, 199, 173, 0.3)',
+                                }),
                               }}
+                              title={`Resize ${header.column.id} (${header.column.getSize()}px)`}
                             >
                               {/* Visual indicator line */}
                               <div
@@ -511,6 +730,17 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                                     : 'bg-transparent group-hover:bg-[#31C7AD]/30'
                                 )}
                               />
+                            </div>
+                          )}
+                          {/* DEBUG: Show resize info in dev mode */}
+                          {isDev && header.column.getCanResize() && !isGroupHeader && (
+                            <div
+                              className="absolute -top-6 left-0 text-[10px] text-[#31C7AD] bg-black/80 px-1 rounded pointer-events-none z-50 whitespace-nowrap"
+                              style={{ fontFamily: 'monospace' }}
+                            >
+                              {header.column.id}: {header.column.getSize()}px
+                              {header.column.columnDef.enableResizing === false && ' ❌'}
+                              {!header.getResizeHandler && ' ⚠️'}
                             </div>
                           )}
                         </th>
@@ -546,6 +776,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                         'hover:bg-[#31C7AD]/5 hover:shadow-sm',
                         row.getIsSelected() && 'bg-[#2063F0]/5 hover:bg-[#2063F0]/10'
                       )}
+                      style={{
+                        height: 'auto', // Allow row height to adjust to content
+                      }}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
@@ -553,12 +786,20 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           data-column-id={cell.column.id}
                           className={cn(
                             'px-4 py-3 text-sm border-r border-border/40 transition-colors',
+                            'break-words', // Allow text to wrap
+                            'overflow-wrap-anywhere', // Break long words if needed
                             highlightedColumnId === cell.column.id && 'bg-[#31C7AD]/10 border-r-2 border-[#31C7AD]'
                           )}
                           style={{
-                            width: cell.column.getSize(),
-                            minWidth: cell.column.columnDef.minSize || 50,
-                            maxWidth: cell.column.columnDef.maxSize || undefined,
+                            width: `${cell.column.getSize()}px`, // Explicit px unit
+                            minWidth: `${cell.column.columnDef.minSize || 50}px`,
+                            maxWidth: cell.column.columnDef.maxSize ? `${cell.column.columnDef.maxSize}px` : undefined,
+                            wordWrap: 'break-word', // Allow wrapping
+                            overflowWrap: 'break-word', // Modern property
+                            // Force width update on resize
+                            ...(cell.column.getIsResizing() && {
+                              transition: 'none', // Disable transition during resize for smooth dragging
+                            }),
                           }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
