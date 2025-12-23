@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FilterChip } from '@/components/ui/filter-chip';
-import { X, Target, Sparkles, CheckCircle2, Lightbulb } from 'lucide-react';
+import { X, Target, CheckCircle2 } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
 import { validateScope } from '@/lib/validation/scopeValidation';
 import { filterDefinitions } from '@/lib/filterDefinitions';
@@ -48,6 +48,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   const [showAddFilter, setShowAddFilter] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
   const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
+  const [configuringFilterId, setConfiguringFilterId] = useState<string | null>(null); // ID du filtre en cours de configuration (nouveau ou existant)
+  const [configuringFilterDef, setConfiguringFilterDef] = useState<typeof filterDefinitions[0] | null>(null); // Définition du filtre en cours de configuration
   // Session-only favorites state
   const [sessionFavorites, setSessionFavorites] = useState<Set<string>>(
     new Set(filterDefinitions.filter(f => f.isFavorite).map(f => f.id))
@@ -65,6 +67,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     }
     setShowAddFilter(false);
     setFilterSearch('');
+    setEditingFilterId(null);
+    setConfiguringFilterId(null);
+    setConfiguringFilterDef(null);
   }, [scope, open]);
 
   const handleSave = () => {
@@ -103,12 +108,56 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     }
   };
 
-  const handleAddFilter = (filterDef: typeof filterDefinitions[0]) => {
+  // Handle opening filter modal (same behavior as SortingAndFiltersPopover)
+  const handleOpenFilterModal = (columnId: string) => {
+    // Find the filter definition that maps to this column
+    const filterDef = filterDefinitions.find(f => {
+      const mappedColumnId = getColumnIdFromFilterId(f.id);
+      return mappedColumnId === columnId;
+    });
+    
+    if (!filterDef) return;
+    
     // Check if filter already exists
-    if (filters.some((f) => f.filterId === filterDef.id)) {
+    const existingFilter = filters.find(f => f.filterId === filterDef.id);
+    
+    if (existingFilter) {
+      // Edit existing filter - pre-fill values
+      setConfiguringFilterId(existingFilter.id);
+      setConfiguringFilterDef(filterDef);
+    } else {
+      // New filter - create temporary ID
+      const tempId = `temp-${Date.now()}`;
+      setConfiguringFilterId(tempId);
+      setConfiguringFilterDef(filterDef);
+    }
+    
+    // Keep AddFilterView open in background (user can navigate back)
+    // Don't close showAddFilter here - let user navigate back
+  };
+
+  const handleAddFilter = (filterDef: typeof filterDefinitions[0]) => {
+    // Check if this filter maps to a column - if so, open the column filter modal
+    const columnId = getColumnIdFromFilterId(filterDef.id);
+    if (columnId) {
+      handleOpenFilterModal(columnId);
       return;
     }
 
+    // Otherwise, for filters that don't map to columns, add directly
+    // Check if filter already exists
+    if (filters.some((f) => f.filterId === filterDef.id)) {
+      // If exists, open configuration modal
+      const existingFilter = filters.find(f => f.filterId === filterDef.id);
+      if (existingFilter) {
+        setConfiguringFilterId(existingFilter.id);
+        setConfiguringFilterDef(filterDef);
+      }
+      return;
+    }
+
+    // For filters without column mapping and without options, we'll need a different approach
+    // For now, add with empty values (user can edit later)
     const newFilter: ScopeFilter = {
       id: `filter-${Date.now()}`,
       filterId: filterDef.id,
@@ -162,7 +211,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden">
         {isGuidedMode ? (
           // Guided Mode Header with Hero Section
           <div className="shrink-0">
@@ -178,22 +227,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                     It filters what you see by default, showing only the plants, parts, or suppliers 
                     that are relevant to your daily work.
                   </DialogDescription>
-                </div>
-              </div>
-              
-              {/* Quick Benefits */}
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
-                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
-                  <span>Focus on what matters</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
-                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
-                  <span>Save time filtering</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm bg-background/60 rounded-lg px-3 py-2 border">
-                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0" />
-                  <span>Personal to you</span>
+                  {/* Sections removed: Quick Benefits and Naming Tips */}
                 </div>
               </div>
             </div>
@@ -208,52 +242,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
           </DialogHeader>
         )}
 
-        <ScrollArea className="flex-1 px-6 py-4 min-h-0">
-          <div className="space-y-4">
-            {isGuidedMode && (
-              // Naming Tips Section
-              <div className="rounded-xl border bg-gradient-to-br from-blue-50/50 to-transparent p-4 space-y-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold text-sm text-blue-900 dark:text-blue-300">
-                    Naming Tips
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Choose a clear name that describes what you're focusing on. Good scope names are:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Location-based</p>
-                      <p className="text-xs text-muted-foreground">e.g., "Lyon Plant", "Europe Region"</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Role-based</p>
-                      <p className="text-xs text-muted-foreground">e.g., "My Suppliers", "Critical Parts"</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Product-based</p>
-                      <p className="text-xs text-muted-foreground">e.g., "Electric Motors", "Battery Cells"</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-blue-600 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Business-based</p>
-                      <p className="text-xs text-muted-foreground">e.g., "Q1 Focus", "Strategic Items"</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 py-4 space-y-4">
             {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="scope-name" className="text-sm font-semibold">
@@ -357,7 +347,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                           return newSet;
                         });
                       }}
-                      onOpenFilterModal={undefined}
+                      onOpenFilterModal={handleOpenFilterModal}
                       getColumnIdFromFilterId={getColumnIdFromFilterId}
                       onBack={() => {
                         setShowAddFilter(false);
@@ -447,15 +437,15 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
         </DialogFooter>
       </DialogContent>
 
-      {/* Filter Value Selection Modal */}
-      {editingFilterId && (() => {
+      {/* Filter Value Selection Modal - For editing existing filters */}
+      {editingFilterId && !configuringFilterId && (() => {
         const editingFilter = filters.find((f) => f.id === editingFilterId);
         if (!editingFilter) return null;
         const editingFilterDef = getFilterDef(editingFilter.filterId);
         if (!editingFilterDef) return null;
 
-        // Get column ID from filter ID (assuming filter ID matches column ID)
-        const columnId = editingFilter.filterId;
+        // Get column ID from filter ID
+        const columnId = getColumnIdFromFilterId(editingFilter.filterId) || editingFilter.filterId;
         
         // Get options from filter definition
         const options = editingFilterDef.options || [];
@@ -482,6 +472,11 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
               selectedValues={editingFilter.values}
               condition={editingFilter.condition || 'is'}
               onApply={(values: (string | number)[], condition: string) => {
+                if (values.length === 0) {
+                  // Empty values = cancel
+                  setEditingFilterId(null);
+                  return;
+                }
                 setFilters(
                   filters.map((f) =>
                     f.id === editingFilterId
@@ -494,6 +489,87 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                   )
                 );
                 setEditingFilterId(null);
+              }}
+            />
+          </Suspense>
+        );
+      })()}
+
+      {/* Filter Configuration Modal - For adding/editing filters from AddFilterView */}
+      {configuringFilterId && configuringFilterDef && (() => {
+        // Check if this is an existing filter or a new one
+        const existingFilter = filters.find((f) => f.id === configuringFilterId);
+        const isNewFilter = !existingFilter || configuringFilterId.startsWith('temp-');
+        
+        // Get column ID from filter ID
+        const columnId = getColumnIdFromFilterId(configuringFilterDef.id) || configuringFilterDef.id;
+        
+        // Get options from filter definition
+        const options = configuringFilterDef.options || [];
+
+        // Determine column type from filter definition
+        const columnType = configuringFilterDef.type === 'number' 
+          ? 'number' 
+          : configuringFilterDef.type === 'date' 
+          ? 'date' 
+          : 'text';
+
+        // Get selected values (existing filter or empty for new)
+        const selectedValues = existingFilter ? existingFilter.values : [];
+
+        return (
+          <Suspense fallback={null}>
+            <ColumnFilterModal
+              open={!!configuringFilterId}
+              onOpenChange={(open) => {
+                if (!open) {
+                  // Cancel - revert to previous state
+                  setConfiguringFilterId(null);
+                  setConfiguringFilterDef(null);
+                }
+              }}
+              columnId={columnId}
+              columnLabel={configuringFilterDef.label}
+              category={configuringFilterDef.category || 'General'}
+              columnType={columnType}
+              options={options}
+              selectedValues={selectedValues}
+              condition={existingFilter?.condition || 'is'}
+              onApply={(values: (string | number)[], condition: string) => {
+                if (values.length === 0) {
+                  // Empty values = cancel
+                  setConfiguringFilterId(null);
+                  setConfiguringFilterDef(null);
+                  return;
+                }
+
+                if (isNewFilter) {
+                  // Add new filter
+                  const newFilter: ScopeFilter = {
+                    id: `filter-${Date.now()}`,
+                    filterId: configuringFilterDef.id,
+                    values,
+                    condition: condition !== 'is' ? condition : undefined,
+                  };
+                  setFilters([...filters, newFilter]);
+                } else {
+                  // Update existing filter
+                  setFilters(
+                    filters.map((f) =>
+                      f.id === configuringFilterId
+                        ? {
+                            ...f,
+                            values,
+                            condition: condition !== 'is' ? condition : undefined,
+                          }
+                        : f
+                    )
+                  );
+                }
+                
+                // Close modal and return to AddFilterView (user can add more filters or go back)
+                setConfiguringFilterId(null);
+                setConfiguringFilterDef(null);
               }}
             />
           </Suspense>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
 import { type Scope } from '@/lib/scopes';
 import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
+import { resetScopesAndRoutines } from '@/lib/resetData';
 import { 
   Bell, 
   Menu, 
@@ -17,7 +18,9 @@ import {
   Video,
   FileText,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,6 +28,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 interface HomePageProps {
@@ -55,16 +66,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetConfirmStep, setResetConfirmStep] = useState<'first' | 'second'>('first');
   
   // Initialize tasks with default values
   const getInitialTasks = (): OnboardingTask[] => [
-    {
-      id: 'complete-profile',
-      label: 'Complete company profile',
-      action: 'Set up',
-      completed: true,
-      onClick: () => console.log('Complete profile'),
-    },
     {
       id: 'define-scope',
       label: 'Define scope',
@@ -164,6 +170,34 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     task.onClick();
   };
 
+  const handleResetClick = () => {
+    setResetConfirmStep('first');
+    setResetConfirmOpen(true);
+  };
+
+  const handleResetConfirm = () => {
+    if (resetConfirmStep === 'first') {
+      setResetConfirmStep('second');
+    } else {
+      // Second confirmation - proceed with reset
+      try {
+        resetScopesAndRoutines();
+        setResetConfirmOpen(false);
+        setResetConfirmStep('first');
+        // Reload the page
+        window.location.reload();
+      } catch (error) {
+        console.error('Error resetting data:', error);
+        alert('An error occurred while resetting data. Please try again.');
+      }
+    }
+  };
+
+  const handleResetCancel = () => {
+    setResetConfirmOpen(false);
+    setResetConfirmStep('first');
+  };
+
   return (
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
       <Sidebar
@@ -184,7 +218,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </Button>
       )}
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         {/* Top Banner */}
         <div className="bg-muted px-6 py-2.5 text-sm border-b">
           <div className="flex items-center gap-2">
@@ -344,6 +378,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     )}
                   </div>
                 ))}
+                
+                {/* Reset Data Button */}
+                <div className="pt-3 mt-3 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetClick}
+                    className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset data
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -386,6 +433,59 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <DialogTitle className="text-xl">
+                {resetConfirmStep === 'first' ? 'Reset Scopes & Routines?' : 'Are you absolutely sure?'}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-base pt-2">
+              {resetConfirmStep === 'first' ? (
+                <>
+                  This will permanently delete <strong>all scopes and routines</strong> you have created.
+                  <br /><br />
+                  <strong>Users and teams will be preserved.</strong>
+                  <br /><br />
+                  This action cannot be undone. Are you sure you want to continue?
+                </>
+              ) : (
+                <>
+                  This is your final confirmation. Clicking "Confirm Reset" will:
+                  <br /><br />
+                  • Delete all scopes<br />
+                  • Delete all routines<br />
+                  • Delete all routine folders<br />
+                  • Reset onboarding progress<br /><br />
+                  <strong>Users and teams will remain untouched.</strong>
+                  <br /><br />
+                  The page will reload automatically after reset.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleResetCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleResetConfirm}
+            >
+              {resetConfirmStep === 'first' ? 'Continue' : 'Confirm Reset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Scope Creation Modal - Always in guided mode from Home page */}
       <ScopeModal

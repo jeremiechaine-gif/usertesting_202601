@@ -118,3 +118,6 @@ export function validateScope(scope: Partial<Scope>): ValidationResult {
   };
 }
 
+
+
+

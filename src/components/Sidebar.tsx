@@ -141,21 +141,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
       
       {/* User profile footer */}
       <div className="border-t p-4 bg-background">
-        <button
-          onClick={() => setAreItemsHidden(!areItemsHidden)}
-          className="w-full flex items-center gap-3 hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-sm shrink-0">
-            AP
+        <div className="w-full flex items-center gap-3">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setAreItemsHidden(!areItemsHidden)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setAreItemsHidden(!areItemsHidden);
+              }
+            }}
+            className="flex-1 flex items-center gap-3 hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-sm shrink-0">
+              AP
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="font-semibold text-sm truncate">Admin Pelico</div>
+              <div className="text-xs text-muted-foreground truncate">admin@pelico.com</div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0 text-left">
-            <div className="font-semibold text-sm truncate">Admin Pelico</div>
-            <div className="text-xs text-muted-foreground truncate">admin@pelico.com</div>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: Open settings
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // TODO: Open settings
+              }
+            }}
+            className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
             <Settings className="w-4 h-4" />
-          </Button>
-        </button>
+          </div>
+        </div>
       </div>
     </div>
   );
