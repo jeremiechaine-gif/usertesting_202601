@@ -13,20 +13,20 @@
  */
 
 export type Persona =
-  | 'Approvisionneur'
-  | 'Acheteur'
-  | 'Manager Appro'
-  | 'Ordonnanceur Assemblage'
-  | 'Ordonnanceur'
+  | 'Supply Planner'
+  | 'Buyer'
+  | 'Procurement Manager'
+  | 'Assembly Scheduler'
+  | 'Scheduler'
   | 'Master Planner'
-  | 'Support Logistique'
-  | 'Recette'
-  | 'Responsable Supply Chain'
-  | 'Directeur Supply Chain'
-  | 'Responsable Ordo & Support log'
-  | 'Autre / Mixte';
+  | 'Logistics Support'
+  | 'Quality Control'
+  | 'Supply Chain Manager'
+  | 'Supply Chain Director'
+  | 'Scheduling & Logistics Manager'
+  | 'Other / Mixed';
 
-export type Objective = 'Anticiper' | 'Piloter' | 'Corriger' | 'Arbitrer' | 'Reporter';
+export type Objective = 'Anticipate' | 'Monitor' | 'Correct' | 'Prioritize' | 'Report';
 
 export type Horizon = 'Today' | 'ThisWeek' | 'Projection';
 
@@ -44,12 +44,25 @@ export type PelicoView =
   | 'Simulation';
 
 export type Intent =
-  | 'Gérer des retards'
-  | 'Anticiper des risques'
-  | 'Prioriser des actions'
-  | 'Tenir la promesse client'
-  | 'Piloter la charge / la prod'
-  | 'Vision business / KPIs';
+  | 'Manage delays'
+  | 'Anticipate risks'
+  | 'Prioritize actions'
+  | 'Meet customer commitments'
+  | 'Monitor workload / production'
+  | 'Business insights / KPIs';
+
+/**
+ * Routine Filter Definition
+ * Defines a filter to be applied when using a routine
+ */
+export interface RoutineFilter {
+  columnId: string; // Column ID (e.g., 'arStatus', 'createdDate')
+  filterId?: string; // Filter definition ID (e.g., 'ar-status', 'date-comparison')
+  condition?: 'is' | 'isNot' | 'lessThan' | 'greaterThan' | 'lessThanOrEqual' | 'greaterThanOrEqual';
+  values: (string | number)[]; // Filter values
+  // For date filters: relative date expressions like "1 week ago", "today", etc.
+  dateExpression?: string; // e.g., "1 week ago", "today", "1 month ago"
+}
 
 /**
  * Routine Library Entry
@@ -66,6 +79,11 @@ export interface RoutineLibraryEntry {
   frequency: Frequency;
   pelicoViews: PelicoView[];
   keywords: string[]; // For search (e.g., ['AR', 'acknowledgement', 'fournisseur'])
+  
+  // Routine configuration
+  primaryPelicoView: PelicoView; // Main Pelico view for this routine (e.g., 'Supply')
+  requiredColumns?: string[]; // Column IDs that must be visible (e.g., ['arStatus'])
+  filters?: RoutineFilter[]; // Filters to apply when using this routine
 }
 
 /**
@@ -79,12 +97,12 @@ export type PersonaDefaultSets = Record<Persona, string[]>;
  * Maps user-selected intents to objectives for scoring
  */
 export const INTENT_TO_OBJECTIVES: Record<Intent, Objective[]> = {
-  'Gérer des retards': ['Corriger'],
-  'Anticiper des risques': ['Anticiper'],
-  'Prioriser des actions': ['Arbitrer', 'Piloter'],
-  'Tenir la promesse client': ['Piloter', 'Reporter'],
-  'Piloter la charge / la prod': ['Piloter'],
-  'Vision business / KPIs': ['Reporter', 'Arbitrer'],
+  'Manage delays': ['Correct'],
+  'Anticipate risks': ['Anticipate'],
+  'Prioritize actions': ['Prioritize', 'Monitor'],
+  'Meet customer commitments': ['Monitor', 'Report'],
+  'Monitor workload / production': ['Monitor'],
+  'Business insights / KPIs': ['Report', 'Prioritize'],
 };
 
 /**
@@ -92,12 +110,12 @@ export const INTENT_TO_OBJECTIVES: Record<Intent, Objective[]> = {
  * Maps user-selected intents to impact zones for scoring
  */
 export const INTENT_TO_IMPACT_ZONES: Record<Intent, ImpactZone[]> = {
-  'Gérer des retards': ['Supplier', 'Production', 'Customer'],
-  'Anticiper des risques': ['Supplier', 'Production', 'Customer'],
-  'Prioriser des actions': ['Supplier', 'Production', 'Customer', 'Business'],
-  'Tenir la promesse client': ['Customer'],
-  'Piloter la charge / la prod': ['Production'],
-  'Vision business / KPIs': ['Business'],
+  'Manage delays': ['Supplier', 'Production', 'Customer'],
+  'Anticipate risks': ['Supplier', 'Production', 'Customer'],
+  'Prioritize actions': ['Supplier', 'Production', 'Customer', 'Business'],
+  'Meet customer commitments': ['Customer'],
+  'Monitor workload / production': ['Production'],
+  'Business insights / KPIs': ['Business'],
 };
 
 /**

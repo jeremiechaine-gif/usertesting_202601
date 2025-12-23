@@ -240,6 +240,35 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         filterFn: customFilterFn,
         enableResizing: true,
       }),
+      columnHelper.accessor('arStatus', {
+        id: 'arStatus',
+        header: 'AR Status',
+        cell: (info) => {
+          const status = info.getValue();
+          const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+            'AR': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120' },
+            'No AR': { bg: '#FFE9E5', text: '#F4511E', border: '#F4511E20' },
+            'Pending': { bg: '#FFF3E0', text: '#FB8C00', border: '#FB8C0020' },
+          };
+          const config = statusConfig[status || 'Pending'] || statusConfig['Pending'];
+          
+          return (
+            <Badge 
+              className="text-xs font-medium"
+              style={{
+                backgroundColor: config.bg,
+                color: config.text,
+                border: `1px solid ${config.border}`,
+              }}
+            >
+              {status || 'Pending'}
+            </Badge>
+          );
+        },
+        size: 100,
+        filterFn: customFilterFn,
+        enableResizing: true,
+      }),
     ],
   },
 

@@ -433,13 +433,23 @@ export const ScopeAndRoutinesPage: React.FC<{
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   A <em>generic</em> view (filters + display configuration) that standardizes a way of working, and can be shared and used by a team.
                 </p>
-                <Button
-                  onClick={handleCreateRoutine}
-                  className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Routine
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleCreateRoutine}
+                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Routine
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onNavigate?.('routines-library')}
+                    className="gap-2 h-9"
+                  >
+                    <Eye className="h-4 w-4" />
+                    See all generic routines
+                  </Button>
+                </div>
               </div>
 
               {routines.length === 0 ? (

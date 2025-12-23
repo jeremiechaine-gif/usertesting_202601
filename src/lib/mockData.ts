@@ -16,6 +16,8 @@ export interface PurchaseOrderRow {
   otdStatus: OTDStatus;
   deliveryStatus: DeliveryStatus;
   subcontract: boolean;
+  arStatus?: string; // AR Status: 'AR', 'No AR', 'Pending'
+  createdDate?: string; // YYYY-MM-DD
   // Produced Part
   partEscalationLevel: number;
   partNumber: string;
@@ -142,6 +144,8 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
       otdStatus: determineOTDStatus(deliveryDate, otdDate),
       deliveryStatus: randomElement<DeliveryStatus>(['Pending', 'Pending', 'Pending', 'Shipped', 'Delivered']),
       subcontract: Math.random() > 0.7,
+      arStatus: randomElement(['AR', 'No AR', 'Pending']),
+      createdDate: randomDate(pastDate, today),
       partEscalationLevel: randomInt(1, 4), // Values between 1 and 4
       partNumber: generatePartNumber(),
       partName: randomElement(partNames),

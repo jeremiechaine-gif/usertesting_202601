@@ -3,6 +3,7 @@ import { PurchaseOrderBookPage } from './components/PurchaseOrderBookPage';
 import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
 import { HomePage } from './components/HomePage';
 import { UsersPage } from './components/UsersPage';
+import { RoutineLibraryPage } from './components/RoutineLibraryPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/toast';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
@@ -171,7 +172,7 @@ function App() {
     // Initialize teams and users on app start
     initializeTeamsAndUsers();
   }, []);
-  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library'>('home');
 
   const handleNavigate = (page: string) => {
     if (page === 'home') {
@@ -186,6 +187,8 @@ function App() {
       setCurrentPage('my-routines');
     } else if (page === 'shared-routines') {
       setCurrentPage('shared-routines');
+    } else if (page === 'routines-library') {
+      setCurrentPage('routines-library');
     }
   };
 
@@ -219,6 +222,14 @@ function App() {
       return (
         <ErrorBoundary>
           <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'routines-library') {
+      return (
+        <ErrorBoundary>
+          <RoutineLibraryPage onNavigate={handleNavigate} />
         </ErrorBoundary>
       );
     }
