@@ -33,10 +33,11 @@ import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { ColumnsPopover } from './ColumnsPopover';
 
 export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
   // Use ScopeContext for global scope management
-  const { currentScopeId, setCurrentScopeId, getScopeFilters } = useScope();
+  const { currentScopeId, setCurrentScopeId, getScopeFilters, currentScope } = useScope();
   
   const [sorting, setSorting] = useState<SortingState>([]);
   // Separate scope filters (applied to table but not shown in modal) from user/routine filters
@@ -78,6 +79,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   const [selectedGroupBy, setSelectedGroupBy] = useState<string | null>(null);
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
   const [routineModalMode, setRoutineModalMode] = useState<'create' | 'update'>('create');
+  const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null);
   
   // Track if scope is overridden by routine (for future UI indicator)
   const [_scopeOverridden, setScopeOverridden] = useState(false);
@@ -205,7 +207,8 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     enableColumnResizing: true,
     defaultColumn: {
       minSize: 50,
-      maxSize: 500,
+      maxSize: 800,
+      size: 150, // Default size for columns without explicit size
     },
     initialState: {
       pagination: {
@@ -376,7 +379,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               selectedRoutineId={selectedRoutineId}
               onSaveAsRoutine={handleSaveAsRoutine}
               onUpdateRoutine={handleUpdateRoutine}
-            onOpenFilterModal={handleOpenFilterModal}
+              onOpenFilterModal={handleOpenFilterModal}
+              scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
+              currentScopeName={currentScope?.name}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -395,7 +400,12 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               selectedGroupBy={selectedGroupBy}
               onGroupBySelect={setSelectedGroupBy}
             />
-            <Button variant="outline" size="sm" className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all">Columns</Button>
+            <ColumnsPopover 
+              table={table} 
+              columns={columns}
+              highlightedColumnId={highlightedColumnId}
+              onHighlightChange={setHighlightedColumnId}
+            />
           </div>
         </div>
 
@@ -426,14 +436,19 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                         <th
                           key={header.id}
                           colSpan={colSpan}
+                          data-column-id={!isGroupHeader ? header.column.id : undefined}
                           className={cn(
-                            'px-4 text-left text-sm font-medium text-muted-foreground border-r border-border/40 transition-colors',
+                            'px-4 text-left text-sm font-medium text-muted-foreground border-r border-border/40 transition-colors group',
                             isGroupHeader ? 'py-1.5' : 'py-3.5',
                             bgColor,
-                            header.column.getCanSort() && !isGroupHeader && 'hover:bg-[#31C7AD]/10 cursor-pointer'
+                            header.column.getCanSort() && !isGroupHeader && 'hover:bg-[#31C7AD]/10 cursor-pointer',
+                            header.column.getCanResize() && !isGroupHeader && 'hover:border-r-[#31C7AD]/40',
+                            !isGroupHeader && highlightedColumnId === header.column.id && 'bg-[#31C7AD]/10 border-r-2 border-[#31C7AD]'
                           )}
                           style={{
                             width: header.getSize(),
+                            minWidth: header.column.columnDef.minSize || 50,
+                            maxWidth: header.column.columnDef.maxSize || undefined,
                             position: 'relative',
                           }}
                         >
@@ -448,6 +463,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                               sorting={sorting}
                               columnFilters={columnFilters}
                               userFilters={userFilters}
+                              scopeFilters={scopeFilters}
                               onSortingChange={setSorting}
                               onColumnFiltersChange={(filters) => {
                                 // When filters change from column header, update user filters
@@ -466,13 +482,36 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                           )}
                           {header.column.getCanResize() && !isGroupHeader && (
                             <div
-                              onMouseDown={header.getResizeHandler()}
-                              onTouchStart={header.getResizeHandler()}
+                              data-resize-handle
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                header.getResizeHandler()(e);
+                              }}
+                              onTouchStart={(e) => {
+                                e.stopPropagation();
+                                header.getResizeHandler()(e);
+                              }}
                               className={cn(
-                                'absolute right-0 top-0 h-full w-0.5 bg-transparent hover:bg-primary cursor-col-resize transition-colors',
-                                header.column.getIsResizing() && 'bg-primary'
+                                'absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none z-30',
+                                'bg-transparent hover:bg-[#31C7AD]/40 transition-colors',
+                                header.column.getIsResizing() && 'bg-[#31C7AD]'
                               )}
-                            />
+                              style={{
+                                userSelect: 'none',
+                                touchAction: 'none',
+                                pointerEvents: 'auto',
+                              }}
+                            >
+                              {/* Visual indicator line */}
+                              <div
+                                className={cn(
+                                  'absolute right-0 top-0 h-full w-0.5 transition-all',
+                                  header.column.getIsResizing() 
+                                    ? 'bg-[#31C7AD] w-0.5' 
+                                    : 'bg-transparent group-hover:bg-[#31C7AD]/30'
+                                )}
+                              />
+                            </div>
                           )}
                         </th>
                       );
@@ -511,8 +550,16 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="px-4 py-3 text-sm border-r border-border/40"
-                          style={{ width: cell.column.getSize() }}
+                          data-column-id={cell.column.id}
+                          className={cn(
+                            'px-4 py-3 text-sm border-r border-border/40 transition-colors',
+                            highlightedColumnId === cell.column.id && 'bg-[#31C7AD]/10 border-r-2 border-[#31C7AD]'
+                          )}
+                          style={{
+                            width: cell.column.getSize(),
+                            minWidth: cell.column.columnDef.minSize || 50,
+                            maxWidth: cell.column.columnDef.maxSize || undefined,
+                          }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>

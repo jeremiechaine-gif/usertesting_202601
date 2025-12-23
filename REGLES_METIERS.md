@@ -41,6 +41,7 @@
 - Le scope actif peut être changé via `setCurrentScopeId()`
 
 ### 1.4 Filtres de Scope
+- **Règle obligatoire** : Un scope doit contenir **au moins un filtre** pour être valide
 - Les filtres de scope sont automatiquement appliqués à la table
 - **Format** : `ScopeFilter` contient :
   - `id` : Identifiant unique du filtre
@@ -48,6 +49,9 @@
   - `values` : Tableau de valeurs sélectionnées `(string | number)[]`
   - `condition` : Condition optionnelle (ex: "equals", "greaterThan", etc.)
 - Les filtres de scope sont convertis en `ColumnFiltersState` pour TanStack Table via `getScopeFilters()`
+- **Affichage** : Les filtres de scope sont visibles :
+  - Dans les en-têtes de colonnes (niveau header) avec un indicateur visuel
+  - Dans la modal "Sorting and Filters" avec une section dédiée "Scope Filters"
 - **Règle** : Seuls les filtres avec au moins une valeur (`values.length > 0`) sont appliqués
 
 ### 1.5 Fusion des filtres Scope et Utilisateur

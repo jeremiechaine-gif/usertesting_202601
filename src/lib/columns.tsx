@@ -161,6 +161,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Escalation Level',
         cell: (info) => <EscalationIndicator level={info.getValue()} />,
         size: 80,
+        enableResizing: true,
       }),
       columnHelper.accessor('type', {
         id: 'type',
@@ -179,6 +180,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         ),
         size: 70,
         filterFn: customFilterFn,
+        enableResizing: true,
       }),
       columnHelper.accessor('event', {
         id: 'event',
@@ -189,6 +191,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           </a>
         ),
         size: 150,
+        enableResizing: true,
       }),
     ],
   },
@@ -204,6 +207,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         cell: (info) => <OTDStatusIndicator status={info.getValue()} />,
         size: 100,
         filterFn: customFilterFn,
+        enableResizing: true,
       }),
       columnHelper.accessor('deliveryStatus', {
         id: 'deliveryStatus',
@@ -234,6 +238,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         },
         size: 120,
         filterFn: customFilterFn,
+        enableResizing: true,
       }),
     ],
   },
@@ -245,6 +250,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
     cell: (info) => (info.getValue() ? 'Yes' : 'No'),
     size: 100,
     filterFn: customFilterFn,
+    enableResizing: true,
   }),
 
   // Group: Produced Part
@@ -257,6 +263,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Escalation Level',
         cell: (info) => <EscalationIndicator level={info.getValue()} />,
         size: 80,
+        enableResizing: true,
       }),
       columnHelper.accessor('partNumber', {
         id: 'partNumber',
@@ -267,6 +274,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           </a>
         ),
         size: 120,
+        enableResizing: true,
       }),
       columnHelper.accessor('partName', {
         id: 'partName',
@@ -277,6 +285,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           </a>
         ),
         size: 150,
+        enableResizing: true,
       }),
       columnHelper.accessor('plant', {
         id: 'plant',
@@ -284,6 +293,15 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         cell: (info) => <span className="text-sm">{info.getValue()}</span>,
         size: 120,
         filterFn: customFilterFn,
+        enableResizing: true,
+      }),
+      columnHelper.accessor('buyerCode', {
+        id: 'buyerCodes',
+        header: 'Buyer Code',
+        cell: (info) => <span className="text-sm">{info.getValue()}</span>,
+        size: 120,
+        filterFn: customFilterFn,
+        enableResizing: true,
       }),
     ],
   },
@@ -300,6 +318,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm">{info.getValue().toLocaleString()}</span>
         ),
         size: 120,
+        enableResizing: true,
       }),
       columnHelper.accessor('price', {
         id: 'price',
@@ -308,6 +327,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm font-medium">{formatCurrency(info.getValue())}</span>
         ),
         size: 130,
+        enableResizing: true,
       }),
       columnHelper.accessor('inventoryValue', {
         id: 'inventoryValue',
@@ -316,6 +336,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm font-medium">{formatCurrency(info.getValue())}</span>
         ),
         size: 140,
+        enableResizing: true,
       }),
       columnHelper.accessor('supplier', {
         id: 'supplier',
@@ -326,6 +347,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           </span>
         ),
         size: 180,
+        enableResizing: true,
       }),
     ],
   },
@@ -351,6 +373,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       );
     },
     size: 100,
+    enableResizing: true,
     meta: {
       headerTint: 'green',
     },
@@ -365,6 +388,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       return <span className="text-sm">{formatted}</span>;
     },
     size: 100,
+    enableResizing: true,
     meta: {
       headerTint: 'green',
     },
@@ -380,12 +404,14 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'OTD Date',
         cell: (info) => <span className="text-sm">{formatDate(info.getValue())}</span>,
         size: 110,
+        enableResizing: true,
       }),
       columnHelper.accessor('deliveryDate', {
         id: 'deliveryDate',
         header: 'Delivery Date',
         cell: (info) => <span className="text-sm">{formatDate(info.getValue())}</span>,
         size: 120,
+        enableResizing: true,
       }),
     ],
   },
@@ -403,6 +429,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       </div>
     ),
     size: 110,
+    enableResizing: true,
     meta: {
       headerTint: 'purple',
     },
@@ -420,6 +447,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       </div>
     ),
     size: 110,
+    enableResizing: true,
     meta: {
       headerTint: 'purple',
     },

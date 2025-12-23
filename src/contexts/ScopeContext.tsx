@@ -12,6 +12,7 @@ import {
   type Scope 
 } from '@/lib/scopes';
 import type { ColumnFiltersState } from '@tanstack/react-table';
+import { getColumnIdFromFilterId } from '@/components/sorting-filters/utils';
 
 interface ScopeContextType {
   currentScopeId: string | null;
@@ -109,14 +110,25 @@ export const ScopeProvider: React.FC<ScopeProviderProps> = ({ children }) => {
     }
     
     // Convert scope filters to table filters format
+    // Map filter IDs (e.g., 'part-name') to column IDs (e.g., 'partName')
     return currentScope.filters
       .filter((filter) => filter.values.length > 0)
-      .map((filter) => ({
-        id: filter.filterId,
-        value: filter.condition
-          ? { condition: filter.condition, values: filter.values }
-          : filter.values,
-      }));
+      .map((filter) => {
+        // Convert filter ID to column ID
+        const columnId = getColumnIdFromFilterId(filter.filterId);
+        // Only include filters that have a valid column mapping
+        if (!columnId) {
+          console.warn(`[ScopeContext] Filter '${filter.filterId}' does not map to a column, skipping.`);
+          return null;
+        }
+        return {
+          id: columnId, // Use column ID instead of filter ID
+          value: filter.condition
+            ? { condition: filter.condition, values: filter.values }
+            : filter.values,
+        };
+      })
+      .filter((filter): filter is NonNullable<typeof filter> => filter !== null);
   }, [currentScope]);
 
   return (

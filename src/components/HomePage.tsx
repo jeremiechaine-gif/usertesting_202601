@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './Sidebar';
 import { ScopeModal } from './ScopeModal';
 import { OnboardingRoutineBuilder } from './OnboardingRoutineBuilder/OnboardingRoutineBuilder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
-import { type Scope } from '@/lib/scopes';
+import { type Scope, getScopes } from '@/lib/scopes';
 import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
 import { resetScopesAndRoutines } from '@/lib/resetData';
 import { 
@@ -120,7 +120,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   }, []);
 
   // Helper to update task status and persist to localStorage
-  const updateTaskStatus = (taskId: string, completed: boolean) => {
+  const updateTaskStatus = useCallback((taskId: string, completed: boolean) => {
     setOnboardingTasks((tasks) => {
       const updatedTasks = tasks.map((task) =>
         task.id === taskId ? { ...task, completed } : task
@@ -135,7 +135,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       
       return updatedTasks;
     });
-  };
+  }, []);
+
+  // Check if "Define scope" task should be marked as completed based on scopes
+  useEffect(() => {
+    const scopes = getScopes();
+    const hasAtLeastOneScope = scopes.length > 0;
+    updateTaskStatus('define-scope', hasAtLeastOneScope);
+  }, [updateTaskStatus]); // Run on mount and when updateTaskStatus changes
+
+  // Listen for scope changes (when modal closes after saving)
+  useEffect(() => {
+    const scopes = getScopes();
+    const hasAtLeastOneScope = scopes.length > 0;
+    updateTaskStatus('define-scope', hasAtLeastOneScope);
+  }, [scopeModalOpen, updateTaskStatus]); // Run when scope modal opens/closes
 
 
   // Mock academy resources

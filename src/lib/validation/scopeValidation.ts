@@ -103,13 +103,21 @@ export function validateScope(scope: Partial<Scope>): ValidationResult {
     if (!Array.isArray(scope.filters)) {
       errors.push('Filters must be an array');
     } else {
-      scope.filters.forEach((filter, index) => {
-        const filterValidation = validateScopeFilter(filter);
-        if (!filterValidation.isValid) {
-          errors.push(`Filter ${index + 1}: ${filterValidation.errors.join(', ')}`);
-        }
-      });
+      // At least one filter is mandatory for a scope
+      if (scope.filters.length === 0) {
+        errors.push('At least one filter is required');
+      } else {
+        scope.filters.forEach((filter, index) => {
+          const filterValidation = validateScopeFilter(filter);
+          if (!filterValidation.isValid) {
+            errors.push(`Filter ${index + 1}: ${filterValidation.errors.join(', ')}`);
+          }
+        });
+      }
     }
+  } else {
+    // If filters is undefined, it means no filters were provided, which is invalid
+    errors.push('At least one filter is required');
   }
 
   return {

@@ -30,6 +30,7 @@ interface ColumnHeaderProps {
   sorting: Array<{ id: string; desc: boolean }>;
   columnFilters: Array<{ id: string; value: unknown }>; // Combined filters (scope + user) - used for table filtering
   userFilters?: Array<{ id: string; value: unknown }>; // User/routine filters (should show visual feedback)
+  scopeFilters?: Array<{ id: string; value: unknown }>; // Scope filters (read-only, shown with different indicator)
   onSortingChange: (updater: any) => void;
   onColumnFiltersChange: (updater: any) => void;
   onFilterClick?: (columnId: string) => void;
@@ -42,6 +43,7 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   sorting,
   columnFilters: _columnFilters, // Combined filters - kept for potential future use
   userFilters = [],
+  scopeFilters = [],
   onSortingChange,
   onColumnFiltersChange,
   onFilterClick,
@@ -63,11 +65,19 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   );
 
   // Check if there's a user/routine filter (not just scope filter)
-  // Only show filter indicator if there's a user/routine filter (not just scope filter)
-  const hasFilter = useMemo(
+  const hasUserFilter = useMemo(
     () => !!userFilters.find((f) => f.id === columnId),
     [userFilters, columnId]
   );
+
+  // Check if there's a scope filter
+  const hasScopeFilter = useMemo(
+    () => !!scopeFilters.find((f) => f.id === columnId),
+    [scopeFilters, columnId]
+  );
+
+  // Show filter indicator if there's either a user filter or scope filter
+  const hasFilter = hasUserFilter || hasScopeFilter;
 
   // Memoized handlers to prevent unnecessary re-renders
   const handleSortAscending = useCallback(() => {
@@ -207,6 +217,10 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
         }
       }}
       onClick={(e) => {
+        // Don't trigger header click if clicking on resize handle
+        if ((e.target as HTMLElement).closest('[data-resize-handle]')) {
+          return;
+        }
         // Don't trigger header click if filter modal is open
         if (filterModalOpen) {
           e.stopPropagation();
@@ -279,8 +293,11 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
                   }}
                 >
                   <MoreHorizontal className="h-4 w-4" />
-                  {hasFilter && (
+                  {hasUserFilter && (
                     <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 bg-red-500 rounded-full" />
+                  )}
+                  {hasScopeFilter && !hasUserFilter && (
+                    <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 bg-[#31C7AD] rounded-full" />
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -289,17 +306,25 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
                 <DropdownMenuItem onClick={handleFilterClick} className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
                   <span>Filter</span>
-                  {hasFilter && (
+                  {hasUserFilter && (
                     <span className="ml-auto h-2 w-2 bg-red-500 rounded-full" />
                   )}
+                  {hasScopeFilter && !hasUserFilter && (
+                    <span className="ml-auto h-2 w-2 bg-[#31C7AD] rounded-full" />
+                  )}
                 </DropdownMenuItem>
-                {hasFilter && (
+                {hasUserFilter && (
                   <DropdownMenuItem
                     onClick={handleClearFilter}
                     className="flex items-center gap-2 text-red-600 focus:text-red-600"
                   >
                     <X className="h-4 w-4" />
                     <span>Clear filter</span>
+                  </DropdownMenuItem>
+                )}
+                {hasScopeFilter && (
+                  <DropdownMenuItem className="flex items-center gap-2 text-muted-foreground cursor-default">
+                    <span className="text-xs">Scope filter (read-only)</span>
                   </DropdownMenuItem>
                 )}
 

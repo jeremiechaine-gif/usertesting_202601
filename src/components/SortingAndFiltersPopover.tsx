@@ -37,6 +37,7 @@ import { draftSortingToTableState, draftFiltersToTableState, tableStateToDraftSo
 import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getColumnIdFromFilterId } from './sorting-filters/utils';
 import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
+import { ScopeFiltersSection } from './sorting-filters/ScopeFiltersSection';
 // @ts-expect-error - filterDefinitions is used in useState initializer which TypeScript doesn't detect
 import { filterDefinitions } from '@/lib/filterDefinitions';
 
@@ -85,6 +86,10 @@ interface SortingAndFiltersPopoverProps {
   onSaveAsRoutine?: () => void;
   onUpdateRoutine?: () => void;
   
+  // Scope information
+  scopeFilters?: Array<{ id: string; filterId: string; values: (string | number)[] }>;
+  currentScopeName?: string;
+  
   // Trigger button (optional, can be passed as children)
   trigger?: React.ReactNode;
 }
@@ -100,6 +105,8 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   selectedRoutineId,
   onSaveAsRoutine,
   onUpdateRoutine,
+  scopeFilters = [],
+  currentScopeName,
   trigger,
 }) => {
   const [open, setOpen] = useState(false);
@@ -458,6 +465,8 @@ interface MainViewProps {
   onUpdateFilterValues: (filterId: string, values: (string | number)[]) => void;
   onRemoveFilter: (filterId: string) => void;
   chipsNotInRoutine: { sorts: Set<string>; filters: Set<string> };
+  scopeFilters?: Array<{ id: string; filterId: string; values: (string | number)[] }>;
+  currentScopeName?: string;
 }
 
 const MainView: React.FC<MainViewProps> = ({
@@ -486,6 +495,8 @@ const MainView: React.FC<MainViewProps> = ({
   onUpdateFilterValues,
   onRemoveFilter,
   chipsNotInRoutine,
+  scopeFilters = [],
+  currentScopeName,
 }) => {
   const selectedRoutine = selectedRoutineId ? getRoutine(selectedRoutineId) : null;
 
@@ -521,7 +532,21 @@ const MainView: React.FC<MainViewProps> = ({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-6 py-5 space-y-5 min-w-0">
-          <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full min-w-0">
+          <Accordion type="multiple" defaultValue={scopeFilters && scopeFilters.length > 0 ? ['scope-filters', 'sorting', 'filters'] : ['sorting', 'filters']} className="w-full min-w-0">
+            {/* Scope Filters Section - Display first if scope filters exist */}
+            {scopeFilters && scopeFilters.length > 0 && (
+              <>
+                <ScopeFiltersSection
+                  scopeFilters={scopeFilters}
+                  filterDefinitions={filterDefinitions}
+                  columns={columns}
+                  currentScopeName={currentScopeName}
+                />
+                <Separator />
+              </>
+            )}
+            
+            {/* Sorting Section */}
             <SortingSection
               draftSorting={draftSorting}
               sortableColumns={sortableColumns}
@@ -534,6 +559,8 @@ const MainView: React.FC<MainViewProps> = ({
               sortsNotInRoutine={chipsNotInRoutine.sorts}
             />
             <Separator />
+            
+            {/* User/Routine Filters Section */}
             <FiltersSection
               draftFilters={draftFilters}
               filterDefinitions={filterDefinitions}

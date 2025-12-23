@@ -20,7 +20,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Target, ArrowLeft, Search, Info, Filter } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { X, Target, ArrowLeft, Search, Info, Filter, HelpCircle } from 'lucide-react';
 import { createScope, updateScope, type Scope, type ScopeFilter } from '@/lib/scopes';
 import { validateScope } from '@/lib/validation/scopeValidation';
 import { filterDefinitions } from '@/lib/filterDefinitions';
@@ -61,6 +62,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   const [layer3DisplaySelectedOnly, setLayer3DisplaySelectedOnly] = useState(false);
   // Debounce search query for Layer 3 (must be at component level, not conditional)
   const debouncedLayer3SearchQuery = useDebounce(layer3SearchQuery, 300);
+  // Info section visibility
+  const [showScopeInfo, setShowScopeInfo] = useState(true);
   // Session-only favorites state
   const [sessionFavorites, setSessionFavorites] = useState<Set<string>>(
     new Set(filterDefinitions.filter(f => f.isFavorite).map(f => f.id))
@@ -81,6 +84,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     setFilterSearch('');
     setConfiguringFilterId(null);
     setConfiguringFilterDef(null);
+    // Reset info section visibility
+    setShowScopeInfo(true);
   }, [scope, open]);
 
   const handleSave = () => {
@@ -306,35 +311,67 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
       <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden">
         {/* Unified Guided Mode Header with Hero Section */}
         <div className="shrink-0">
-          <div className="bg-gradient-to-br from-[#31C7AD]/10 via-[#31C7AD]/5 to-transparent px-6 pt-6 pb-4 border-b">
-            <div className="flex items-start gap-4 mb-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-[#31C7AD] to-[#2ab89a] shadow-lg">
-                <Target className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-[#31C7AD]/10 via-[#31C7AD]/5 to-transparent px-6 py-3 border-b">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#31C7AD] to-[#2ab89a] shadow-lg shrink-0">
+                <Target className="h-5 w-5 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  {(currentLayer === 2 || currentLayer === 3) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleBack}
-                      className="h-8 w-8 p-0 -ml-2"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <DialogTitle className="text-2xl font-bold">
-                    {currentLayer === 2 ? 'Add Filter' : currentLayer === 3 && configuringFilterDef ? `Configure ${configuringFilterDef.label}` : modalTitle}
-                  </DialogTitle>
-                </div>
-                {currentLayer === 1 && (
-                  <DialogDescription className="text-base leading-relaxed">
-                    {getSubtitle()}
-                  </DialogDescription>
-                )}
+              <div className="flex-1 flex items-center gap-2">
+                <DialogTitle className="text-2xl font-bold">
+                  {modalTitle}
+                </DialogTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-full hover:bg-muted/50 p-1 transition-colors shrink-0"
+                        aria-label="Information about scope"
+                      >
+                        <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                      <TooltipContent className="max-w-sm bg-slate-950 text-slate-50 border border-slate-800 shadow-lg">
+                        <p className="text-sm leading-relaxed">
+                          {scope ? (
+                            'Update scope details and filters'
+                          ) : (
+                            <>
+                              A scope is your <strong className="text-slate-50">personal data perimeter</strong>. 
+                              It filters what you see by default, showing only the plants, parts, or suppliers 
+                              that are relevant to your daily work.
+                            </>
+                          )}
+                        </p>
+                      </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>
+          
+          {/* Step navigation bar for Layer 2 and 3 */}
+          {(currentLayer === 2 || currentLayer === 3) && (
+            <div className="px-6 py-3 border-b bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBack}
+                  className="h-8 w-8 p-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-semibold text-foreground">
+                  {currentLayer === 2 
+                    ? 'Add Filter' 
+                    : currentLayer === 3 && configuringFilterDef 
+                      ? `Configure ${configuringFilterDef.label}` 
+                      : ''}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <ScrollArea className="flex-1 min-h-0">
@@ -345,6 +382,38 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
             {/* Layer 1: Form (Name, Description, Filters list) */}
             {currentLayer === 1 && (
               <>
+                {/* Info Section */}
+                {showScopeInfo && (
+                  <div className="relative rounded-lg border border-[#31C7AD]/20 bg-gradient-to-r from-[#31C7AD]/5 via-[#31C7AD]/3 to-transparent p-4 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowScopeInfo(false)}
+                      className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Close information"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-start gap-3 pr-6">
+                      <div className="p-1.5 rounded-md bg-[#31C7AD]/10 shrink-0 mt-0.5">
+                        <Info className="h-4 w-4 text-[#31C7AD]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm leading-relaxed text-foreground">
+                          {scope ? (
+                            'Update scope details and filters'
+                          ) : (
+                            <>
+                              A scope is your <strong className="text-foreground font-semibold">personal data perimeter</strong>. 
+                              It filters what you see by default, showing only the plants, parts, or suppliers 
+                              that are relevant to your daily work.
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="scope-name" className="text-sm font-semibold">
@@ -383,7 +452,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-sm font-semibold">Filters</Label>
+                      <Label className="text-sm font-semibold">
+                        Filters <span className="text-destructive">*</span>
+                      </Label>
                       <p className="text-xs text-muted-foreground mt-1">
                         Define which data you want to see (plants, suppliers, part types, etc.)
                       </p>

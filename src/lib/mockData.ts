@@ -21,6 +21,7 @@ export interface PurchaseOrderRow {
   partNumber: string;
   partName: string;
   plant: string;
+  buyerCode: string;
   // General Information
   openQuantity: number;
   price: number;
@@ -77,6 +78,8 @@ const partNames = [
 ];
 
 const plants = ['plant_1', 'plant_100000', 'plant_100001', 'plant_100002', 'plant_100003'];
+
+const buyerCodes = ['ABC123', 'BCD567', 'CDE890', 'DEF123', 'XYZ789', 'YZA012'];
 
 function randomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
@@ -143,6 +146,7 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
       partNumber: generatePartNumber(),
       partName: randomElement(partNames),
       plant: randomElement(plants),
+      buyerCode: randomElement(buyerCodes),
       openQuantity: openQty,
       price,
       inventoryValue: inventory,
