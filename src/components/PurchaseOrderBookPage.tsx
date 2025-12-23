@@ -131,6 +131,15 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
     setScopeFilters(scopeFiltersFromContext);
   }, [currentScopeId, getScopeFilters]);
 
+  // Check for pending routine from navigation (e.g., from "View" button)
+  useEffect(() => {
+    const pendingRoutineId = sessionStorage.getItem('pendingRoutineId');
+    if (pendingRoutineId && !selectedRoutineId) {
+      sessionStorage.removeItem('pendingRoutineId');
+      setSelectedRoutineId(pendingRoutineId);
+    }
+  }, [selectedRoutineId]);
+
   // Apply routine configuration when routine changes
   useEffect(() => {
     if (selectedRoutineId) {

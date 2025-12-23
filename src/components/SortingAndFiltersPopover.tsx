@@ -666,6 +666,7 @@ export interface AddFilterViewProps {
   getColumnIdFromFilterId: (filterId: string) => string | null;
   onBack: () => void;
   onClose: () => void;
+  hideHeader?: boolean; // Option to hide the internal header
 }
 
 export const AddFilterView: React.FC<AddFilterViewProps> = ({
@@ -679,6 +680,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
   getColumnIdFromFilterId,
   onBack,
   onClose,
+  hideHeader = false,
 }) => {
   const handleStarClick = (e: React.MouseEvent, filterId: string) => {
     e.stopPropagation();
@@ -698,21 +700,23 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
   };
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
+      {/* Header - Only show if not hidden */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h3 className="font-semibold text-sm">Add filter</h3>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onClose}>
+            <X className="h-4 w-4" />
           </Button>
-          <h3 className="font-semibold text-sm">Add filter</h3>
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
 
       {/* Search Bar */}
-      <div className="px-4 py-3 border-b shrink-0">
+      <div className={`px-4 py-3 ${hideHeader ? '' : 'border-b'} shrink-0`}>
         <div className="flex items-center border rounded-md px-3 bg-background">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <input

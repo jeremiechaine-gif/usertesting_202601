@@ -201,6 +201,7 @@ export const ScopeDropdown: React.FC<ScopeDropdownProps> = ({
           open={createModalOpen}
           onOpenChange={setCreateModalOpen}
           scope={editScope}
+          title={editScope ? 'Edit Scope' : 'Create New Scope'}
           onSave={handleScopeSaved}
         />
       )}

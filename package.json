@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:clean": "rm -rf node_modules/.vite && vite",
+    "dev:force": "rm -rf node_modules/.vite dist && vite --force",
+    "dev:hmr-test": "vite --force",
     "build": "tsc -b && vite build",
+    "build:clean": "rm -rf dist node_modules/.vite && tsc -b && vite build",
+    "clean": "rm -rf node_modules/.vite dist",
+    "test:hmr": "./test-hmr.sh",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",

@@ -5,6 +5,15 @@
 
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
 
+export type PelicoViewPage = 
+  | 'supply'
+  | 'production'
+  | 'customer'
+  | 'escalation'
+  | 'value-engineering'
+  | 'event-explorer'
+  | 'simulation';
+
 export interface Routine {
   id: string;
   name: string;
@@ -17,6 +26,9 @@ export interface Routine {
   columnOrder?: string[];
   groupBy?: string | null;
   pageSize?: number;
+  
+  // Page cible pour cette routine
+  pelicoView?: PelicoViewPage; // Page Pelico associée (Supply, Production Control, etc.)
   
   // Relation avec le scope
   scopeMode: 'scope-aware' | 'scope-fixed';

@@ -4,6 +4,7 @@ import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
 import { HomePage } from './components/HomePage';
 import { UsersPage } from './components/UsersPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ToastProvider } from './components/ui/toast';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
 import { createUser, getUsers, getCurrentUserId } from './lib/users';
 import { getRoutines, createRoutine, updateRoutine } from './lib/routines';
@@ -189,42 +190,50 @@ function App() {
   };
 
   // Wrap pages in ErrorBoundary for graceful error handling
-  if (currentPage === 'home') {
-    return (
-      <ErrorBoundary>
-        <HomePage onNavigate={handleNavigate} />
-      </ErrorBoundary>
-    );
-  }
+  const renderPage = () => {
+    if (currentPage === 'home') {
+      return (
+        <ErrorBoundary>
+          <HomePage onNavigate={handleNavigate} />
+        </ErrorBoundary>
+      );
+    }
 
-  if (currentPage === 'scope-routines') {
-    return (
-      <ErrorBoundary>
-        <ScopeAndRoutinesPage onNavigate={handleNavigate} />
-      </ErrorBoundary>
-    );
-  }
+    if (currentPage === 'scope-routines') {
+      return (
+        <ErrorBoundary>
+          <ScopeAndRoutinesPage onNavigate={handleNavigate} />
+        </ErrorBoundary>
+      );
+    }
 
-  if (currentPage === 'users') {
-    return (
-      <ErrorBoundary>
-        <UsersPage onNavigate={handleNavigate} />
-      </ErrorBoundary>
-    );
-  }
+    if (currentPage === 'users') {
+      return (
+        <ErrorBoundary>
+          <UsersPage onNavigate={handleNavigate} />
+        </ErrorBoundary>
+      );
+    }
 
-  if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
+    if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
+      return (
+        <ErrorBoundary>
+          <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />
+        </ErrorBoundary>
+      );
+    }
+
     return (
       <ErrorBoundary>
-        <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />
+        <PurchaseOrderBookPage onNavigate={handleNavigate} />
       </ErrorBoundary>
     );
-  }
+  };
 
   return (
-    <ErrorBoundary>
-      <PurchaseOrderBookPage onNavigate={handleNavigate} />
-    </ErrorBoundary>
+    <ToastProvider>
+      {renderPage()}
+    </ToastProvider>
   );
 }
 

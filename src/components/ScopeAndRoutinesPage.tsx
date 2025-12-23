@@ -43,7 +43,8 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   Sparkles,
-  Zap
+  Zap,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -541,6 +542,10 @@ export const ScopeAndRoutinesPage: React.FC<{
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
                                 <Share2 className="h-4 w-4 mr-2" />
                                 Share
@@ -643,6 +648,7 @@ export const ScopeAndRoutinesPage: React.FC<{
           open={scopeModalOpen}
           onOpenChange={setScopeModalOpen}
           scope={editingScope}
+          title={editingScope ? 'Edit Scope' : 'Create New Scope'}
           onSave={() => {
             loadScopes();
             setScopeModalOpen(false);
