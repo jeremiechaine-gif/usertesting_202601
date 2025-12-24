@@ -25,6 +25,7 @@ import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
+import { CreateRoutineModal } from './CreateRoutineModal';
 
 export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
 
@@ -44,6 +45,7 @@ interface RoutineWithDetails {
   description?: string;
   personas?: string[];
   pelicoViews?: string[];
+  objectives?: string[];
 }
 
 export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
@@ -57,6 +59,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
+  const [openCreateRoutineModal, setOpenCreateRoutineModal] = useState<string | null>(null);
   const [tempSelectedRoutineIds, setTempSelectedRoutineIds] = useState<string[]>([]);
 
   // Get all available routines from library
@@ -67,6 +70,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       description: routine.description,
       personas: routine.personas,
       pelicoViews: routine.pelicoViews,
+      objectives: routine.objectives,
     }));
   }, []);
 
@@ -94,11 +98,23 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       .map(r => r.id);
   };
 
-  // Get routines assigned to a team
+  // Get routines assigned to a team, sorted alphabetically by name and then by objective
   const getTeamRoutines = (teamId: string): RoutineWithDetails[] => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return [];
-    return availableRoutines.filter(r => team.assignedRoutineIds.includes(r.id));
+    const routines = availableRoutines.filter(r => team.assignedRoutineIds.includes(r.id));
+    
+    // Sort by name alphabetically, then by first objective alphabetically
+    return routines.sort((a, b) => {
+      // First sort by name
+      const nameCompare = a.name.localeCompare(b.name);
+      if (nameCompare !== 0) return nameCompare;
+      
+      // If names are equal, sort by first objective
+      const aFirstObjective = a.objectives && a.objectives.length > 0 ? a.objectives[0] : '';
+      const bFirstObjective = b.objectives && b.objectives.length > 0 ? b.objectives[0] : '';
+      return aFirstObjective.localeCompare(bFirstObjective);
+    });
   };
 
   // Get filtered routines for a team (not already assigned)
@@ -154,6 +170,25 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     });
 
     onTeamsUpdate(updatedTeams);
+  };
+
+  // Handle routine creation
+  const handleRoutineCreated = (teamId: string, routineId: string) => {
+    const updatedTeams = teams.map(t => {
+      if (t.id === teamId) {
+        const routineIds = t.assignedRoutineIds || [];
+        if (!routineIds.includes(routineId)) {
+          return {
+            ...t,
+            assignedRoutineIds: [...routineIds, routineId],
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
+      return t;
+    });
+    onTeamsUpdate(updatedTeams);
+    setOpenCreateRoutineModal(null);
   };
 
   // Add all suggested routines
@@ -287,7 +322,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs"
                               >
                                 <Sparkles className="h-3 w-3" />
-                                Add from personas
+                                Add suggested
                               </Button>
                               <Button
                                 variant="outline"
@@ -304,23 +339,47 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 <Plus className="h-3 w-3" />
                                 Add manually
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setOpenCreateRoutineModal(team.id);
+                                }}
+                                className="h-7 gap-1.5 text-xs"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Create Routine
+                              </Button>
                             </>
                           ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // Initialize temp selection with routines not already assigned
-                                const teamRoutineIds = team.assignedRoutineIds || [];
-                                setTempSelectedRoutineIds([]);
-                                setOpenAddRoutinesModal(team.id);
-                              }}
-                              className="h-7 gap-1.5 text-xs"
-                              disabled={availableRoutinesForTeam.length === 0}
-                            >
-                              <Plus className="h-3 w-3" />
-                              Add Routine
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Initialize temp selection with routines not already assigned
+                                  const teamRoutineIds = team.assignedRoutineIds || [];
+                                  setTempSelectedRoutineIds([]);
+                                  setOpenAddRoutinesModal(team.id);
+                                }}
+                                className="h-7 gap-1.5 text-xs"
+                                disabled={availableRoutinesForTeam.length === 0}
+                              >
+                                <Plus className="h-3 w-3" />
+                                Add manually
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setOpenCreateRoutineModal(team.id);
+                                }}
+                                className="h-7 gap-1.5 text-xs"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Create Routine
+                              </Button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -452,6 +511,20 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
           />
         );
       })()}
+
+      {/* Create Routine Modal */}
+      {openCreateRoutineModal && (
+        <CreateRoutineModal
+          open={openCreateRoutineModal !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setOpenCreateRoutineModal(null);
+            }
+          }}
+          teamId={openCreateRoutineModal}
+          onRoutineCreated={(routineId) => handleRoutineCreated(openCreateRoutineModal, routineId)}
+        />
+      )}
     </div>
   );
 };
