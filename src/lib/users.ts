@@ -11,6 +11,7 @@ export interface User {
   teamId?: string | null;
   assignedScopeIds?: string[]; // Scopes assignés individuellement à l'utilisateur
   assignedRoutineIds?: string[]; // Routines assignées individuellement à l'utilisateur
+  defaultScopeId?: string | null; // Scope par défaut principal pour l'utilisateur
   createdAt: string;
   updatedAt: string;
 }

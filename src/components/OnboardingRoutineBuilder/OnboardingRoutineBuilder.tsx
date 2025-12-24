@@ -104,12 +104,25 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
 
   // Handle role toggle (Step 1)
   const handleRoleToggle = (persona: Persona) => {
-    if (selectedPersonas.includes(persona)) {
-      setSelectedPersonas(selectedPersonas.filter(p => p !== persona));
-    } else {
-      setSelectedPersonas([...selectedPersonas, persona]);
-    }
+    const updatedPersonas = selectedPersonas.includes(persona)
+      ? selectedPersonas.filter(p => p !== persona)
+      : [...selectedPersonas, persona];
+    
+    setSelectedPersonas(updatedPersonas);
     saveState();
+    
+    // Also save personas separately for Team Wizard (even if wizard not completed)
+    if (updatedPersonas.length > 0) {
+      const teamWizardState = {
+        selectedPersonas: updatedPersonas,
+        searchType,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('pelico-team-wizard-personas', JSON.stringify(teamWizardState));
+    } else {
+      // Remove saved personas if none selected
+      localStorage.removeItem('pelico-team-wizard-personas');
+    }
   };
 
   // Handle search type selection (Step 0 → Step 1)
@@ -129,6 +142,14 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   // Handle continue to step 2 (from role selection - personas flow)
   const handleContinueFromPersonas = () => {
     if (selectedPersonas.length > 0) {
+      // Save personas for Team Wizard before continuing
+      const teamWizardState = {
+        selectedPersonas,
+        searchType,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('pelico-team-wizard-personas', JSON.stringify(teamWizardState));
+      
       // Score and rank routines based on selected personas
       const limit = 7;
       
@@ -221,6 +242,17 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   // Handle final completion
   const handleComplete = () => {
     saveState();
+    
+    // Save personas separately for Team Wizard before clearing state
+    if (selectedPersonas.length > 0) {
+      const teamWizardState = {
+        selectedPersonas,
+        searchType,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem('pelico-team-wizard-personas', JSON.stringify(teamWizardState));
+    }
+    
     onComplete(selectedRoutineIds);
     onOpenChange(false);
     

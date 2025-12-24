@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './Sidebar';
 import { ScopeModal } from './ScopeModal';
 import { OnboardingRoutineBuilder } from './OnboardingRoutineBuilder/OnboardingRoutineBuilder';
+import { OnboardingTeamBuilder } from './OnboardingTeamBuilder/OnboardingTeamBuilder';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
@@ -66,6 +67,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
+  const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
 
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [resetConfirmStep, setResetConfirmStep] = useState<'first' | 'second'>('first');
@@ -94,7 +96,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       label: 'Manage team',
       action: 'Manage team',
       completed: false,
-      onClick: () => onNavigate?.('users'),
+      onClick: () => {
+        // Open team builder wizard
+        setTeamBuilderOpen(true);
+      },
     },
   ];
   
@@ -512,6 +517,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               console.log('All selected routines already exist');
             }
           }
+        }}
+      />
+
+      {/* Onboarding Team Builder */}
+      <OnboardingTeamBuilder
+        open={teamBuilderOpen}
+        onOpenChange={setTeamBuilderOpen}
+        onComplete={() => {
+          // Mark onboarding task as completed and persist to localStorage
+          updateTaskStatus('manage-team', true);
         }}
       />
     </div>
