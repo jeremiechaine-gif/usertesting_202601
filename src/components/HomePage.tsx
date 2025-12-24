@@ -431,6 +431,28 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </div>
             </div>
           </div>
+
+          {/* Simple Onboarding Section */}
+          <div className="mt-6">
+            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                  <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
+                </div>
+                <h3 className="text-xl font-bold">Simple onboarding</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 rounded-lg transition-all border bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                    <span className="text-sm font-medium">
+                      Set-up your workspace
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -443,15 +465,20 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <DialogTitle className="text-xl">
-                {resetConfirmStep === 'first' ? 'Reset Scopes & Routines?' : 'Are you absolutely sure?'}
+                {resetConfirmStep === 'first' ? 'Reset Onboarding Data?' : 'Are you absolutely sure?'}
               </DialogTitle>
             </div>
             <DialogDescription className="text-base pt-2">
               {resetConfirmStep === 'first' ? (
                 <>
-                  This will permanently delete <strong>all scopes and routines</strong> you have created.
+                  This will permanently delete <strong>all data created during onboarding</strong>:
                   <br /><br />
-                  <strong>Users and teams will be preserved.</strong>
+                  • All scopes<br />
+                  • All routines<br />
+                  • All teams<br />
+                  • All team and member assignments<br />
+                  • All onboarding progress<br /><br />
+                  <strong>User accounts will be preserved, but their assignments will be cleared.</strong>
                   <br /><br />
                   This action cannot be undone. Are you sure you want to continue?
                 </>
@@ -462,8 +489,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                   • Delete all scopes<br />
                   • Delete all routines<br />
                   • Delete all routine folders<br />
-                  • Reset onboarding progress<br /><br />
-                  <strong>Users and teams will remain untouched.</strong>
+                  • Delete all teams<br />
+                  • Clear all member assignments<br />
+                  • Clear all scope assignments<br />
+                  • Reset all onboarding progress<br /><br />
+                  <strong>User accounts will be preserved, but all their assignments will be cleared.</strong>
                   <br /><br />
                   The page will reload automatically after reset.
                 </>
