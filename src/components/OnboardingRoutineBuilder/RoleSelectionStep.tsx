@@ -7,7 +7,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, ChevronRight, List } from 'lucide-react';
+import { User, ChevronRight, List, Zap } from 'lucide-react';
 import type { Persona } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +32,7 @@ interface RoleSelectionStepProps {
   isUnsure: boolean;
   onUnsureChange: (unsure: boolean) => void;
   onSkipToAll: () => void;
+  onSeeAllRoutines: () => void;
   onNext: () => void;
 }
 
@@ -41,6 +42,7 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
   isUnsure,
   onUnsureChange,
   onSkipToAll,
+  onSeeAllRoutines,
   onNext,
 }) => {
   const canContinue = selectedPersonas.length > 0 || isUnsure;
@@ -160,16 +162,28 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
       {/* Footer with Next and Skip buttons */}
       <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
         <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSkipToAll}
-            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
-          >
-            <List className="h-4 w-4" />
-            Skip to all routines
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSkipToAll}
+              className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+            >
+              <List className="h-4 w-4" />
+              Skip to all routines
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onSeeAllRoutines}
+              className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+            >
+              <Zap className="h-4 w-4" />
+              See all generic routines
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
           
           <Button
             onClick={onNext}

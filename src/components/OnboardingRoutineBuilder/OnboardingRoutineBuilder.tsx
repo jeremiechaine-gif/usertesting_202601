@@ -1,10 +1,9 @@
 /**
  * Onboarding Routine Builder
  * 
- * Progressive 3-step flow:
- * 1. Role selection (preselects defaults)
- * 2. Intent-based refinement (scores routines)
- * 3. Concrete review (final selection)
+ * Progressive 2-step flow:
+ * 1. Routine selection (role-based OR all routines view)
+ * 2. Review and finalize selection
  * 
  * State persisted to localStorage for recovery
  */
@@ -17,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { RoleSelectionStep } from './RoleSelectionStep';
-import { IntentSelectionStep } from './IntentSelectionStep';
+import { AllRoutinesSelectionStep } from './AllRoutinesSelectionStep';
 import { RoutineReviewStep } from './RoutineReviewStep';
 import type { Persona, Intent } from '@/lib/onboarding/types';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
@@ -32,6 +31,7 @@ interface OnboardingState {
   selectedRoutineIds: string[];
   isUnsureOfRole?: boolean;
   showAllRoutines?: boolean;
+  viewingAllRoutines?: boolean;
 }
 
 interface OnboardingRoutineBuilderProps {
@@ -45,13 +45,14 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   onOpenChange,
   onComplete,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
   const [selectedIntents, setSelectedIntents] = useState<Intent[]>([]);
   const [selectedRoutineIds, setSelectedRoutineIds] = useState<string[]>([]);
   const [scoredRoutines, setScoredRoutines] = useState<ScoredRoutine[]>([]);
   const [isUnsureOfRole, setIsUnsureOfRole] = useState(false);
   const [showAllRoutines, setShowAllRoutines] = useState(false);
+  const [viewingAllRoutines, setViewingAllRoutines] = useState(false);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -65,11 +66,10 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
           setSelectedRoutineIds(state.selectedRoutineIds || []);
           setIsUnsureOfRole(state.isUnsureOfRole || false);
           setShowAllRoutines(state.showAllRoutines || false);
+          setViewingAllRoutines(state.viewingAllRoutines || false);
           
           // Determine step based on state
-          if (state.selectedPersonas && state.selectedPersonas.length > 0 && state.selectedIntents.length > 0) {
-            setStep(3);
-          } else if (state.selectedPersonas && state.selectedPersonas.length > 0) {
+          if (state.selectedRoutineIds && state.selectedRoutineIds.length > 0) {
             setStep(2);
           } else {
             setStep(1);
@@ -89,6 +89,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
       selectedRoutineIds,
       isUnsureOfRole,
       showAllRoutines,
+      viewingAllRoutines,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   };
@@ -103,49 +104,78 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     saveState();
   };
 
-  // Handle continue to step 2
+  // Handle continue to step 2 (from role selection)
   const handleContinueToStep2 = () => {
     if (selectedPersonas.length > 0 || isUnsureOfRole) {
+      // Score and rank routines based on selected personas
+      const limit = isUnsureOfRole ? undefined : 7;
+      
+      const scored = scoreAndRankRoutines(
+        ROUTINE_LIBRARY,
+        {
+          personas: selectedPersonas,
+          intents: [],
+        },
+        limit
+      );
+      
+      setScoredRoutines(scored);
+      
+      // Preselect top routines
+      const topRoutineIds = scored
+        .slice(0, limit || scored.length)
+        .map((s) => s.routine.id);
+      setSelectedRoutineIds(topRoutineIds);
+      
+      saveState();
       setStep(2);
     }
   };
 
-  // Handle intent selection (Step 2 → Step 3)
-  const handleIntentsSelect = (intents: Intent[]) => {
-    setSelectedIntents(intents);
-    
-    // If unsure or showing all routines, show ALL routines
-    // Otherwise, score and limit to top 7
-    const limit = (isUnsureOfRole || showAllRoutines) ? undefined : 7;
-    
-    // Score and rank routines with multiple personas
-    const scored = scoreAndRankRoutines(
-      ROUTINE_LIBRARY,
-      {
-        personas: selectedPersonas,
-        intents,
-      },
-      limit
-    );
-    
-    setScoredRoutines(scored);
-    
-    // Preselect top routines (or all if showing all)
-    const topRoutineIds = scored
-      .slice(0, limit || scored.length)
-      .map((s) => s.routine.id);
-    setSelectedRoutineIds(topRoutineIds);
-    
+  // Handle "See all generic routines" - switch to all routines view
+  const handleSeeAllRoutines = () => {
+    setViewingAllRoutines(true);
     saveState();
-    setStep(3);
   };
 
-  // Handle routine selection changes (Step 3)
-  const handleRoutineToggle = (routineId: string, selected: boolean) => {
-    if (selected) {
-      setSelectedRoutineIds([...selectedRoutineIds, routineId]);
+  // Handle back from all routines view to role selection
+  const handleBackFromAllRoutines = () => {
+    setViewingAllRoutines(false);
+    saveState();
+  };
+
+  // Handle continue from all routines view to review
+  const handleContinueFromAllRoutines = () => {
+    if (selectedRoutineIds.length > 0) {
+      // Score selected routines for display in review step
+      const selectedRoutines = ROUTINE_LIBRARY.filter(r => selectedRoutineIds.includes(r.id));
+      const scored = selectedRoutines.map(routine => ({
+        routine,
+        score: 100, // All selected routines get same score
+        reasons: ['Selected by user'],
+      }));
+      setScoredRoutines(scored);
+      saveState();
+      setStep(2);
+    }
+  };
+
+  // Handle routine selection changes (Step 2 - Review, or Step 1 - All Routines)
+  const handleRoutineToggle = (routineId: string, selected?: boolean) => {
+    if (selected === undefined) {
+      // Toggle behavior
+      if (selectedRoutineIds.includes(routineId)) {
+        setSelectedRoutineIds(selectedRoutineIds.filter((id) => id !== routineId));
+      } else {
+        setSelectedRoutineIds([...selectedRoutineIds, routineId]);
+      }
     } else {
-      setSelectedRoutineIds(selectedRoutineIds.filter((id) => id !== routineId));
+      // Explicit set behavior
+      if (selected) {
+        setSelectedRoutineIds([...selectedRoutineIds, routineId]);
+      } else {
+        setSelectedRoutineIds(selectedRoutineIds.filter((id) => id !== routineId));
+      }
     }
     saveState();
   };
@@ -162,14 +192,17 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
 
   // Handle back navigation
   const handleBack = () => {
-    if (step === 3) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(1);
+    if (step === 2) {
+      if (viewingAllRoutines) {
+        setViewingAllRoutines(false);
+      } else {
+        setStep(1);
+      }
+      saveState();
     }
   };
 
-  // Handle "Skip to all routines"
+  // Handle "Skip to all routines" - go directly to review with all routines
   const handleSkipToAll = () => {
     setShowAllRoutines(true);
     setIsUnsureOfRole(false);
@@ -191,7 +224,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     setSelectedRoutineIds(topRoutineIds);
     
     saveState();
-    setStep(3);
+    setStep(2);
   };
 
   // Handle clear all (reset wizard and go back to step 1)
@@ -203,6 +236,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     setScoredRoutines([]);
     setIsUnsureOfRole(false);
     setShowAllRoutines(false);
+    setViewingAllRoutines(false);
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -217,6 +251,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
       setScoredRoutines([]);
       setIsUnsureOfRole(false);
       setShowAllRoutines(false);
+      setViewingAllRoutines(false);
     }
     onOpenChange(open);
   };
@@ -239,20 +274,17 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
                   Create Your Routines
                 </DialogTitle>
                 <DialogDescription className="text-base text-muted-foreground">
-                  {step === 1 && 'Start by selecting your primary role to get personalized recommendations'}
-                  {step === 2 && 'Select areas you want to improve to refine your routine selection'}
-                  {step === 3 && (showAllRoutines 
-                    ? 'Browse and select from all available routines' 
-                    : isUnsureOfRole 
-                    ? 'Review all available routines to help you discover what might be useful'
-                    : 'Review and finalize your routine collection')}
+                  {step === 1 && (viewingAllRoutines 
+                    ? 'Browse and select routines from the complete library' 
+                    : 'Start by selecting your primary role to get personalized recommendations')}
+                  {step === 2 && 'Review and finalize your routine collection'}
                 </DialogDescription>
               </div>
             </div>
             
             {/* Enhanced Progress indicator */}
             <div className="flex items-center gap-2">
-              {[1, 2, 3].map((s) => (
+              {[1, 2].map((s) => (
                 <React.Fragment key={s}>
                   <div className="flex items-center gap-2">
                     <div
@@ -278,10 +310,10 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
                       )}
                     </div>
                     <span className={`text-xs font-medium ${s === step ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {s === 1 ? 'Role' : s === 2 ? 'Goals' : 'Review'}
+                      {s === 1 ? 'Selection' : 'Review'}
                     </span>
                   </div>
-                  {s < 3 && (
+                  {s < 2 && (
                     <div
                       className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
                         s < step 
@@ -297,24 +329,26 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {step === 1 && (
+          {step === 1 && !viewingAllRoutines && (
             <RoleSelectionStep
               selectedPersonas={selectedPersonas}
               onToggle={handleRoleToggle}
               isUnsure={isUnsureOfRole}
               onUnsureChange={setIsUnsureOfRole}
               onSkipToAll={handleSkipToAll}
+              onSeeAllRoutines={handleSeeAllRoutines}
               onNext={handleContinueToStep2}
             />
           )}
-          {step === 2 && (
-            <IntentSelectionStep
-              selectedIntents={selectedIntents}
-              onSelect={handleIntentsSelect}
-              onBack={handleBack}
+          {step === 1 && viewingAllRoutines && (
+            <AllRoutinesSelectionStep
+              selectedRoutineIds={selectedRoutineIds}
+              onRoutineToggle={handleRoutineToggle}
+              onBack={handleBackFromAllRoutines}
+              onNext={handleContinueFromAllRoutines}
             />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <RoutineReviewStep
               groupedRoutines={groupedRoutines}
               selectedRoutineIds={selectedRoutineIds}
