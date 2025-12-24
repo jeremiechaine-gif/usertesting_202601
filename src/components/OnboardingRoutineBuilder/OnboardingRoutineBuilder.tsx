@@ -1,8 +1,9 @@
 /**
  * Onboarding Routine Builder
  * 
- * Progressive 2-step flow:
- * 1. Routine selection (role-based OR all routines view)
+ * Progressive 3-step flow:
+ * 0. Search type selection (By Personas, By Objectives, Complete List)
+ * 1. Routine selection (based on search type)
  * 2. Review and finalize selection
  * 
  * State persisted to localStorage for recovery
@@ -12,10 +13,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { SearchTypeSelectionStep, type SearchType } from './SearchTypeSelectionStep';
 import { RoleSelectionStep } from './RoleSelectionStep';
+import { IntentSelectionStep } from './IntentSelectionStep';
 import { AllRoutinesSelectionStep } from './AllRoutinesSelectionStep';
 import { RoutineReviewStep } from './RoutineReviewStep';
 import type { Persona, Intent } from '@/lib/onboarding/types';
@@ -26,6 +28,7 @@ import type { ScoredRoutine } from '@/lib/onboarding/scoring';
 const STORAGE_KEY = 'pelico-onboarding-state';
 
 interface OnboardingState {
+  searchType: SearchType | null;
   selectedPersonas: Persona[];
   selectedIntents: Intent[];
   selectedRoutineIds: string[];
@@ -45,7 +48,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   onOpenChange,
   onComplete,
 }) => {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [searchType, setSearchType] = useState<SearchType | null>(null);
   const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
   const [selectedIntents, setSelectedIntents] = useState<Intent[]>([]);
   const [selectedRoutineIds, setSelectedRoutineIds] = useState<string[]>([]);
@@ -67,12 +71,15 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
           setIsUnsureOfRole(state.isUnsureOfRole || false);
           setShowAllRoutines(state.showAllRoutines || false);
           setViewingAllRoutines(state.viewingAllRoutines || false);
+          setSearchType(state.searchType || null);
           
           // Determine step based on state
           if (state.selectedRoutineIds && state.selectedRoutineIds.length > 0) {
             setStep(2);
-          } else {
+          } else if (state.searchType) {
             setStep(1);
+          } else {
+            setStep(0);
           }
         } catch {
           // Invalid stored state, start fresh
@@ -84,6 +91,7 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   // Save state to localStorage
   const saveState = () => {
     const state: OnboardingState = {
+      searchType,
       selectedPersonas,
       selectedIntents,
       selectedRoutineIds,
@@ -104,11 +112,25 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     saveState();
   };
 
-  // Handle continue to step 2 (from role selection)
-  const handleContinueToStep2 = () => {
-    if (selectedPersonas.length > 0 || isUnsureOfRole) {
+  // Handle search type selection (Step 0 → Step 1)
+  const handleSearchTypeSelect = (type: SearchType) => {
+    setSearchType(type);
+    saveState();
+  };
+
+  // Handle continue from search type selection (Step 0 → Step 1)
+  const handleContinueFromSearchType = () => {
+    if (searchType) {
+      setStep(1);
+      saveState();
+    }
+  };
+
+  // Handle continue to step 2 (from role selection - personas flow)
+  const handleContinueFromPersonas = () => {
+    if (selectedPersonas.length > 0) {
       // Score and rank routines based on selected personas
-      const limit = isUnsureOfRole ? undefined : 7;
+      const limit = 7;
       
       const scored = scoreAndRankRoutines(
         ROUTINE_LIBRARY,
@@ -132,16 +154,32 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     }
   };
 
-  // Handle "See all generic routines" - switch to all routines view
-  const handleSeeAllRoutines = () => {
-    setViewingAllRoutines(true);
-    saveState();
-  };
-
-  // Handle back from all routines view to role selection
-  const handleBackFromAllRoutines = () => {
-    setViewingAllRoutines(false);
-    saveState();
+  // Handle continue from objectives selection (Step 1 → Step 2)
+  const handleContinueFromObjectives = () => {
+    if (selectedIntents.length > 0) {
+      // Score and rank routines based on selected objectives
+      const limit = 7;
+      
+      const scored = scoreAndRankRoutines(
+        ROUTINE_LIBRARY,
+        {
+          personas: [],
+          intents: selectedIntents,
+        },
+        limit
+      );
+      
+      setScoredRoutines(scored);
+      
+      // Preselect top routines
+      const topRoutineIds = scored
+        .slice(0, limit)
+        .map((s) => s.routine.id);
+      setSelectedRoutineIds(topRoutineIds);
+      
+      saveState();
+      setStep(2);
+    }
   };
 
   // Handle continue from all routines view to review
@@ -193,11 +231,12 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   // Handle back navigation
   const handleBack = () => {
     if (step === 2) {
-      if (viewingAllRoutines) {
-        setViewingAllRoutines(false);
-      } else {
-        setStep(1);
-      }
+      // Go back to selection step (Step 1)
+      setStep(1);
+      saveState();
+    } else if (step === 1) {
+      // Go back to search type selection (Step 0)
+      setStep(0);
       saveState();
     }
   };
@@ -227,9 +266,10 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
     setStep(2);
   };
 
-  // Handle clear all (reset wizard and go back to step 1)
+  // Handle clear all (reset wizard and go back to step 0)
   const handleClearAll = () => {
-    setStep(1);
+    setStep(0);
+    setSearchType(null);
     setSelectedPersonas([]);
     setSelectedIntents([]);
     setSelectedRoutineIds([]);
@@ -244,7 +284,8 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
   const handleClose = (open: boolean) => {
     if (!open) {
       // Reset state when closing
-      setStep(1);
+      setStep(0);
+      setSearchType(null);
       setSelectedPersonas([]);
       setSelectedIntents([]);
       setSelectedRoutineIds([]);
@@ -267,29 +308,21 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
         {/* Hero Header with Gradient */}
         <div className="relative shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
-          <div className="relative px-8 pt-8 pb-6 border-b border-border/50">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex-1">
-                <DialogTitle className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                  Create Your Routines
-                </DialogTitle>
-                <DialogDescription className="text-base text-muted-foreground">
-                  {step === 1 && (viewingAllRoutines 
-                    ? 'Browse and select routines from the complete library' 
-                    : 'Start by selecting your primary role to get personalized recommendations')}
-                  {step === 2 && 'Review and finalize your routine collection'}
-                </DialogDescription>
-              </div>
+          <div className="relative px-8 pt-6 pb-4 border-b border-border/50">
+            <div className="flex items-center justify-between mb-4">
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Create Your Routines
+              </DialogTitle>
             </div>
             
             {/* Enhanced Progress indicator */}
-            <div className="flex items-center gap-2">
-              {[1, 2].map((s) => (
+            <div className="flex items-center gap-1.5">
+              {[0, 1, 2].map((s) => (
                 <React.Fragment key={s}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <div
                       className={`
-                        relative flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold
+                        relative flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold
                         transition-all duration-300
                         ${s === step
                           ? 'bg-gradient-to-br from-[#2063F0] to-[#1a54d8] text-white shadow-lg shadow-[#2063F0]/30 scale-110'
@@ -299,23 +332,23 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
                       `}
                     >
                       {s < step ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (
-                        s
+                        s + 1
                       )}
                       {s === step && (
                         <div className="absolute inset-0 rounded-full bg-[#2063F0] animate-ping opacity-20" />
                       )}
                     </div>
                     <span className={`text-xs font-medium ${s === step ? 'text-foreground' : 'text-muted-foreground'}`}>
-                      {s === 1 ? 'Selection' : 'Review'}
+                      {s === 0 ? 'Search Type' : s === 1 ? 'Selection' : 'Review'}
                     </span>
                   </div>
                   {s < 2 && (
                     <div
-                      className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                      className={`h-1 flex-1 rounded-full transition-all duration-500 ${
                         s < step 
                           ? 'bg-gradient-to-r from-[#31C7AD] to-[#2ab89a]' 
                           : 'bg-muted/30'
@@ -329,22 +362,36 @@ export const OnboardingRoutineBuilder: React.FC<OnboardingRoutineBuilderProps> =
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          {step === 1 && !viewingAllRoutines && (
+          {step === 0 && (
+            <SearchTypeSelectionStep
+              selectedType={searchType}
+              onSelect={handleSearchTypeSelect}
+              onNext={handleContinueFromSearchType}
+            />
+          )}
+          {step === 1 && searchType === 'personas' && (
             <RoleSelectionStep
               selectedPersonas={selectedPersonas}
               onToggle={handleRoleToggle}
-              isUnsure={isUnsureOfRole}
-              onUnsureChange={setIsUnsureOfRole}
-              onSkipToAll={handleSkipToAll}
-              onSeeAllRoutines={handleSeeAllRoutines}
-              onNext={handleContinueToStep2}
+              onBack={handleBack}
+              onNext={handleContinueFromPersonas}
             />
           )}
-          {step === 1 && viewingAllRoutines && (
+          {step === 1 && searchType === 'objectives' && (
+            <IntentSelectionStep
+              selectedIntents={selectedIntents}
+              onSelect={(intents) => {
+                setSelectedIntents(intents);
+                handleContinueFromObjectives();
+              }}
+              onBack={handleBack}
+            />
+          )}
+          {step === 1 && searchType === 'complete' && (
             <AllRoutinesSelectionStep
               selectedRoutineIds={selectedRoutineIds}
               onRoutineToggle={handleRoutineToggle}
-              onBack={handleBackFromAllRoutines}
+              onBack={handleBack}
               onNext={handleContinueFromAllRoutines}
             />
           )}

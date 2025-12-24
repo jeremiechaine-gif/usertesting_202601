@@ -327,31 +327,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <p className="text-muted-foreground text-base">Here's what we have for you today</p>
           </div>
 
-          {/* Main Hero Card */}
-          <div className="relative mb-8 rounded-xl p-8 overflow-hidden border border-[#2063F0]/20 bg-background shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#2063F0]/10 via-[#31C7AD]/5 to-transparent" />
-            <div className="relative flex items-start gap-6">
-              <div className="p-3 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md shrink-0">
-                <Sparkles className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-2xl font-bold mb-2">Kick-start your supply chain optimization with Pelico</h3>
-                <p className="text-muted-foreground leading-relaxed max-w-3xl">
-                  Optimize your supply chain operations with intelligent scopes, routines, and analytics. 
-                  Define scopes to filter your data, create routines to save your preferred views, and 
-                  manage your team to collaborate effectively on supply chain decisions.
-                </p>
-              </div>
-              <div className="shrink-0">
-                <img 
-                  src="/images/Illu2-Supply.png" 
-                  alt="Supply Chain Illustration" 
-                  className="h-40 w-auto object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pelico Onboarding Card */}
@@ -533,12 +508,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               
               // Mark onboarding task as completed and persist to localStorage
               updateTaskStatus('create-routine', true);
-              
-              // Navigate to scope-routines page after modal closes
-              // Small delay to ensure modal closing animation completes
-              setTimeout(() => {
-                onNavigate?.('scope-routines');
-              }, 300);
             } else {
               console.log('All selected routines already exist');
             }

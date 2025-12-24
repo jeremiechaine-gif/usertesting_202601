@@ -167,89 +167,88 @@ export const AllRoutinesSelectionStep: React.FC<AllRoutinesSelectionStepProps> =
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      {/* Filters and Search Bar */}
-      <div className="border-b bg-background px-6 py-4 shrink-0">
-        <div className="flex flex-col gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search routines by name, description, or keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10"
-            />
-          </div>
-
-          {/* Filters Row */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Select value={personaFilter} onValueChange={(value) => setPersonaFilter(value as PersonaFilter)}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Persona" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Personas</SelectItem>
-                {uniquePersonas.map(persona => (
-                  <SelectItem key={persona} value={persona}>{persona}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={objectiveFilter} onValueChange={(value) => setObjectiveFilter(value as ObjectiveFilter)}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Objective" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Objectives</SelectItem>
-                {uniqueObjectives.map(objective => (
-                  <SelectItem key={objective} value={objective}>{objective}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={horizonFilter} onValueChange={(value) => setHorizonFilter(value as HorizonFilter)}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Horizon" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Horizons</SelectItem>
-                {uniqueHorizons.map(horizon => (
-                  <SelectItem key={horizon} value={horizon}>{horizon}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={pelicoViewFilter} onValueChange={(value) => setPelicoViewFilter(value as PelicoViewFilter)}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Pelico View" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Pelico Views</SelectItem>
-                {uniquePelicoViews.map(view => (
-                  <SelectItem key={view} value={view}>{view}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="flex-1" />
-
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-              <SelectTrigger className="w-[150px] h-9">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name (A-Z)</SelectItem>
-                <SelectItem value="frequency">Frequency</SelectItem>
-                <SelectItem value="horizon">Horizon</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Content - Cards Grid */}
+      {/* Content - Search, Filters and Cards Grid */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="p-6">
+        <div className="px-6 pt-4 pb-6">
+          {/* Search and Filters Section */}
+          <div className="flex flex-col gap-4 mb-6">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search routines by name, description, or keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={personaFilter} onValueChange={(value) => setPersonaFilter(value as PersonaFilter)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Persona" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Personas</SelectItem>
+                  {uniquePersonas.map(persona => (
+                    <SelectItem key={persona} value={persona}>{persona}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={objectiveFilter} onValueChange={(value) => setObjectiveFilter(value as ObjectiveFilter)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Objective" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Objectives</SelectItem>
+                  {uniqueObjectives.map(objective => (
+                    <SelectItem key={objective} value={objective}>{objective}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={horizonFilter} onValueChange={(value) => setHorizonFilter(value as HorizonFilter)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Horizon" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Horizons</SelectItem>
+                  {uniqueHorizons.map(horizon => (
+                    <SelectItem key={horizon} value={horizon}>{horizon}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={pelicoViewFilter} onValueChange={(value) => setPelicoViewFilter(value as PelicoViewFilter)}>
+                <SelectTrigger className="w-[180px] h-9">
+                  <SelectValue placeholder="Pelico View" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Pelico Views</SelectItem>
+                  {uniquePelicoViews.map(view => (
+                    <SelectItem key={view} value={view}>{view}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="flex-1" />
+
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[150px] h-9">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="frequency">Frequency</SelectItem>
+                  <SelectItem value="horizon">Horizon</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
           {filteredAndSortedRoutines.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
               <div className="p-4 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-4">

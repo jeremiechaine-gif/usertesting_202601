@@ -6,8 +6,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { User, ChevronRight, List, Zap } from 'lucide-react';
+import { User, ArrowLeft } from 'lucide-react';
 import type { Persona } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
 
@@ -29,28 +28,26 @@ const ROLES: Persona[] = [
 interface RoleSelectionStepProps {
   selectedPersonas: Persona[];
   onToggle: (persona: Persona) => void;
-  isUnsure: boolean;
-  onUnsureChange: (unsure: boolean) => void;
-  onSkipToAll: () => void;
-  onSeeAllRoutines: () => void;
+  isUnsure?: boolean;
+  onUnsureChange?: (unsure: boolean) => void;
+  onSkipToAll?: () => void;
+  onSeeAllRoutines?: () => void;
+  onBack: () => void;
   onNext: () => void;
 }
 
 export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
   selectedPersonas,
   onToggle,
-  isUnsure,
-  onUnsureChange,
-  onSkipToAll,
-  onSeeAllRoutines,
+  onBack,
   onNext,
 }) => {
-  const canContinue = selectedPersonas.length > 0 || isUnsure;
+  const canContinue = selectedPersonas.length > 0;
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-8 py-6 space-y-6 pb-0">
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+        <div className="px-8 pt-4 space-y-6 pb-0">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
             <div className="p-2 rounded-lg bg-[#31C7AD]/10">
               <User className="h-5 w-5 text-[#31C7AD]" />
             </div>
@@ -71,7 +68,7 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
             )}
           </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {ROLES.map((role) => {
             const isSelected = selectedPersonas.includes(role);
             return (
@@ -79,15 +76,10 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
                 key={role}
                 onClick={() => {
                   onToggle(role);
-                  if (isUnsure) {
-                    onUnsureChange(false);
-                  }
                 }}
-                disabled={isUnsure}
                 className={cn(
                   'group relative flex items-center justify-between p-4 rounded-xl transition-all text-left',
                   'border-2 hover:shadow-md',
-                  isUnsure && 'opacity-50 cursor-not-allowed',
                   isSelected
                     ? 'border-[#2063F0] bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5 shadow-lg shadow-[#2063F0]/10'
                     : 'border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent'
@@ -129,69 +121,31 @@ export const RoleSelectionStep: React.FC<RoleSelectionStepProps> = ({
           })}
         </div>
 
-          {/* Option B: "I'm not sure yet" checkbox */}
-          <div className="mt-6 pt-6 border-t border-border/50">
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                 onClick={() => {
-                   onUnsureChange(!isUnsure);
-                 }}>
-              <Checkbox
-                id="unsure-role"
-                checked={isUnsure}
-                onCheckedChange={(checked) => {
-                  onUnsureChange(checked === true);
-                }}
-                className="mt-0.5 data-[state=checked]:bg-[#31C7AD] data-[state=checked]:border-[#31C7AD]"
-              />
-              <div className="flex-1">
-                <label
-                  htmlFor="unsure-role"
-                  className="text-sm font-medium cursor-pointer"
-                >
-                  I'm not sure of my role yet
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  We'll show you all available routines to help you discover what might be useful
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </ScrollArea>
 
-      {/* Footer with Next and Skip buttons */}
+      {/* Footer with Back and Next buttons */}
       <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSkipToAll}
-              className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
-            >
-              <List className="h-4 w-4" />
-              Skip to all routines
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSeeAllRoutines}
-              className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
-            >
-              <Zap className="h-4 w-4" />
-              See all generic routines
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
           
           <Button
             onClick={onNext}
             disabled={!canContinue}
             className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next
-            <ChevronRight className="h-4 w-4" />
+            Continue
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Button>
         </div>
       </div>

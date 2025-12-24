@@ -129,10 +129,10 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
     <>
       <div className="flex flex-col h-full min-h-0">
         <ScrollArea className="flex-1 min-h-0">
-          <div className="px-8 py-6 space-y-6">
+          <div className="px-8 pt-4 space-y-6">
             {hasSelectedRoutines ? (
               <>
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
                   <div className="p-2 rounded-lg bg-[#31C7AD]/10">
                     <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
                   </div>
@@ -169,46 +169,45 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
               </div>
             )}
 
-            {hasSelectedRoutines && (
-              <div className="pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBrowseModal(true)}
-                  className="w-full h-11 border-2 border-dashed hover:border-[#31C7AD] hover:bg-[#31C7AD]/5"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add More Routines
-                </Button>
-              </div>
-            )}
           </div>
         </ScrollArea>
 
-        <div className="px-8 py-5 border-t bg-gradient-to-b from-muted/30 to-background flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={onBack} className="h-10 px-6">
-              Back
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={onClearAll}
-              className="h-10 px-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            >
-              Clear All
-            </Button>
-          </div>
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-muted-foreground italic">
-              You can customize these anytime
-            </p>
-            <Button
-              onClick={onComplete}
-              disabled={!hasSelectedRoutines}
-              className="h-11 px-8 bg-gradient-to-r from-[#31C7AD] to-[#2ab89a] hover:from-[#2ab89a] hover:to-[#249582] shadow-lg shadow-[#31C7AD]/30 font-semibold"
-            >
-              <CheckCircle2 className="h-5 w-5 mr-2" />
-              Complete Setup
-            </Button>
+        <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBack}
+                className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={onClearAll}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5"
+              >
+                Clear All
+              </Button>
+            </div>
+            <div className="flex items-center gap-4">
+              <p className="text-xs text-muted-foreground italic">
+                You can customize these anytime
+              </p>
+              <Button
+                onClick={onComplete}
+                disabled={!hasSelectedRoutines}
+                className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Complete Setup
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -18,39 +18,39 @@ const INTENTS: Array<{
   icon: React.ComponentType<{ className?: string }> 
 }> = [
   { 
-    id: 'Gérer des retards', 
-    label: 'Gérer des retards', 
-    description: 'Traiter les POs en retard, escalader et corriger les problèmes de livraison',
+    id: 'Manage delays', 
+    label: 'Manage delays', 
+    description: 'Handle delayed purchase orders, escalate issues, and correct delivery problems',
     icon: AlertTriangle 
   },
   { 
-    id: 'Anticiper des risques', 
-    label: 'Anticiper des risques', 
-    description: 'Identifier proactivement les risques supply chain avant qu\'ils ne deviennent critiques',
+    id: 'Anticipate risks', 
+    label: 'Anticipate risks', 
+    description: 'Proactively identify supply chain risks before they become critical',
     icon: Target 
   },
   { 
-    id: 'Prioriser des actions', 
-    label: 'Prioriser des actions', 
-    description: 'Déterminer quelles commandes et actions traiter en priorité selon leur impact',
+    id: 'Prioritize actions', 
+    label: 'Prioritize actions', 
+    description: 'Determine which orders and actions to handle first based on their impact',
     icon: CheckCircle2 
   },
   { 
-    id: 'Tenir la promesse client', 
-    label: 'Tenir la promesse client', 
-    description: 'Assurer les dates de livraison promises et maintenir la satisfaction client',
+    id: 'Meet customer commitments', 
+    label: 'Meet customer commitments', 
+    description: 'Ensure promised delivery dates and maintain customer satisfaction',
     icon: Users 
   },
   { 
-    id: 'Piloter la charge / la prod', 
-    label: 'Piloter la charge / la prod', 
-    description: 'Optimiser la planification de production et l\'équilibrage des capacités',
+    id: 'Monitor workload / production', 
+    label: 'Monitor workload / production', 
+    description: 'Optimize production planning and balance capacity',
     icon: TrendingUp 
   },
   { 
-    id: 'Vision business / KPIs', 
-    label: 'Vision business / KPIs', 
-    description: 'Suivre la performance globale et les indicateurs clés de votre supply chain',
+    id: 'Business insights / KPIs', 
+    label: 'Business insights / KPIs', 
+    description: 'Track overall performance and key indicators of your supply chain',
     icon: BarChart3 
   },
 ];
@@ -82,8 +82,8 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0">
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-8 py-6 space-y-6">
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+        <div className="px-8 pt-4 space-y-6">
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
             <div className="p-2 rounded-lg bg-[#2063F0]/10">
               <Target className="h-5 w-5 text-[#2063F0]" />
             </div>
@@ -160,17 +160,30 @@ export const IntentSelectionStep: React.FC<IntentSelectionStepProps> = ({
         </div>
       </ScrollArea>
 
-      <div className="px-8 py-5 border-t bg-gradient-to-b from-muted/30 to-background flex items-center justify-between shrink-0">
-        <Button variant="outline" onClick={onBack} className="h-10 px-6">
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          disabled={localIntents.length === 0}
-          className="h-10 px-8 bg-gradient-to-r from-[#2063F0] to-[#1a54d8] hover:from-[#1a54d8] hover:to-[#164ab8] shadow-lg shadow-[#2063F0]/30"
-        >
-          Continue
-        </Button>
+      <div className="px-8 py-4 border-t border-border/50 bg-background shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="text-muted-foreground hover:text-[#2063F0] hover:bg-[#2063F0]/5 gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={localIntents.length === 0}
+            className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Button>
+        </div>
       </div>
     </div>
   );
