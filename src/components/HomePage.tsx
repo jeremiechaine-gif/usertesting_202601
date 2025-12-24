@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { ScopeModal } from './ScopeModal';
 import { OnboardingRoutineBuilder } from './OnboardingRoutineBuilder/OnboardingRoutineBuilder';
 import { OnboardingTeamBuilder } from './OnboardingTeamBuilder/OnboardingTeamBuilder';
+import { SimpleOnboardingWizard } from './SimpleOnboardingWizard/SimpleOnboardingWizard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlanDropdown } from './PlanDropdown';
@@ -68,9 +69,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
   const [teamBuilderOpen, setTeamBuilderOpen] = useState(false);
+  const [simpleOnboardingOpen, setSimpleOnboardingOpen] = useState(false);
 
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [resetConfirmStep, setResetConfirmStep] = useState<'first' | 'second'>('first');
+  const [simpleOnboardingProgress, setSimpleOnboardingProgress] = useState({ completed: 0, total: 4 });
   
   // Initialize tasks with default values
   const getInitialTasks = (): OnboardingTask[] => [
@@ -141,6 +144,53 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       return updatedTasks;
     });
   }, []);
+
+  // Recalculate progress when Simple Onboarding wizard closes
+  useEffect(() => {
+    if (!simpleOnboardingOpen) {
+      const STORAGE_KEY = 'pelico-simple-onboarding-state';
+      const stored = localStorage.getItem(STORAGE_KEY);
+      let completedSteps = 0;
+      const totalSteps = 4;
+      
+      if (stored) {
+        try {
+          const state = JSON.parse(stored);
+          const teams = state.teams || [];
+          
+          // Step 0: Create Teams - at least one team created
+          if (teams.length > 0) {
+            completedSteps++;
+            
+            // Step 1: Choose Routines - all teams have at least one routine
+            const allTeamsHaveRoutines = teams.every((team: any) => 
+              team.assignedRoutineIds && team.assignedRoutineIds.length > 0
+            );
+            if (allTeamsHaveRoutines && teams.length > 0) {
+              completedSteps++;
+              
+              // Step 2: Add Members - all teams have at least one member
+              const allTeamsHaveMembers = teams.every((team: any) => 
+                team.memberIds && team.memberIds.length > 0
+              );
+              if (allTeamsHaveMembers && teams.length > 0) {
+                completedSteps++;
+                
+                // Step 3: Create Scopes - optional, but if we reached step 3, consider it done
+                if (state.currentStep >= 3) {
+                  completedSteps++;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Invalid state, progress stays at 0
+        }
+      }
+      
+      setSimpleOnboardingProgress({ completed: completedSteps, total: totalSteps });
+    }
+  }, [simpleOnboardingOpen]);
 
   // Check if "Define scope" task should be marked as completed based on scopes
   useEffect(() => {
@@ -443,18 +493,58 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-4 rounded-lg transition-all border bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
-                    <span className="text-sm font-medium">
-                      Set-up your workspace
-                    </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
+                    onClick={() => setSimpleOnboardingOpen(true)}
+                  >
+                    Set-up your workspace
+                  </Button>
+                  
+                  {/* Progress Bar */}
+                  <div className="flex flex-col gap-1.5 min-w-[200px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Progress</span>
+                      <span className="text-xs font-medium">{simpleOnboardingProgress.completed} / {simpleOnboardingProgress.total}</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#2063F0] to-[#31C7AD] transition-all duration-300"
+                        style={{ width: `${(simpleOnboardingProgress.completed / simpleOnboardingProgress.total) * 100}%` }}
+                      />
+                    </div>
                   </div>
+                </div>
+                
+                {/* Reset Data Button */}
+                <div className="pt-3 mt-3 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetClick}
+                    className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset data
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Simple Onboarding Wizard */}
+      <SimpleOnboardingWizard
+        open={simpleOnboardingOpen}
+        onOpenChange={setSimpleOnboardingOpen}
+        onComplete={() => {
+          setSimpleOnboardingOpen(false);
+          // Reload page to reflect changes
+          window.location.reload();
+        }}
+      />
 
       {/* Reset Confirmation Modal */}
       <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
