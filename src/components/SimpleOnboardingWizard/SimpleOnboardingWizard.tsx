@@ -458,8 +458,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Header - Hide on welcome substep */}
-        {!(step === 0 && currentSubstep.step0 === 'welcome') && (
+        {/* Top Header - Hide on welcome substep and when creating a routine (substep) */}
+        {!(step === 0 && currentSubstep.step0 === 'welcome') && !routineCreationStep && (
           <div className="px-8 py-4 border-b border-border bg-background shrink-0">
             <div className="flex items-center justify-between">
               <div>

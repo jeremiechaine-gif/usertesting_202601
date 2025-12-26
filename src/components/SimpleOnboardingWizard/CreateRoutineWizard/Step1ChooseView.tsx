@@ -18,6 +18,7 @@ interface Step1ChooseViewProps {
   onToggleShowAll: () => void;
   onViewSelect: (view: PelicoViewDefinition) => void;
   hasPersona: boolean;
+  personaName?: string; // French persona name to display
 }
 
 const INTENT_LABELS: Record<ViewIntent, { label: string; icon: React.ReactNode; description: string }> = {
@@ -56,6 +57,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
   onToggleShowAll,
   onViewSelect,
   hasPersona,
+  personaName,
 }) => {
   return (
     <div className="space-y-6">
@@ -73,7 +75,9 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[#31C7AD]" />
-              <span className="text-sm font-medium">Recommended for your role</span>
+              <span className="text-sm font-medium">
+                {personaName ? `Recommended for ${personaName}` : 'Recommended for your role'}
+              </span>
             </div>
             <Button
               variant="ghost"

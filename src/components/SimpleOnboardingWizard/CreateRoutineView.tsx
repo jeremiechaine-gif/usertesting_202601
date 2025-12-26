@@ -198,11 +198,6 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">Create Routine</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {currentStep === 'choose-view' && 'Select a Pelico view to base your routine on'}
-                {currentStep === 'configure-table' && selectedView && `Configure ${selectedView.name}`}
-                {currentStep === 'save' && 'Save your routine'}
-              </p>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -224,6 +219,7 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
                 onToggleShowAll={() => setShowAllViews(!showAllViews)}
                 onViewSelect={handleViewSelect}
                 hasPersona={!!teamPersonaEnglish}
+                personaName={teamPersona || undefined}
               />
             </div>
           </ScrollArea>
