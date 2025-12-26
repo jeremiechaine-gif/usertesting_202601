@@ -56,6 +56,8 @@ interface CreateRoutineViewProps {
   teamPersona?: string;
   onClose: () => void;
   onRoutineCreated: (routineId: string) => void;
+  currentStep?: CreateRoutineStep;
+  onStepChange?: (step: CreateRoutineStep) => void;
 }
 
 export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
@@ -63,8 +65,26 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
   teamPersona,
   onClose,
   onRoutineCreated,
+  currentStep: externalCurrentStep,
+  onStepChange,
 }) => {
-  const [currentStep, setCurrentStep] = useState<CreateRoutineStep>('choose-view');
+  const [internalCurrentStep, setInternalCurrentStep] = useState<CreateRoutineStep>('choose-view');
+  const currentStep = externalCurrentStep ?? internalCurrentStep;
+  
+  // Sync internal step when external step changes
+  React.useEffect(() => {
+    if (externalCurrentStep) {
+      setInternalCurrentStep(externalCurrentStep);
+    }
+  }, [externalCurrentStep]);
+  
+  const setCurrentStep = (step: CreateRoutineStep) => {
+    if (onStepChange) {
+      onStepChange(step);
+    } else {
+      setInternalCurrentStep(step);
+    }
+  };
   const [selectedView, setSelectedView] = useState<PelicoViewDefinition | null>(null);
   const [showAllViews, setShowAllViews] = useState(false);
   
@@ -139,10 +159,10 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
-      {/* Header with stepper */}
+      {/* Header */}
       <div className="shrink-0 border-b border-border bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent">
         <div className="px-6 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">Create Routine</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -154,57 +174,6 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
-          </div>
-
-          {/* Step indicator */}
-          <div className="flex items-center gap-3">
-            {(['choose-view', 'configure-table', 'save'] as CreateRoutineStep[]).map((step, index) => {
-              const stepNumber = index + 1;
-              const stepLabels = {
-                'choose-view': 'Choose View',
-                'configure-table': 'Configure',
-                'save': 'Save',
-              };
-              const isActive = currentStep === step;
-              const isCompleted = ['choose-view', 'configure-table', 'save'].indexOf(currentStep) > index;
-              
-              return (
-                <React.Fragment key={step}>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={cn(
-                        'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all',
-                        isCompleted
-                          ? 'bg-[#31C7AD] text-white'
-                          : isActive
-                          ? 'bg-[#2063F0] text-white'
-                          : 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        stepNumber
-                      )}
-                    </div>
-                    <span className={cn(
-                      'text-sm font-medium',
-                      isActive ? 'text-foreground' : 'text-muted-foreground'
-                    )}>
-                      {stepLabels[step]}
-                    </span>
-                  </div>
-                  {index < 2 && (
-                    <div
-                      className={cn(
-                        'flex-1 h-0.5 transition-colors',
-                        isCompleted ? 'bg-[#31C7AD]' : 'bg-muted'
-                      )}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
           </div>
         </div>
       </div>

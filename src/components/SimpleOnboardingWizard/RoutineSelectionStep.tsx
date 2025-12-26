@@ -29,6 +29,7 @@ import { CreateRoutineView } from './CreateRoutineView';
 import { getRoutines } from '@/lib/routines';
 
 export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
+export type CreateRoutineStep = 'choose-view' | 'configure-table' | 'save';
 
 interface RoutineSelectionStepProps {
   teams: SimpleTeamConfig[];
@@ -38,6 +39,8 @@ interface RoutineSelectionStepProps {
   onClearAll: () => void;
   currentSubstep?: RoutineSelectionSubstep | string;
   onSubstepChange?: (substep: RoutineSelectionSubstep | string) => void;
+  routineCreationStep?: CreateRoutineStep | null;
+  onRoutineCreationStepChange?: (step: CreateRoutineStep | null) => void;
 }
 
 interface RoutineWithDetails {
@@ -57,6 +60,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   onClearAll,
   currentSubstep = 'team-selection',
   onSubstepChange,
+  routineCreationStep,
+  onRoutineCreationStepChange,
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
@@ -251,6 +256,14 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 
   const canContinue = teams.every(team => team.assignedRoutineIds.length > 0);
 
+  // Initialize routine creation step when starting to create a routine
+  const handleCreateRoutineClick = (teamId: string) => {
+    setCreatingRoutineForTeam(teamId);
+    if (onRoutineCreationStepChange) {
+      onRoutineCreationStepChange('choose-view');
+    }
+  };
+
   // Show CreateRoutineView if active
   if (creatingRoutineForTeam) {
     const team = teams.find(t => t.id === creatingRoutineForTeam);
@@ -260,6 +273,9 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         teamPersona={team?.persona}
         onClose={() => {
           setCreatingRoutineForTeam(null);
+          if (onRoutineCreationStepChange) {
+            onRoutineCreationStepChange(null);
+          }
           if (onSubstepChange) {
             onSubstepChange('team-selection');
           }
@@ -267,8 +283,17 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         onRoutineCreated={(routineId) => {
           handleRoutineCreated(creatingRoutineForTeam, routineId);
           setCreatingRoutineForTeam(null);
+          if (onRoutineCreationStepChange) {
+            onRoutineCreationStepChange(null);
+          }
           if (onSubstepChange) {
             onSubstepChange('team-selection');
+          }
+        }}
+        currentStep={routineCreationStep || undefined}
+        onStepChange={(step) => {
+          if (onRoutineCreationStepChange) {
+            onRoutineCreationStepChange(step);
           }
         }}
       />
@@ -403,7 +428,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setCreatingRoutineForTeam(team.id);
+                                  handleCreateRoutineClick(team.id);
                                   if (onSubstepChange) {
                                     onSubstepChange('create-routine');
                                   }
@@ -435,7 +460,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setCreatingRoutineForTeam(team.id);
+                                  handleCreateRoutineClick(team.id);
                                   if (onSubstepChange) {
                                     onSubstepChange('create-routine');
                                   }

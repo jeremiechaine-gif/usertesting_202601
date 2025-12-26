@@ -4,6 +4,7 @@
  */
 
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
+import type { Persona } from '@/lib/onboarding/pelicoViews';
 
 export type PelicoViewPage = 
   | 'supply'
@@ -39,6 +40,7 @@ export interface Routine {
   teamIds?: string[]; // [] ou undefined = privée, [teamId1, teamId2, ...] = partagée à plusieurs équipes
   // Legacy: teamId is kept for backward compatibility but deprecated
   teamId?: string | null; // @deprecated Use teamIds instead
+  personas?: Persona[]; // Personas for which this routine is recommended
   createdAt: string;
   updatedAt: string;
 }

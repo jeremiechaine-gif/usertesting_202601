@@ -72,6 +72,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   });
   const [step0CanProceed, setStep0CanProceed] = useState(false);
   const step0ContinueHandlerRef = useRef<(() => boolean) | null>(null);
+  // Routine creation substeps state
+  const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | 'save' | null>(null);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -270,7 +272,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     0: 'Welcome & Create Teams',
     1: 'Add Members',
     2: 'Create Scopes',
-    3: 'Choose Routines',
+    3: 'Routines',
   };
 
   if (!open) return null;
@@ -308,70 +310,127 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               // Allow navigation to completed steps, current step, and next accessible step
               const isAccessible = stepIndex === 0 || step >= stepIndex - 1;
               const canNavigate = isAccessible || isCompleted;
+              const showRoutineSubsteps = stepIndex === 3 && isActive && routineCreationStep !== null;
 
               return (
-                <button
-                  key={stepIndex}
-                  onClick={() => {
-                    if (canNavigate) {
-                      setStep(stepIndex as 0 | 1 | 2 | 3);
-                      saveState();
-                    }
-                  }}
-                  disabled={!canNavigate}
-                  className={cn(
-                    'w-full flex items-start gap-3 p-4 rounded-lg transition-all text-left',
-                    'border-2',
-                    isActive
-                      ? 'border-[#2063F0] bg-[#2063F0]/10 shadow-md'
-                      : isCompleted
-                      ? 'border-[#31C7AD]/30 bg-[#31C7AD]/5 hover:border-[#31C7AD]/50 hover:bg-[#31C7AD]/10 cursor-pointer'
-                      : isAccessible
-                      ? 'border-border bg-background hover:border-[#2063F0]/30 hover:bg-muted/50 cursor-pointer'
-                      : 'border-border/50 bg-muted/20 opacity-50 cursor-not-allowed'
+                <React.Fragment key={stepIndex}>
+                  <button
+                    onClick={() => {
+                      if (canNavigate) {
+                        setStep(stepIndex as 0 | 1 | 2 | 3);
+                        // Reset routine creation step when leaving step 3
+                        if (stepIndex !== 3) {
+                          setRoutineCreationStep(null);
+                        }
+                        saveState();
+                      }
+                    }}
+                    disabled={!canNavigate}
+                    className={cn(
+                      'w-full flex items-start gap-3 p-4 rounded-lg transition-all text-left',
+                      'border-2',
+                      isActive
+                        ? 'border-[#2063F0] bg-[#2063F0]/10 shadow-md'
+                        : isCompleted
+                        ? 'border-[#31C7AD]/30 bg-[#31C7AD]/5 hover:border-[#31C7AD]/50 hover:bg-[#31C7AD]/10 cursor-pointer'
+                        : isAccessible
+                        ? 'border-border bg-background hover:border-[#2063F0]/30 hover:bg-muted/50 cursor-pointer'
+                        : 'border-border/50 bg-muted/20 opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    <div className="flex-shrink-0 mt-0.5">
+                      {isCompleted ? (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#31C7AD] text-white">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                      ) : isActive ? (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2063F0] text-white font-semibold">
+                          {stepIndex + 1}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-muted-foreground/30 bg-background">
+                          <Circle className="h-5 w-5 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={cn(
+                          'text-sm font-semibold mb-1',
+                          isActive && 'text-[#2063F0]',
+                          isCompleted && 'text-[#31C7AD]',
+                          !isActive && !isCompleted && 'text-foreground'
+                        )}
+                      >
+                        Step {stepIndex + 1}
+                      </div>
+                      <div
+                        className={cn(
+                          'text-xs',
+                          isActive ? 'text-[#2063F0]' : 'text-muted-foreground'
+                        )}
+                      >
+                        {stepLabels[stepIndex]}
+                      </div>
+                      {isCompleted && (
+                        <div className="mt-1 text-xs text-[#31C7AD] font-medium">
+                          Completed
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                  
+                  {/* Routine Creation Substeps - Only show when Step 4 is active and creating a routine */}
+                  {showRoutineSubsteps && (
+                    <div className="ml-6 space-y-2 border-l-2 border-[#2063F0]/20 pl-4 mt-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Create routine
+                      </div>
+                      {(['choose-view', 'configure-table', 'save'] as const).map((substep, substepIndex) => {
+                        const substepLabels = {
+                          'choose-view': 'Choose View',
+                          'configure-table': 'Configure',
+                          'save': 'Save',
+                        };
+                        const isSubstepActive = routineCreationStep === substep;
+                        const isSubstepCompleted = routineCreationStep && 
+                          ['choose-view', 'configure-table', 'save'].indexOf(routineCreationStep) > substepIndex;
+                        const canNavigateToSubstep = isSubstepCompleted || isSubstepActive;
+
+                        return (
+                          <button
+                            key={substep}
+                            onClick={() => {
+                              if (canNavigateToSubstep) {
+                                setRoutineCreationStep(substep);
+                              }
+                            }}
+                            disabled={!canNavigateToSubstep}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all text-left text-xs',
+                              isSubstepActive
+                                ? 'bg-[#2063F0]/10 text-[#2063F0] font-medium'
+                                : isSubstepCompleted
+                                ? 'text-[#31C7AD] hover:bg-[#31C7AD]/5 cursor-pointer'
+                                : 'text-muted-foreground opacity-50 cursor-not-allowed'
+                            )}
+                          >
+                            <div className="flex-shrink-0">
+                              {isSubstepCompleted ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-[#31C7AD]" />
+                              ) : isSubstepActive ? (
+                                <div className="w-3.5 h-3.5 rounded-full bg-[#2063F0]" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5 text-muted-foreground/30" />
+                              )}
+                            </div>
+                            <span>{substepLabels[substep]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
-                >
-                  <div className="flex-shrink-0 mt-0.5">
-                    {isCompleted ? (
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#31C7AD] text-white">
-                        <CheckCircle2 className="h-5 w-5" />
-                      </div>
-                    ) : isActive ? (
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2063F0] text-white font-semibold">
-                        {stepIndex + 1}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-muted-foreground/30 bg-background">
-                        <Circle className="h-5 w-5 text-muted-foreground/30" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={cn(
-                        'text-sm font-semibold mb-1',
-                        isActive && 'text-[#2063F0]',
-                        isCompleted && 'text-[#31C7AD]',
-                        !isActive && !isCompleted && 'text-foreground'
-                      )}
-                    >
-                      Step {stepIndex + 1}
-                    </div>
-                    <div
-                      className={cn(
-                        'text-xs',
-                        isActive ? 'text-[#2063F0]' : 'text-muted-foreground'
-                      )}
-                    >
-                      {stepLabels[stepIndex]}
-                    </div>
-                    {isCompleted && (
-                      <div className="mt-1 text-xs text-[#31C7AD] font-medium">
-                        Completed
-                      </div>
-                    )}
-                  </div>
-                </button>
+                </React.Fragment>
               );
             })}
           </div>
@@ -466,6 +525,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 setCurrentSubstep({ ...currentSubstep, step3: substep });
                 saveState();
               }}
+              routineCreationStep={routineCreationStep}
+              onRoutineCreationStepChange={setRoutineCreationStep}
             />
           )}
         </div>

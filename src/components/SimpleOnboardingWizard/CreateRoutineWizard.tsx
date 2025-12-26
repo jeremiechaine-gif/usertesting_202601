@@ -45,6 +45,7 @@ import {
   getViewsByIntent,
   mapPersonaToEnglish,
   type PelicoViewDefinition,
+  type Persona,
 } from '@/lib/onboarding/pelicoViews';
 import { Step1ChooseView } from './CreateRoutineWizard/Step1ChooseView';
 import { Step2ExplainView } from './CreateRoutineWizard/Step2ExplainView';
@@ -77,6 +78,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [routineName, setRoutineName] = useState('');
   const [routineDescription, setRoutineDescription] = useState('');
+  const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
   
   // Map French persona to English and get recommended views
   const teamPersona = teamPersonaFrench ? mapPersonaToEnglish(teamPersonaFrench) : null;
@@ -93,8 +95,31 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
       setSorting([]);
       setRoutineName('');
       setRoutineDescription('');
+      // Initialize personas with recommended personas from the view if available
+      // Otherwise, initialize with team persona if available
+      if (teamPersona) {
+        setSelectedPersonas([teamPersona]);
+      } else {
+        setSelectedPersonas([]);
+      }
     }
-  }, [open]);
+  }, [open, teamPersona]);
+
+  // Update selected personas when view changes
+  useEffect(() => {
+    if (selectedView) {
+      if (teamPersona && selectedView.recommendedPersonas.includes(teamPersona)) {
+        // If team has a persona and view recommends it, pre-select it
+        setSelectedPersonas([teamPersona]);
+      } else if (selectedView.recommendedPersonas.length > 0) {
+        // Otherwise, pre-select recommended personas from the view (max 3)
+        setSelectedPersonas(selectedView.recommendedPersonas.slice(0, 3));
+      } else {
+        // No recommended personas, keep current selection or empty
+        setSelectedPersonas([]);
+      }
+    }
+  }, [selectedView, teamPersona]);
 
   const handleViewSelect = (view: PelicoViewDefinition) => {
     setSelectedView(view);
@@ -130,6 +155,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
       scopeMode: 'scope-aware',
       createdBy: currentUserId,
       teamIds: [teamId],
+      personas: selectedPersonas.length > 0 ? selectedPersonas : undefined,
     });
 
     onRoutineCreated(routine.id);
@@ -240,8 +266,10 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
                   view={selectedView}
                   routineName={routineName}
                   routineDescription={routineDescription}
+                  selectedPersonas={selectedPersonas}
                   onNameChange={setRoutineName}
                   onDescriptionChange={setRoutineDescription}
+                  onPersonasChange={setSelectedPersonas}
                   onBack={handleBackFromSave}
                 />
               )}
