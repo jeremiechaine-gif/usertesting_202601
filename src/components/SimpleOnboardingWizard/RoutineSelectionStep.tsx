@@ -25,7 +25,7 @@ import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
-import { CreateRoutineModal } from './CreateRoutineModal';
+import { CreateRoutineWizard } from './CreateRoutineWizard';
 
 export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
 
@@ -512,19 +512,23 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         );
       })()}
 
-      {/* Create Routine Modal */}
-      {openCreateRoutineModal && (
-        <CreateRoutineModal
-          open={openCreateRoutineModal !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setOpenCreateRoutineModal(null);
-            }
-          }}
-          teamId={openCreateRoutineModal}
-          onRoutineCreated={(routineId) => handleRoutineCreated(openCreateRoutineModal, routineId)}
-        />
-      )}
+      {/* Create Routine Wizard */}
+      {openCreateRoutineModal && (() => {
+        const team = teams.find(t => t.id === openCreateRoutineModal);
+        return (
+          <CreateRoutineWizard
+            open={openCreateRoutineModal !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setOpenCreateRoutineModal(null);
+              }
+            }}
+            teamId={openCreateRoutineModal}
+            teamPersona={team?.persona}
+            onRoutineCreated={(routineId) => handleRoutineCreated(openCreateRoutineModal, routineId)}
+          />
+        );
+      })()}
     </div>
   );
 };

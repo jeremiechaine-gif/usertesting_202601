@@ -107,19 +107,34 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     try {
       // Check if scope exists and has a valid ID (not empty or temp ID)
       if (scope && scope.id && !scope.id.startsWith('temp-')) {
-        updateScope(scope.id, {
+        // Preserve templateId when updating an instance
+        const updates: Partial<Omit<Scope, 'id' | 'createdAt'>> = {
           name: name.trim(),
           description: description.trim() || undefined,
           filters,
-        });
+        };
+        // If updating an instance, preserve templateId
+        if (scope.templateId) {
+          updates.templateId = scope.templateId;
+        }
+        updateScope(scope.id, updates);
       } else {
-        const createdScope = createScope({
+        // Creating a new scope - check if it's from a template (scopeToDuplicate scenario)
+        // If scope has templateId, it means we're creating an instance
+        const scopeData: Omit<Scope, 'id' | 'createdAt' | 'updatedAt'> = {
           name: name.trim(),
           description: description.trim() || undefined,
           filters,
-          isGlobal: true, // Make scope globally available
+          isGlobal: !scope?.templateId, // Only templates are global, instances are not
+          templateId: scope?.templateId, // Preserve templateId if creating from template
+        };
+        const createdScope = createScope(scopeData);
+        console.log('[ScopeModal] Scope created:', { 
+          id: createdScope.id, 
+          name: createdScope.name, 
+          isGlobal: createdScope.isGlobal,
+          templateId: createdScope.templateId 
         });
-        console.log('[ScopeModal] Scope created:', { id: createdScope.id, name: createdScope.name, isGlobal: createdScope.isGlobal });
       }
 
       onSave();

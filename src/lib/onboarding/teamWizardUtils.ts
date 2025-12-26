@@ -262,12 +262,15 @@ export const getAvailableScopes = (): Scope[] => {
   const scopes = getScopes();
   const currentUserId = getCurrentUserId();
   
-  // In the wizard context, show all scopes (global or user-specific)
-  // If scope has no isGlobal/userId set, consider it as global (for backward compatibility)
+  // In the wizard context, show templates only (not instances)
+  // Templates are global scopes (isGlobal === true) without templateId
+  // For backward compatibility, include scopes without isGlobal/userId/templateId set
   return scopes.filter(
-    scope => scope.isGlobal === true || 
-             scope.userId === currentUserId ||
-             (scope.isGlobal === undefined && scope.userId === undefined) // Include scopes without these properties
+    scope => !scope.templateId && ( // Only templates, not instances
+      scope.isGlobal === true || 
+      scope.userId === currentUserId ||
+      (scope.isGlobal === undefined && scope.userId === undefined && scope.templateId === undefined) // Backward compatibility
+    )
   );
 };
 

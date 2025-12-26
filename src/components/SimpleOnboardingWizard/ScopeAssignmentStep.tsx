@@ -12,13 +12,21 @@ import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { getAvailableScopes } from '@/lib/onboarding/teamWizardUtils';
 import { getUsers, updateUser, type User } from '@/lib/users';
-import { getScopes, type Scope } from '@/lib/scopes';
+import { getScopes, type Scope, createInstanceFromTemplate, isInstance } from '@/lib/scopes';
 import { ScopeModal } from '../ScopeModal';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
 interface ScopeAssignmentStepProps {
@@ -56,7 +64,19 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
       scopeModalOpen,
     });
     setAvailableScopes(scopes);
-  }, [scopeModalOpen, refreshKey]); // Reload when modal closes or refreshKey changes
+    
+    // Initialize userDefaultScopes from users' defaultScopeId
+    const defaultScopes: Record<string, string> = {};
+    teams.forEach(team => {
+      const teamMembers = getTeamMembers(team.id);
+      teamMembers.forEach(member => {
+        if (member.defaultScopeId) {
+          defaultScopes[member.id] = member.defaultScopeId;
+        }
+      });
+    });
+    setUserDefaultScopes(defaultScopes);
+  }, [scopeModalOpen, refreshKey, teams]); // Reload when modal closes, refreshKey changes, or teams change
 
   const handleUserScopeToggle = (userId: string, scopeId: string) => {
     const user = getUsers().find(u => u.id === userId);
@@ -114,15 +134,53 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
       console.log('[ScopeAssignmentStep] getUserScopes - No user or no assignedScopeIds:', userId);
       return [];
     }
-    const scopes = availableScopes.filter(s => user.assignedScopeIds!.includes(s.id));
+    // Use getScopes() to get ALL scopes (templates + instances), not just availableScopes
+    // This ensures we display all scopes assigned to the user, including customized instances
+    const allScopes = getScopes();
+    const scopes = allScopes.filter(s => user.assignedScopeIds!.includes(s.id));
     console.log('[ScopeAssignmentStep] getUserScopes:', {
       userId,
       userName: user.name,
       assignedScopeIds: user.assignedScopeIds,
-      availableScopesIds: availableScopes.map(s => s.id),
-      foundScopes: scopes.map(s => ({ id: s.id, name: s.name })),
+      allScopesCount: allScopes.length,
+      foundScopes: scopes.map(s => ({ id: s.id, name: s.name, isInstance: isInstance(s) })),
     });
     return scopes;
+  };
+
+  // Handle template selection - create instance and open edit modal directly
+  const handleTemplateClick = (template: Scope, memberId: string) => {
+    // Create instance from template immediately
+    const instance = createInstanceFromTemplate(template.id, memberId);
+    if (instance) {
+      // Assign instance to user
+      const user = getUsers().find(u => u.id === memberId);
+      if (user) {
+        if (!user.assignedScopeIds) {
+          user.assignedScopeIds = [];
+        }
+        if (!user.assignedScopeIds.includes(instance.id)) {
+          user.assignedScopeIds.push(instance.id);
+          // If it's the first scope, set it as default
+          if (user.assignedScopeIds.length === 1) {
+            setUserDefaultScopes({ ...userDefaultScopes, [memberId]: instance.id });
+            updateUser(memberId, { 
+              assignedScopeIds: user.assignedScopeIds,
+              defaultScopeId: instance.id 
+            });
+          } else {
+            updateUser(memberId, { assignedScopeIds: user.assignedScopeIds });
+          }
+        }
+      }
+      
+      // Open modal to customize the instance directly
+      setCurrentMemberId(memberId);
+      setEditingScope(instance);
+      setScopeToDuplicate(null);
+      setOpenScopePopover(null);
+      setScopeModalOpen(true);
+    }
   };
 
   const getFilteredScopes = (userId: string): Scope[] => {
@@ -291,7 +349,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                           className="w-full h-8 gap-1.5 text-xs"
                                         >
                                           <Plus className="h-3 w-3" />
-                                          Create New Scope
+                                          Create Scope Template
                                         </Button>
                                       </div>
                                       <ScrollArea className="max-h-[400px]">
@@ -309,14 +367,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                                 >
                                                   <div className="flex items-start gap-2 p-2.5 rounded-lg hover:bg-muted transition-colors">
                                                     <button
-                                                      onClick={() => {
-                                                        // Open modal to modify scope before assigning
-                                                        setCurrentMemberId(member.id);
-                                                        setEditingScope(null);
-                                                        setScopeToDuplicate(scope);
-                                                        setOpenScopePopover(null);
-                                                        setScopeModalOpen(true);
-                                                      }}
+                                                      onClick={() => handleTemplateClick(scope, member.id)}
                                                       className="flex-1 flex items-start gap-3 text-left min-w-0"
                                                     >
                                                       <div className="flex-1 min-w-0">
@@ -352,20 +403,31 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                   <div className="space-y-2">
                                     {memberScopes.map((scope) => {
                                       const isDefault = defaultScopeId === scope.id;
+                                      const isCustomized = isInstance(scope);
                                       return (
                                         <div
                                           key={scope.id}
                                           className="group relative flex items-center gap-2 p-2.5 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
                                         >
                                           <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
+                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                                               <span className="text-sm font-medium text-foreground">
                                                 {scope.name}
                                               </span>
+                                              {isCustomized && (
+                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                  Customized
+                                                </Badge>
+                                              )}
                                               {isDefault && (
                                                 <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
                                                   <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
                                                   Default
+                                                </Badge>
+                                              )}
+                                              {scope.filters && scope.filters.length > 0 && (
+                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-muted text-muted-foreground border-border">
+                                                  {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
                                                 </Badge>
                                               )}
                                             </div>
@@ -379,18 +441,32 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                             <button
                                               onClick={() => {
                                                 setCurrentMemberId(member.id);
-                                                // If scope is shared, duplicate it instead of editing
-                                                if (isScopeShared(scope.id, member.id)) {
-                                                  setEditingScope(null);
-                                                  setScopeToDuplicate(scope);
-                                                } else {
+                                                // If it's an instance, edit it directly
+                                                // If it's a template, create an instance first
+                                                if (isCustomized) {
                                                   setEditingScope(scope);
                                                   setScopeToDuplicate(null);
+                                                } else {
+                                                  // Template: create instance and edit
+                                                  const instance = createInstanceFromTemplate(scope.id, member.id);
+                                                  if (instance) {
+                                                    // Replace template with instance in user's assigned scopes
+                                                    const user = getUsers().find(u => u.id === member.id);
+                                                    if (user && user.assignedScopeIds) {
+                                                      const index = user.assignedScopeIds.indexOf(scope.id);
+                                                      if (index !== -1) {
+                                                        user.assignedScopeIds[index] = instance.id;
+                                                        updateUser(member.id, { assignedScopeIds: user.assignedScopeIds });
+                                                      }
+                                                    }
+                                                    setEditingScope(instance);
+                                                    setScopeToDuplicate(null);
+                                                  }
                                                 }
                                                 setScopeModalOpen(true);
                                               }}
                                               className="p-1 rounded-md hover:bg-[#31C7AD]/10 text-muted-foreground hover:text-[#31C7AD] transition-colors opacity-0 group-hover:opacity-100"
-                                              title={isScopeShared(scope.id, member.id) ? "Duplicate and modify scope" : "Edit scope"}
+                                              title={isCustomized ? "Edit customized scope" : "Customize template"}
                                             >
                                               <Edit2 className="h-3.5 w-3.5" />
                                             </button>
@@ -479,8 +555,8 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           } : editingScope || undefined}
-          title={scopeToDuplicate ? "Modify Scope" : editingScope ? "Edit Scope" : "Create New Scope"}
-          saveButtonText={scopeToDuplicate ? "Add Scope" : editingScope ? "Update Scope" : undefined}
+          title={scopeToDuplicate ? "Modify Scope" : editingScope ? (isInstance(editingScope) ? "Customize Scope" : "Edit Scope") : "Create Scope Template"}
+          saveButtonText={scopeToDuplicate ? "Add Scope" : editingScope ? (isInstance(editingScope) ? "Update Scope" : "Update Scope") : "Create Template"}
           onSave={() => {
             console.log('[ScopeAssignmentStep] onSave called', {
               currentMemberId,
@@ -581,4 +657,5 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
     </>
   );
 };
+
 

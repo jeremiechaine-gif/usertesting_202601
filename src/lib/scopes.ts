@@ -18,6 +18,7 @@ export interface Scope {
   isDefault?: boolean; // Scope par défaut pour l'utilisateur
   userId?: string; // Utilisateur propriétaire (pour multi-utilisateurs)
   isGlobal?: boolean; // Scope global vs personnel
+  templateId?: string; // ID du template d'origine (si c'est une instance personnalisée)
   createdAt: string;
   updatedAt: string;
 }
@@ -186,6 +187,77 @@ export const duplicateScope = (id: string): Scope | null => {
     isDefault: false,
     userId: scope.userId,
     isGlobal: scope.isGlobal,
+    templateId: scope.templateId, // Preserve templateId if duplicating an instance
   });
+};
+
+/**
+ * Get all scope templates (scopes without templateId, i.e., not instances)
+ */
+export const getScopeTemplates = (): Scope[] => {
+  return getScopes().filter(scope => !scope.templateId);
+};
+
+/**
+ * Get all scope instances (scopes with templateId)
+ */
+export const getScopeInstances = (): Scope[] => {
+  return getScopes().filter(scope => scope.templateId);
+};
+
+/**
+ * Get instances for a specific template
+ */
+export const getInstancesForTemplate = (templateId: string): Scope[] => {
+  return getScopes().filter(scope => scope.templateId === templateId);
+};
+
+/**
+ * Check if a scope is a template (not an instance)
+ */
+export const isTemplate = (scope: Scope): boolean => {
+  return !scope.templateId;
+};
+
+/**
+ * Check if a scope is an instance (has templateId)
+ */
+export const isInstance = (scope: Scope): boolean => {
+  return !!scope.templateId;
+};
+
+/**
+ * Create a scope instance from a template
+ * @param templateId The ID of the template to create an instance from
+ * @param userId The user ID who will own this instance
+ * @param customizations Optional customizations to apply to the instance
+ */
+export const createInstanceFromTemplate = (
+  templateId: string,
+  userId: string,
+  customizations?: Partial<Pick<Scope, 'name' | 'description' | 'filters'>>
+): Scope | null => {
+  const template = getScope(templateId);
+  if (!template || template.templateId) {
+    // Template doesn't exist or is itself an instance
+    return null;
+  }
+  
+  return createScope({
+    name: customizations?.name || template.name,
+    description: customizations?.description !== undefined ? customizations.description : template.description,
+    filters: customizations?.filters || template.filters.map(f => ({ ...f, id: `filter-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` })),
+    isDefault: false,
+    userId: userId,
+    isGlobal: false, // Instances are never global
+    templateId: templateId, // Link to the template
+  });
+};
+
+/**
+ * Check if a template has instances
+ */
+export const templateHasInstances = (templateId: string): boolean => {
+  return getInstancesForTemplate(templateId).length > 0;
 };
 
