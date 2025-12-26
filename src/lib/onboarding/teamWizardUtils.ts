@@ -262,8 +262,12 @@ export const getAvailableScopes = (): Scope[] => {
   const scopes = getScopes();
   const currentUserId = getCurrentUserId();
   
+  // In the wizard context, show all scopes (global or user-specific)
+  // If scope has no isGlobal/userId set, consider it as global (for backward compatibility)
   return scopes.filter(
-    scope => scope.isGlobal === true || scope.userId === currentUserId
+    scope => scope.isGlobal === true || 
+             scope.userId === currentUserId ||
+             (scope.isGlobal === undefined && scope.userId === undefined) // Include scopes without these properties
   );
 };
 

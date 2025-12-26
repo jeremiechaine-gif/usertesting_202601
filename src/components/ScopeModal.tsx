@@ -38,6 +38,7 @@ interface ScopeModalProps {
   scope?: Scope | null;
   onSave: () => void;
   title?: string; // Custom title for the modal (default: "Define Your Scope" or "Edit Scope")
+  saveButtonText?: string; // Custom text for the save button (default: "Create Scope" or "Update Scope")
 }
 
 export const ScopeModal: React.FC<ScopeModalProps> = ({
@@ -46,6 +47,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   scope,
   onSave,
   title,
+  saveButtonText,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -103,18 +105,21 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     }
 
     try {
-      if (scope) {
+      // Check if scope exists and has a valid ID (not empty or temp ID)
+      if (scope && scope.id && !scope.id.startsWith('temp-')) {
         updateScope(scope.id, {
           name: name.trim(),
           description: description.trim() || undefined,
           filters,
         });
       } else {
-        createScope({
+        const createdScope = createScope({
           name: name.trim(),
           description: description.trim() || undefined,
           filters,
+          isGlobal: true, // Make scope globally available
         });
+        console.log('[ScopeModal] Scope created:', { id: createdScope.id, name: createdScope.name, isGlobal: createdScope.isGlobal });
       }
 
       onSave();
@@ -309,6 +314,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[85vh] flex flex-col p-0 overflow-hidden">
+        <DialogDescription className="sr-only">
+          {scope ? 'Edit scope' : 'Create a new scope with custom filters'}
+        </DialogDescription>
         {/* Unified Guided Mode Header with Hero Section */}
         <div className="shrink-0">
           <div className="bg-gradient-to-br from-[#31C7AD]/10 via-[#31C7AD]/5 to-transparent px-6 py-3 border-b">
@@ -815,7 +823,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
               Cancel
             </Button>
             <Button onClick={handleSave} className="bg-[#2063F0] hover:bg-[#1a54d8]">
-              {scope ? 'Update' : 'Create'} Scope
+              {saveButtonText || (scope ? 'Update' : 'Create') + ' Scope'}
             </Button>
           </DialogFooter>
         )}
