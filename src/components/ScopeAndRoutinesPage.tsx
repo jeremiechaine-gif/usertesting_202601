@@ -67,7 +67,8 @@ import { Label } from '@/components/ui/label';
 export const ScopeAndRoutinesPage: React.FC<{ 
   onNavigate?: (page: string) => void;
   viewMode?: 'scope-routines' | 'my-routines' | 'shared-routines';
-}> = ({ onNavigate, viewMode = 'scope-routines' }) => {
+  onLogout?: () => void;
+}> = ({ onNavigate, viewMode = 'scope-routines', onLogout }) => {
   const { refreshScopes, currentScopeId, setCurrentScopeId } = useScope();
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -209,6 +210,7 @@ export const ScopeAndRoutinesPage: React.FC<{
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
+          onLogout={onLogout}
         />
       )}
       

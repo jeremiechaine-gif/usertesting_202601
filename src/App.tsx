@@ -4,6 +4,8 @@ import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
 import { HomePage } from './components/HomePage';
 import { UsersPage } from './components/UsersPage';
 import { RoutineLibraryPage } from './components/RoutineLibraryPage';
+import { LoginPage } from './components/LoginPage';
+import { SimpleOnboardingWizard } from './components/SimpleOnboardingWizard/SimpleOnboardingWizard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/toast';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
@@ -168,11 +170,86 @@ const initializeTeamsAndUsers = () => {
 };
 
 function App() {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
     // Initialize teams and users on app start
     initializeTeamsAndUsers();
   }, []);
+  
+  // Login state management
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState<{ email: string; firstName: string; lastName: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library'>('home');
+  
+  // Check if user is already logged in (from localStorage)
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('pelico-user-data');
+    if (storedUserData) {
+      try {
+        const data = JSON.parse(storedUserData);
+        setUserData(data);
+        setIsLoggedIn(true);
+        // Check if onboarding should be shown
+        const onboardingCompleted = localStorage.getItem('pelico-onboarding-tasks-status');
+        if (!onboardingCompleted || !JSON.parse(onboardingCompleted)['set-up-workspace']) {
+          setShowOnboarding(true);
+        }
+      } catch {
+        // Invalid stored data, show login
+      }
+    }
+  }, []);
+
+  const handleLogin = (loginUserData: { email: string; firstName: string; lastName: string }) => {
+    setUserData(loginUserData);
+    setIsLoggedIn(true);
+    setShowOnboarding(true);
+    // Store user data in localStorage
+    localStorage.setItem('pelico-user-data', JSON.stringify(loginUserData));
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+  };
+
+  const handleLogout = () => {
+    // Clear user data and onboarding state
+    localStorage.removeItem('pelico-user-data');
+    localStorage.removeItem('pelico-onboarding-tasks-status');
+    localStorage.removeItem('pelico-simple-onboarding-state');
+    // Reset state
+    setIsLoggedIn(false);
+    setUserData(null);
+    setShowOnboarding(false);
+  };
+
+  // Show login page if not logged in
+  if (!isLoggedIn) {
+    return (
+      <ToastProvider>
+        <LoginPage onLogin={handleLogin} />
+      </ToastProvider>
+    );
+  }
+
+  // Show onboarding wizard if logged in and onboarding not completed
+  if (showOnboarding) {
+    return (
+      <ToastProvider>
+        <SimpleOnboardingWizard
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowOnboarding(false);
+            }
+          }}
+          onComplete={handleOnboardingComplete}
+          userData={userData}
+        />
+      </ToastProvider>
+    );
+  }
 
   const handleNavigate = (page: string) => {
     if (page === 'home') {
@@ -197,7 +274,7 @@ function App() {
     if (currentPage === 'home') {
       return (
         <ErrorBoundary>
-          <HomePage onNavigate={handleNavigate} />
+          <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
@@ -205,7 +282,7 @@ function App() {
     if (currentPage === 'scope-routines') {
       return (
         <ErrorBoundary>
-          <ScopeAndRoutinesPage onNavigate={handleNavigate} />
+          <ScopeAndRoutinesPage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
@@ -213,7 +290,7 @@ function App() {
     if (currentPage === 'users') {
       return (
         <ErrorBoundary>
-          <UsersPage onNavigate={handleNavigate} />
+          <UsersPage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
@@ -221,7 +298,7 @@ function App() {
     if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
       return (
         <ErrorBoundary>
-          <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} />
+          <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
@@ -229,14 +306,14 @@ function App() {
     if (currentPage === 'routines-library') {
       return (
         <ErrorBoundary>
-          <RoutineLibraryPage onNavigate={handleNavigate} />
+          <RoutineLibraryPage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
 
     return (
       <ErrorBoundary>
-        <PurchaseOrderBookPage onNavigate={handleNavigate} />
+        <PurchaseOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
       </ErrorBoundary>
     );
   };

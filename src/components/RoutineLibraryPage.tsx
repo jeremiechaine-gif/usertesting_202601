@@ -53,7 +53,8 @@ type PelicoViewFilter = string | 'all';
 
 export const RoutineLibraryPage: React.FC<{ 
   onNavigate?: (page: string) => void;
-}> = ({ onNavigate }) => {
+  onLogout?: () => void;
+}> = ({ onNavigate, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [personaFilter, setPersonaFilter] = useState<PersonaFilter>('all');
@@ -181,6 +182,7 @@ export const RoutineLibraryPage: React.FC<{
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
+          onLogout={onLogout}
         />
       )}
       

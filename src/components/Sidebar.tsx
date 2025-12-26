@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban, UserCircle, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ interface SidebarProps {
   onNavigate?: (page: string) => void;
   activeRoutineId?: string | null;
   onRoutineClick?: (routineId: string) => void;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -20,8 +21,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   activeRoutineId,
   onRoutineClick,
+  onLogout,
 }) => {
   const [areItemsHidden, setAreItemsHidden] = useState(false);
+  const [userDisplayName, setUserDisplayName] = useState('Jeremie Chaine');
+  const [userEmail, setUserEmail] = useState('admin@pelico.com');
+  const [userInitials, setUserInitials] = useState('JC');
+
+  // Load user data from localStorage
+  useEffect(() => {
+    const storedUserData = localStorage.getItem('pelico-user-data');
+    if (storedUserData) {
+      try {
+        const data = JSON.parse(storedUserData);
+        const firstName = data.firstName?.trim() || '';
+        const lastName = data.lastName?.trim() || '';
+        
+        if (firstName || lastName) {
+          const fullName = `${firstName} ${lastName}`.trim();
+          setUserDisplayName(fullName || 'Jeremie Chaine');
+          // Generate initials - use first letter of firstName, then lastName, or first two letters of the name if only one is provided
+          let initials = '';
+          if (firstName && lastName) {
+            initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+          } else if (firstName) {
+            initials = firstName.substring(0, 2).toUpperCase();
+          } else if (lastName) {
+            initials = lastName.substring(0, 2).toUpperCase();
+          }
+          setUserInitials(initials || 'JC');
+          
+          // Generate email from firstName and lastName: [prenom][nom]@pelico.io
+          const emailFirstName = firstName.toLowerCase().replace(/\s+/g, '') || 'jeremie';
+          const emailLastName = lastName.toLowerCase().replace(/\s+/g, '') || 'chaine';
+          const generatedEmail = `${emailFirstName}${emailLastName}@pelico.io`;
+          setUserEmail(generatedEmail);
+        } else {
+          setUserDisplayName('Jeremie Chaine');
+          setUserInitials('JC');
+          setUserEmail('jeremiechaine@pelico.io');
+        }
+      } catch {
+        // Invalid stored data, use defaults
+        setUserDisplayName('Jeremie Chaine');
+        setUserInitials('JC');
+        setUserEmail('jeremiechaine@pelico.io');
+      }
+    } else {
+      // No user data, use defaults
+      setUserDisplayName('Jeremie Chaine');
+      setUserInitials('JC');
+      setUserEmail('jeremiechaine@pelico.io');
+    }
+  }, []);
 
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
@@ -155,11 +207,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="flex-1 flex items-center gap-3 hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-sm shrink-0">
-              AP
+              {userInitials}
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="font-semibold text-sm truncate">Admin Pelico</div>
-              <div className="text-xs text-muted-foreground truncate">admin@pelico.com</div>
+              <div className="font-semibold text-sm truncate">{userDisplayName}</div>
+              <div className="text-xs text-muted-foreground truncate">{userEmail}</div>
             </div>
           </div>
           <div
@@ -167,12 +219,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             tabIndex={0}
             onClick={(e) => {
               e.stopPropagation();
-              // TODO: Open settings
+              onLogout?.();
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                // TODO: Open settings
+                onLogout?.();
               }
             }}
             className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground transition-colors shrink-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"

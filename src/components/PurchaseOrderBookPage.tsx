@@ -36,7 +36,7 @@ import { getColumnIdFromFilterId } from './sorting-filters/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 
-export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
   // Use ScopeContext for global scope management
   const { currentScopeId, setCurrentScopeId, getScopeFilters, currentScope } = useScope();
   
@@ -347,6 +347,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
           activeRoutineId={selectedRoutineId}
+          onLogout={onLogout}
           onRoutineClick={(routineId) => {
             // Apply routine to table
             setSelectedRoutineId(routineId);

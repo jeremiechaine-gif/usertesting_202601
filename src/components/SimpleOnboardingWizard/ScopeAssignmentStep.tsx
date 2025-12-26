@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 interface ScopeAssignmentStepProps {
   teams: SimpleTeamConfig[];
   onTeamsUpdate: (teams: SimpleTeamConfig[]) => void;
-  onComplete: () => void;
+  onNext: () => void;
   onBack: () => void;
   onClearAll: () => void;
 }
@@ -33,7 +33,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
   teams,
   onTeamsUpdate,
   onBack,
-  onComplete,
+  onNext,
   onClearAll,
 }) => {
   const [availableScopes, setAvailableScopes] = useState<Scope[]>([]);

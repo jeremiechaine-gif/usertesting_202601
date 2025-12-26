@@ -52,7 +52,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserScopesRoutinesModal } from './UserScopesRoutinesModal';
 
-export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
+export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [userModalOpen, setUserModalOpen] = useState(false);
@@ -161,6 +161,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ o
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
+          onLogout={onLogout}
         />
       )}
       

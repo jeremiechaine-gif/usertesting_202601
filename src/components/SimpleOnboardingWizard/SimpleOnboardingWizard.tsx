@@ -2,10 +2,10 @@
  * Simple Onboarding Wizard
  * 
  * Progressive 4-step flow:
- * 0. Create teams (from personas or manually)
- * 1. Choose routines for each team (with sub-step modal)
- * 2. Add members to each team
- * 3. Create and apply scopes for each member
+ * 0. Welcome + Create teams (from personas or manually)
+ * 1. Add members to each team
+ * 2. Create and apply scopes for each member
+ * 3. Choose routines for each team (with sub-step modal)
  * 
  * State persisted to localStorage for recovery
  */
@@ -36,7 +36,7 @@ export interface SimpleTeamConfig {
   updatedAt: string;
 }
 
-export type TeamCreationSubstep = 'mode-selection' | 'persona-selection' | 'manual-creation';
+export type TeamCreationSubstep = 'welcome' | 'mode-selection' | 'persona-selection' | 'manual-creation';
 export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
 
 interface SimpleOnboardingState {
@@ -52,21 +52,23 @@ interface SimpleOnboardingWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  userData?: { email: string; firstName: string; lastName: string } | null;
 }
 
 export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   open,
   onOpenChange,
   onComplete,
+  userData,
 }) => {
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [teams, setTeams] = useState<SimpleTeamConfig[]>([]);
   const [currentSubstep, setCurrentSubstep] = useState<{
     step0?: TeamCreationSubstep;
-    step1?: RoutineSelectionSubstep | string;
+    step3?: RoutineSelectionSubstep | string;
   }>({
-    step0: 'mode-selection',
-    step1: 'team-selection',
+    step0: 'welcome',
+    step3: 'team-selection',
   });
   const [step0CanProceed, setStep0CanProceed] = useState(false);
   const step0ContinueHandlerRef = useRef<(() => boolean) | null>(null);
@@ -89,15 +91,16 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
           }
           if (state.currentStep === undefined && state.teams && state.teams.length > 0) {
             // Check which step we should be on based on completion
-            const hasRoutines = state.teams.some(t => t.assignedRoutineIds.length > 0);
+            // New order: 0. Welcome+Teams, 1. Members, 2. Scopes, 3. Routines
             const hasMembers = state.teams.some(t => t.memberIds.length > 0);
+            const hasRoutines = state.teams.some(t => t.assignedRoutineIds.length > 0);
             
-            if (hasMembers) {
-              setStep(3); // Scopes step
-            } else if (hasRoutines) {
-              setStep(2); // Members step
+            if (hasRoutines) {
+              setStep(3); // Routines step (last)
+            } else if (hasMembers) {
+              setStep(2); // Scopes step
             } else {
-              setStep(1); // Routines step
+              setStep(1); // Members step
             }
           } else {
             setStep(0);
@@ -127,7 +130,20 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
 
   // Handle back navigation
   const handleBack = () => {
-    if (step > 0) {
+    if (step === 0) {
+      // Handle substeps within step 0
+      const currentStep0Substep = currentSubstep.step0 || 'welcome';
+      if (currentStep0Substep === 'mode-selection') {
+        // Go back to welcome
+        setCurrentSubstep({ ...currentSubstep, step0: 'welcome' });
+        saveState();
+      } else if (currentStep0Substep === 'persona-selection' || currentStep0Substep === 'manual-creation') {
+        // Go back to mode-selection
+        setCurrentSubstep({ ...currentSubstep, step0: 'mode-selection' });
+        saveState();
+      }
+      // If on welcome, don't go back (first screen)
+    } else if (step > 0) {
       setStep((step - 1) as 0 | 1 | 2 | 3);
       saveState();
     }
@@ -136,6 +152,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   // Handle next navigation
   const handleNext = () => {
     // Validation at each step
+    // New order: 0. Welcome+Teams, 1. Members, 2. Scopes, 3. Routines
     if (step === 0) {
       // Step 0: Check if we need to create teams from substep
       if (step0ContinueHandlerRef.current) {
@@ -147,21 +164,17 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         // Fallback: must have at least one team
         return;
       }
-      setStep(1);
+      setStep(1); // Go to Members step
     } else if (step === 1) {
-      // Step 1: Must have at least one routine per team
-      const allTeamsHaveRoutines = teams.every(team => team.assignedRoutineIds.length > 0);
-      if (!allTeamsHaveRoutines) {
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      // Step 2: Must have at least one member per team
+      // Step 1: Must have at least one member per team
       const allTeamsHaveMembers = teams.every(team => team.memberIds.length > 0);
       if (!allTeamsHaveMembers) {
         return;
       }
-      setStep(3);
+      setStep(2); // Go to Scopes step
+    } else if (step === 2) {
+      // Step 2: Scopes are optional, can proceed
+      setStep(3); // Go to Routines step
     }
     saveState();
   };
@@ -171,21 +184,22 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     setTeams([]);
     setStep(0);
     setCurrentSubstep({
-      step0: 'mode-selection',
-      step1: 'team-selection',
+      step0: 'welcome',
+      step3: 'team-selection',
     });
     localStorage.removeItem(STORAGE_KEY);
   };
 
   // Check if can proceed to next step
   const canProceed = () => {
+    // New order: 0. Welcome+Teams, 1. Members, 2. Scopes, 3. Routines
     if (step === 0) {
       // For step 0, check if teams exist OR if substep validation allows proceeding
       return teams.length > 0 || step0CanProceed;
     }
-    if (step === 1) return teams.every(team => team.assignedRoutineIds.length > 0);
-    if (step === 2) return teams.every(team => team.memberIds.length > 0);
-    if (step === 3) return true; // Scopes are optional
+    if (step === 1) return teams.every(team => team.memberIds.length > 0);
+    if (step === 2) return true; // Scopes are optional
+    if (step === 3) return teams.every(team => team.assignedRoutineIds.length > 0);
     return false;
   };
 
@@ -253,10 +267,10 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
 
   // Step labels for progress indicator
   const stepLabels: Record<number, string> = {
-    0: 'Create Teams',
-    1: 'Choose Routines',
-    2: 'Add Members',
-    3: 'Create Scopes',
+    0: 'Welcome & Create Teams',
+    1: 'Add Members',
+    2: 'Create Scopes',
+    3: 'Choose Routines',
   };
 
   if (!open) return null;
@@ -382,20 +396,22 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Header */}
-        <div className="px-8 py-4 border-b border-border bg-background shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">{stepLabels[step]}</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {step === 0 && 'Create teams from personas or manually'}
-                {step === 1 && 'Assign routines to each team'}
-                {step === 2 && 'Add members to each team'}
-                {step === 3 && 'Assign scopes to team members'}
-              </p>
+        {/* Top Header - Hide on welcome substep */}
+        {!(step === 0 && currentSubstep.step0 === 'welcome') && (
+          <div className="px-8 py-4 border-b border-border bg-background shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">{stepLabels[step]}</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {step === 0 && 'Welcome and create teams from personas or manually'}
+                  {step === 1 && 'Add members to each team'}
+                  {step === 2 && 'Assign scopes to team members'}
+                  {step === 3 && 'Assign routines to each team'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Step Content */}
         <div className="flex-1 overflow-hidden flex flex-col">
@@ -406,7 +422,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onNext={handleNext}
               onBack={handleBack}
               onClearAll={handleClearAll}
-              currentSubstep={currentSubstep.step0 || 'mode-selection'}
+              currentSubstep={currentSubstep.step0 || 'welcome'}
               onSubstepChange={(substep) => {
                 setCurrentSubstep({ ...currentSubstep, step0: substep });
                 saveState();
@@ -415,23 +431,10 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onStep0Continue={(handler) => {
                 step0ContinueHandlerRef.current = handler;
               }}
+              userData={userData}
             />
           )}
           {step === 1 && (
-            <RoutineSelectionStep
-              teams={teams}
-              onTeamsUpdate={handleTeamsUpdate}
-              onNext={handleNext}
-              onBack={handleBack}
-              onClearAll={handleClearAll}
-              currentSubstep={currentSubstep.step1 || 'team-selection'}
-              onSubstepChange={(substep) => {
-                setCurrentSubstep({ ...currentSubstep, step1: substep });
-                saveState();
-              }}
-            />
-          )}
-          {step === 2 && (
             <MemberAssignmentStep
               teams={teams}
               onTeamsUpdate={handleTeamsUpdate}
@@ -440,13 +443,27 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onClearAll={handleClearAll}
             />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <ScopeAssignmentStep
               teams={teams}
               onTeamsUpdate={handleTeamsUpdate}
-              onComplete={handleComplete}
+              onNext={handleNext}
               onBack={handleBack}
               onClearAll={handleClearAll}
+            />
+          )}
+          {step === 3 && (
+            <RoutineSelectionStep
+              teams={teams}
+              onTeamsUpdate={handleTeamsUpdate}
+              onNext={handleNext}
+              onBack={handleBack}
+              onClearAll={handleClearAll}
+              currentSubstep={currentSubstep.step3 || 'team-selection'}
+              onSubstepChange={(substep) => {
+                setCurrentSubstep({ ...currentSubstep, step3: substep });
+                saveState();
+              }}
             />
           )}
         </div>
@@ -459,7 +476,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 variant="ghost" 
                 size="sm"
                 onClick={handleBack}
-                disabled={step === 0}
+                disabled={step === 0 && currentSubstep.step0 === 'welcome'}
                 className="gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />

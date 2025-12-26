@@ -32,7 +32,7 @@ const PERSONAS = [
   'Autre / Mixte',
 ];
 
-export type TeamCreationSubstep = 'mode-selection' | 'persona-selection' | 'manual-creation';
+export type TeamCreationSubstep = 'welcome' | 'mode-selection' | 'persona-selection' | 'manual-creation';
 
 interface TeamCreationStepProps {
   teams: SimpleTeamConfig[];
@@ -44,6 +44,7 @@ interface TeamCreationStepProps {
   onSubstepChange?: (substep: TeamCreationSubstep) => void;
   onValidationChange?: (canProceed: boolean) => void;
   onStep0Continue?: (handler: () => boolean) => void; // Register handler function
+  userData?: { email: string; firstName: string; lastName: string } | null;
 }
 
 export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
@@ -52,10 +53,11 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   onNext,
   onBack,
   onClearAll,
-  currentSubstep = 'mode-selection',
+  currentSubstep = 'welcome',
   onSubstepChange,
   onValidationChange,
   onStep0Continue,
+  userData,
 }) => {
   const [creationMode, setCreationMode] = useState<TeamCreationMode | null>(null);
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
@@ -204,14 +206,23 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
       // Don't clear selectedPersonas - keep them for when user returns
       setManualTeamName('');
       setManualTeamDescription('');
+    } else if (currentSubstep === 'mode-selection') {
+      onSubstepChange?.('welcome');
     } else {
-      onBack();
+      // Welcome screen - no back button needed (first step)
+      // But allow it for flexibility
     }
   };
 
   // Handle continue from substep - exposed to parent
   const handleSubstepContinue = () => {
-    if (currentSubstep === 'mode-selection') {
+    if (currentSubstep === 'welcome') {
+      // Welcome screen now shows mode selection directly, so check if teams exist
+      if (teams.length > 0) {
+        return true;
+      }
+      return false;
+    } else if (currentSubstep === 'mode-selection') {
       // If teams already exist, can proceed
       if (teams.length > 0) {
         return true;
@@ -249,7 +260,9 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   useEffect(() => {
     let canProceed = false;
     
-    if (currentSubstep === 'mode-selection') {
+    if (currentSubstep === 'welcome') {
+      canProceed = teams.length > 0; // Can proceed if teams already exist
+    } else if (currentSubstep === 'mode-selection') {
       canProceed = teams.length > 0; // Can proceed if teams already exist
     } else if (currentSubstep === 'persona-selection') {
       canProceed = selectedPersonas.length > 0;
@@ -261,34 +274,135 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   }, [currentSubstep, selectedPersonas, manualTeamName, teams.length, onValidationChange]);
 
   const canContinue = () => {
+    if (currentSubstep === 'welcome') return teams.length > 0; // Can proceed if teams already exist
     if (currentSubstep === 'mode-selection') return teams.length > 0; // Can proceed if teams already exist
     if (currentSubstep === 'persona-selection') return selectedPersonas.length > 0;
     if (currentSubstep === 'manual-creation') return manualTeamName.trim().length > 0;
     return false;
   };
 
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (userData?.firstName && userData?.lastName) {
+      return `${userData.firstName} ${userData.lastName}`;
+    }
+    return userData?.firstName || userData?.lastName || 'Jeremie Chaine';
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-8 pt-4 pb-0">
-          {/* Info Banner */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 mb-6">
-            <div className="p-2 rounded-lg bg-[#31C7AD]/10">
-              <Users className="h-5 w-5 text-[#31C7AD]" />
+          {/* Welcome Screen with Direct Team Creation Options */}
+          {currentSubstep === 'welcome' && (
+            <div className="max-w-4xl mx-auto py-6">
+              {/* Welcome Message - Subtle and integrated */}
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
+                  Bienvenue, {getUserDisplayName()} !
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Créez vos équipes pour commencer la configuration de votre espace de travail
+                </p>
+              </div>
+
+              {/* Info Banner */}
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 mb-6">
+                <div className="p-2 rounded-lg bg-[#31C7AD]/10">
+                  <Users className="h-5 w-5 text-[#31C7AD]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium mb-1">
+                    Choose how to create teams
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Select how you'd like to create your teams
+                  </p>
+                </div>
+              </div>
+
+              {/* Team Creation Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => handleModeSelect('personas')}
+                  className="group relative flex flex-col items-start p-6 rounded-xl border-2 transition-all text-left h-full hover:shadow-lg border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent"
+                >
+                  <div className="flex items-start justify-between w-full mb-4">
+                    <div className="p-3 rounded-lg transition-all bg-muted group-hover:bg-[#31C7AD]/10">
+                      <Users className="h-6 w-6 text-muted-foreground group-hover:text-[#31C7AD]" />
+                    </div>
+                    <Badge className="bg-gradient-to-r from-[#31C7AD] to-[#2063F0] text-white border-0 shadow-sm">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Recommended
+                    </Badge>
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Create teams from personas</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Select one or more personas to automatically create teams with suggested routines
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => handleModeSelect('manual')}
+                  className="group relative flex flex-col items-start p-6 rounded-xl border-2 transition-all text-left h-full hover:shadow-lg border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent"
+                >
+                  <div className="p-3 rounded-lg mb-4 transition-all bg-muted group-hover:bg-[#31C7AD]/10">
+                    <Settings className="h-6 w-6 text-muted-foreground group-hover:text-[#31C7AD]" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">Manual setup</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Create teams manually with custom names and descriptions
+                  </p>
+                </button>
+              </div>
+
+              {/* Created Teams Preview (if any) */}
+              {teams.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-4">Created Teams ({teams.length})</h3>
+                  <div className="space-y-3">
+                    {teams.map((team) => (
+                      <div
+                        key={team.id}
+                        className="flex items-center gap-3 p-4 border border-border rounded-lg bg-background hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{team.name}</p>
+                          {team.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{team.description}</p>
+                          )}
+                          {team.persona && (
+                            <span className="text-xs text-muted-foreground">From persona: {team.persona}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium mb-1">
-                {currentSubstep === 'mode-selection' && 'Choose how to create teams'}
-                {currentSubstep === 'persona-selection' && 'Select personas for your teams'}
-                {currentSubstep === 'manual-creation' && 'Create team manually'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {currentSubstep === 'mode-selection' && 'Select how you\'d like to create your teams'}
-                {currentSubstep === 'persona-selection' && 'Select one or more personas to automatically create teams'}
-                {currentSubstep === 'manual-creation' && 'Enter team details to create a custom team'}
-              </p>
+          )}
+
+          {/* Info Banner - For other substeps */}
+          {currentSubstep !== 'welcome' && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 mb-6">
+              <div className="p-2 rounded-lg bg-[#31C7AD]/10">
+                <Users className="h-5 w-5 text-[#31C7AD]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium mb-1">
+                  {currentSubstep === 'mode-selection' && 'Choose how to create teams'}
+                  {currentSubstep === 'persona-selection' && 'Select personas for your teams'}
+                  {currentSubstep === 'manual-creation' && 'Create team manually'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {currentSubstep === 'mode-selection' && 'Select how you\'d like to create your teams'}
+                  {currentSubstep === 'persona-selection' && 'Select one or more personas to automatically create teams'}
+                  {currentSubstep === 'manual-creation' && 'Enter team details to create a custom team'}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Substep 0.1: Mode Selection */}
           {currentSubstep === 'mode-selection' && (

@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 
 interface HomePageProps {
   onNavigate?: (page: string) => void;
+  onLogout?: () => void;
 }
 
 interface OnboardingTask {
@@ -62,7 +63,7 @@ interface AcademyResource {
 
 const ONBOARDING_TASKS_STORAGE_KEY = 'pelico-onboarding-tasks-status';
 
-export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
@@ -275,6 +276,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onNavigate={onNavigate}
+        onLogout={onLogout}
       />
 
       {sidebarCollapsed && (
