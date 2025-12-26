@@ -53,6 +53,7 @@ interface RoutineWithDetails {
   name: string;
   description?: string;
   personas?: Persona[];
+  pelicoViews?: string[];
 }
 
 export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
@@ -70,6 +71,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
   const [availableRoutines, setAvailableRoutines] = useState<RoutineWithDetails[]>([]);
   const [routineSearchQuery, setRoutineSearchQuery] = useState<Record<number, string>>({});
   const [openRoutinePopover, setOpenRoutinePopover] = useState<number | null>(null);
+  const [routineAddMode, setRoutineAddMode] = useState<Record<number, 'personas' | 'manual'>>({});
   const [duplicateTeamDialog, setDuplicateTeamDialog] = useState<{
     open: boolean;
     teamName: string;
@@ -89,6 +91,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
         name: routine.name,
         description: routine.description,
         personas: libraryRoutine?.personas || [],
+        pelicoViews: libraryRoutine?.pelicoViews || [],
       };
     });
     setAvailableRoutines(routinesWithDetails);
@@ -117,6 +120,21 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
       }
     }
   }, [configurationType, teams.length, onTeamsChange]);
+
+  // Initialize default mode to 'personas' for teams with personas
+  useEffect(() => {
+    const updatedMode: Record<number, 'personas' | 'manual'> = { ...routineAddMode };
+    let hasChanges = false;
+    teams.forEach((team, index) => {
+      if (team.persona && updatedMode[index] === undefined) {
+        updatedMode[index] = 'personas';
+        hasChanges = true;
+      }
+    });
+    if (hasChanges) {
+      setRoutineAddMode(updatedMode);
+    }
+  }, [teams.length, teams.map(t => t.persona).join(',')]);
 
   // Auto-suggest routines for teams based on personas
   useEffect(() => {
@@ -267,6 +285,15 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
     }
     
     onTeamsChange(updatedTeams);
+    
+    // Close popover after adding routine manually
+    if (routineAddMode[teamIndex] === 'manual' && routineIndex === -1) {
+      // Keep popover open for multiple selections, but close if all routines are assigned
+      const availableRoutines = getFilteredRoutines(teamIndex);
+      if (availableRoutines.length === 0) {
+        setOpenRoutinePopover(null);
+      }
+    }
   };
 
   const handleAddAllSuggestedRoutines = (teamIndex: number) => {
@@ -278,16 +305,16 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
     const updatedTeam = updatedTeams[teamIndex];
     
     // Add all suggested routines that aren't already added
+    let addedCount = 0;
     suggestedRoutineIds.forEach(routineId => {
       if (!updatedTeam.routineIds.includes(routineId)) {
         updatedTeam.routineIds.push(routineId);
+        addedCount++;
       }
     });
     
-    onTeamsChange(updatedTeams);
-    // Close popover if it's open
-    if (openRoutinePopover === teamIndex) {
-      setOpenRoutinePopover(null);
+    if (addedCount > 0) {
+      onTeamsChange(updatedTeams);
     }
   };
 
@@ -397,6 +424,9 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
               {teams.map((team, index) => {
                 const teamRoutines = getTeamRoutines(index);
                 const availableRoutinesForTeam = getFilteredRoutines(index);
+                const currentMode = routineAddMode[index] || (team.persona ? 'personas' : 'manual');
+                const suggestedRoutines = team.persona ? getSuggestedRoutinesForTeam(index) : [];
+                const hasAllSuggestedRoutines = team.persona && suggestedRoutines.length === 0;
                 
                 return (
                   <div
@@ -456,44 +486,62 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                             <Zap className="h-4 w-4 text-[#31C7AD]" />
                             <span className="text-sm font-medium">Routines ({teamRoutines.length})</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {team.persona && (() => {
-                              const suggestedRoutines = getSuggestedRoutinesForTeam(index);
-                              if (suggestedRoutines.length > 0) {
-                                return (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleAddAllSuggestedRoutines(index)}
-                                    className="h-7 gap-1.5 text-xs bg-[#31C7AD]/5 border-[#31C7AD]/20 hover:bg-[#31C7AD]/10 hover:border-[#31C7AD]/30 text-[#31C7AD]"
-                                  >
+                          <div className="flex items-center gap-0">
+                            {/* Segmented Control */}
+                            {team.persona ? (
+                              <div className="inline-flex rounded-lg border border-border bg-muted p-0.5">
+                                <button
+                                  onClick={() => {
+                                    setRoutineAddMode({ ...routineAddMode, [index]: 'personas' });
+                                    handleAddAllSuggestedRoutines(index);
+                                  }}
+                                  disabled={hasAllSuggestedRoutines}
+                                  className={cn(
+                                    "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                                    currentMode !== 'manual' 
+                                      ? "bg-background text-foreground shadow-sm" 
+                                      : "text-muted-foreground hover:text-foreground",
+                                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3" />
-                                    Add Suggested ({suggestedRoutines.length})
-                                  </Button>
-                                );
-                              }
-                              return null;
-                            })()}
-                            <Popover 
-                              open={openRoutinePopover === index}
-                              onOpenChange={(open) => {
-                                setOpenRoutinePopover(open ? index : null);
-                                if (!open) {
-                                  setRoutineSearchQuery({ ...routineSearchQuery, [index]: '' });
-                                }
-                              }}
-                            >
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 gap-1.5 text-xs"
-                                disabled={availableRoutinesForTeam.length === 0}
-                              >
-                                <Plus className="h-3 w-3" />
-                                Add Routine
-                              </Button>
-                            </PopoverTrigger>
+                                    Add from personas
+                                  </div>
+                                </button>
+                                <Popover 
+                                  open={openRoutinePopover === index && currentMode === 'manual'}
+                                  onOpenChange={(open) => {
+                                    if (open) {
+                                      setRoutineAddMode({ ...routineAddMode, [index]: 'manual' });
+                                      setOpenRoutinePopover(index);
+                                    } else {
+                                      setOpenRoutinePopover(null);
+                                      setRoutineSearchQuery({ ...routineSearchQuery, [index]: '' });
+                                    }
+                                  }}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      onClick={() => {
+                                        setRoutineAddMode({ ...routineAddMode, [index]: 'manual' });
+                                        setOpenRoutinePopover(index);
+                                      }}
+                                      disabled={availableRoutinesForTeam.length === 0}
+                                      className={cn(
+                                        "px-3 py-1.5 text-xs font-medium rounded-md transition-all",
+                                        currentMode === 'manual'
+                                          ? "bg-background text-foreground shadow-sm" 
+                                          : "text-muted-foreground hover:text-foreground",
+                                        "disabled:opacity-50 disabled:cursor-not-allowed"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <Plus className="h-3 w-3" />
+                                        Add manually
+                                      </div>
+                                    </button>
+                                  </PopoverTrigger>
                             <PopoverContent className="w-96 p-0" align="end">
                               <div className="p-3 border-b border-border">
                                 <div className="relative">
@@ -541,19 +589,34 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                   {routine.description}
                                                 </div>
                                               )}
-                                              {routine.personas && routine.personas.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                  {routine.personas.map((persona) => (
-                                                    <Badge
-                                                      key={persona}
-                                                      variant="outline"
-                                                      className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
-                                                    >
-                                                      {persona}
-                                                    </Badge>
-                                                  ))}
-                                                </div>
-                                              )}
+                                              <div className="flex flex-wrap gap-1 items-center">
+                                                {routine.personas && routine.personas.length > 0 && (
+                                                  <>
+                                                    {routine.personas.map((persona) => (
+                                                      <Badge
+                                                        key={persona}
+                                                        variant="outline"
+                                                        className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
+                                                      >
+                                                        {persona}
+                                                      </Badge>
+                                                    ))}
+                                                  </>
+                                                )}
+                                                      {routine.pelicoViews && routine.pelicoViews.length > 0 && (
+                                                        <>
+                                                          {routine.pelicoViews.map((view) => (
+                                                            <Badge
+                                                              key={view}
+                                                              variant="outline"
+                                                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                                            >
+                                                              {view}
+                                                            </Badge>
+                                                          ))}
+                                                        </>
+                                                      )}
+                                              </div>
                                             </div>
                                             <Plus className="h-4 w-4 text-muted-foreground group-hover:text-[#31C7AD] transition-colors flex-shrink-0 mt-1" />
                                           </button>
@@ -565,6 +628,115 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                               </ScrollArea>
                             </PopoverContent>
                           </Popover>
+                            </div>
+                            ) : (
+                              <Popover 
+                                open={openRoutinePopover === index}
+                                onOpenChange={(open) => {
+                                  setOpenRoutinePopover(open ? index : null);
+                                  if (!open) {
+                                    setRoutineSearchQuery({ ...routineSearchQuery, [index]: '' });
+                                  }
+                                }}
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 gap-1.5 text-xs"
+                                    disabled={availableRoutinesForTeam.length === 0}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                    Add Routine
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-96 p-0" align="end">
+                                  <div className="p-3 border-b border-border">
+                                    <div className="relative">
+                                      <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        placeholder="Search routines..."
+                                        value={routineSearchQuery[index] || ''}
+                                        onChange={(e) => setRoutineSearchQuery({ ...routineSearchQuery, [index]: e.target.value })}
+                                        className="pl-8 h-9 text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <ScrollArea className="max-h-[400px]">
+                                    <div className="p-2">
+                                      {availableRoutinesForTeam.length === 0 ? (
+                                        <div className="text-center py-8 text-sm text-muted-foreground">
+                                          {routineSearchQuery[index] ? 'No routines found' : 'All routines assigned'}
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-1">
+                                          {availableRoutinesForTeam.map((routine) => {
+                                            const isSuggested = isRoutineSuggested(index, routine.id);
+                                            return (
+                                              <button
+                                                key={routine.id}
+                                                onClick={() => {
+                                                  handleRoutineToggle(index, routine.id);
+                                                }}
+                                                className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left group"
+                                              >
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2 mb-1">
+                                                    <div className="text-sm font-medium text-foreground group-hover:text-[#31C7AD] transition-colors">
+                                                      {routine.name}
+                                                    </div>
+                                                    {isSuggested && (
+                                                      <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                                        <Sparkles className="h-2.5 w-2.5" />
+                                                        Suggested
+                                                      </Badge>
+                                                    )}
+                                                  </div>
+                                                  {routine.description && (
+                                                    <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                                      {routine.description}
+                                                    </div>
+                                                  )}
+                                                  <div className="flex flex-wrap gap-1 items-center">
+                                                    {routine.personas && routine.personas.length > 0 && (
+                                                      <>
+                                                        {routine.personas.map((persona) => (
+                                                          <Badge
+                                                            key={persona}
+                                                            variant="outline"
+                                                            className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
+                                                          >
+                                                            {persona}
+                                                          </Badge>
+                                                        ))}
+                                                      </>
+                                                    )}
+                                                      {routine.pelicoViews && routine.pelicoViews.length > 0 && (
+                                                        <>
+                                                          {routine.pelicoViews.map((view) => (
+                                                            <Badge
+                                                              key={view}
+                                                              variant="outline"
+                                                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                                            >
+                                                              {view}
+                                                            </Badge>
+                                                          ))}
+                                                        </>
+                                                      )}
+                                                  </div>
+                                                </div>
+                                                <Plus className="h-4 w-4 text-muted-foreground group-hover:text-[#31C7AD] transition-colors flex-shrink-0 mt-1" />
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </ScrollArea>
+                                </PopoverContent>
+                              </Popover>
+                            )}
                           </div>
                         </div>
 
@@ -595,19 +767,34 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                         {routine.description}
                                       </p>
                                     )}
-                                    {routine.personas && routine.personas.length > 0 && (
-                                      <div className="flex flex-wrap gap-1">
-                                        {routine.personas.map((persona) => (
-                                          <Badge
-                                            key={persona}
-                                            variant="outline"
-                                            className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
-                                          >
-                                            {persona}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    )}
+                                    <div className="flex flex-wrap gap-1 items-center">
+                                      {routine.personas && routine.personas.length > 0 && (
+                                        <>
+                                          {routine.personas.map((persona) => (
+                                            <Badge
+                                              key={persona}
+                                              variant="outline"
+                                              className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
+                                            >
+                                              {persona}
+                                            </Badge>
+                                          ))}
+                                        </>
+                                      )}
+                                                      {routine.pelicoViews && routine.pelicoViews.length > 0 && (
+                                                        <>
+                                                          {routine.pelicoViews.map((view) => (
+                                                            <Badge
+                                                              key={view}
+                                                              variant="outline"
+                                                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                                            >
+                                                              {view}
+                                                            </Badge>
+                                                          ))}
+                                                        </>
+                                                      )}
+                                    </div>
                                   </div>
                                   <button
                                     onClick={() => handleRoutineToggle(index, routine.id)}

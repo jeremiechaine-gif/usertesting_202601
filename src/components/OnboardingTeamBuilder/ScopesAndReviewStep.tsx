@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Target, CheckCircle2, X, Search, Plus, Star } from 'lucide-react';
+import { Target, CheckCircle2, X, Search, Plus, Star, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TeamConfig } from './TeamSetupStep';
 import { getAvailableScopes } from '@/lib/onboarding/teamWizardUtils';
@@ -39,13 +39,16 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
   const [availableScopes, setAvailableScopes] = useState<Scope[]>([]);
   const [userDefaultScopes, setUserDefaultScopes] = useState<Record<string, string>>({});
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
+  const [editingScope, setEditingScope] = useState<Scope | null>(null);
+  const [scopeToDuplicate, setScopeToDuplicate] = useState<Scope | null>(null);
   const [scopeSearchQuery, setScopeSearchQuery] = useState<Record<string, string>>({});
   const [openScopePopover, setOpenScopePopover] = useState<string | null>(null);
+  const [currentMemberId, setCurrentMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     const scopes = getAvailableScopes();
     setAvailableScopes(scopes);
-  }, []);
+  }, [scopeModalOpen]); // Reload when modal closes
 
   const handleUserScopeToggle = (userId: string, scopeId: string) => {
     const user = getUsers().find(u => u.id === userId);
@@ -221,14 +224,13 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                         variant="outline"
                                         size="sm"
                                         className="h-6 gap-1 text-xs"
-                                        disabled={availableScopesForMember.length === 0}
                                       >
                                         <Plus className="h-3 w-3" />
                                         Add Scope
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-0" align="end">
-                                      <div className="p-3 border-b border-border">
+                                    <PopoverContent className="w-96 p-0" align="end">
+                                      <div className="p-3 border-b border-border space-y-2">
                                         <div className="relative">
                                           <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                           <Input
@@ -238,43 +240,77 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                             className="pl-8 h-9 text-sm"
                                           />
                                         </div>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            setCurrentMemberId(member.id);
+                                            setEditingScope(null);
+                                            setScopeToDuplicate(null);
+                                            setOpenScopePopover(null);
+                                            setScopeModalOpen(true);
+                                          }}
+                                          className="w-full h-8 gap-1.5 text-xs"
+                                        >
+                                          <Plus className="h-3 w-3" />
+                                          Create New Scope
+                                        </Button>
                                       </div>
-                                      <ScrollArea className="max-h-64">
+                                      <ScrollArea className="max-h-[400px]">
                                         <div className="p-2">
-                                          {availableScopesForMember.length === 0 ? (
+                                          {availableScopesForMember.length === 0 && availableScopes.length > 0 ? (
                                             <div className="text-center py-8 text-sm text-muted-foreground">
-                                              {scopeSearchQuery[member.id] ? 'No scopes found' : availableScopes.length === 0 ? 'No scopes available' : 'All scopes assigned'}
+                                              {scopeSearchQuery[member.id] ? 'No scopes found' : 'All scopes assigned'}
                                             </div>
-                                          ) : (
+                                          ) : availableScopesForMember.length > 0 ? (
                                             <div className="space-y-1">
                                               {availableScopesForMember.map((scope) => (
-                                                <button
+                                                <div
                                                   key={scope.id}
-                                                  onClick={() => {
-                                                    handleUserScopeToggle(member.id, scope.id);
-                                                  }}
-                                                  className="w-full flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors text-left group"
+                                                  className="group"
                                                 >
-                                                  <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-foreground group-hover:text-[#31C7AD] transition-colors mb-1">
-                                                      {scope.name}
-                                                    </div>
-                                                    {scope.description && (
-                                                      <div className="text-xs text-muted-foreground line-clamp-2">
-                                                        {scope.description}
+                                                  <div className="flex items-start gap-2 p-2.5 rounded-lg hover:bg-muted transition-colors">
+                                                    <button
+                                                      onClick={() => {
+                                                        handleUserScopeToggle(member.id, scope.id);
+                                                      }}
+                                                      className="flex-1 flex items-start gap-3 text-left min-w-0"
+                                                    >
+                                                      <div className="flex-1 min-w-0">
+                                                        <div className="text-sm font-medium text-foreground group-hover:text-[#31C7AD] transition-colors mb-1">
+                                                          {scope.name}
+                                                        </div>
+                                                        {scope.description && (
+                                                          <div className="text-xs text-muted-foreground line-clamp-2 mb-1">
+                                                            {scope.description}
+                                                          </div>
+                                                        )}
+                                                        {scope.filters && scope.filters.length > 0 && (
+                                                          <div className="text-xs text-muted-foreground">
+                                                            {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
+                                                          </div>
+                                                        )}
                                                       </div>
-                                                    )}
-                                                    {scope.filters && scope.filters.length > 0 && (
-                                                      <div className="text-xs text-muted-foreground mt-1">
-                                                        {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
-                                                      </div>
-                                                    )}
+                                                      <Plus className="h-4 w-4 text-muted-foreground group-hover:text-[#31C7AD] transition-colors flex-shrink-0 mt-1" />
+                                                    </button>
+                                                    <button
+                                                      onClick={() => {
+                                                        setCurrentMemberId(member.id);
+                                                        setEditingScope(null);
+                                                        setScopeToDuplicate(scope);
+                                                        setOpenScopePopover(null);
+                                                        setScopeModalOpen(true);
+                                                      }}
+                                                      className="p-1.5 rounded-md hover:bg-[#2063F0]/10 text-muted-foreground hover:text-[#2063F0] transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                                                      title="Duplicate and modify"
+                                                    >
+                                                      <Target className="h-3.5 w-3.5" />
+                                                    </button>
                                                   </div>
-                                                  <Plus className="h-4 w-4 text-muted-foreground group-hover:text-[#31C7AD] transition-colors flex-shrink-0 mt-1" />
-                                                </button>
+                                                </div>
                                               ))}
                                             </div>
-                                          )}
+                                          ) : null}
                                         </div>
                                       </ScrollArea>
                                     </PopoverContent>
@@ -310,6 +346,18 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                             )}
                                           </div>
                                           <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                              onClick={() => {
+                                                setCurrentMemberId(member.id);
+                                                setEditingScope(scope);
+                                                setScopeToDuplicate(null);
+                                                setScopeModalOpen(true);
+                                              }}
+                                              className="p-1 rounded-md hover:bg-[#31C7AD]/10 text-muted-foreground hover:text-[#31C7AD] transition-colors opacity-0 group-hover:opacity-100"
+                                              title="Edit scope"
+                                            >
+                                              <Edit2 className="h-3.5 w-3.5" />
+                                            </button>
                                             {!isDefault && (
                                               <button
                                                 onClick={() => handleSetDefaultScope(member.id, scope.id)}
@@ -410,17 +458,51 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
         </div>
       </div>
 
-      {/* Scope Creation Modal */}
+      {/* Scope Creation/Edit Modal */}
       {scopeModalOpen && (
         <ScopeModal
           open={scopeModalOpen}
-          onOpenChange={setScopeModalOpen}
-          title="Create Scope"
+          onOpenChange={(open) => {
+            setScopeModalOpen(open);
+            if (!open) {
+              setEditingScope(null);
+              setScopeToDuplicate(null);
+              setCurrentMemberId(null);
+            }
+          }}
+          scope={scopeToDuplicate ? {
+            ...scopeToDuplicate,
+            id: `temp-${Date.now()}`, // Temporary ID for duplication
+            name: `${scopeToDuplicate.name} (Copy)`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } : editingScope || undefined}
+          title={scopeToDuplicate ? "Create Scope from Template" : editingScope ? "Edit Scope" : "Create New Scope"}
           onSave={() => {
-            // Reload scopes after creation
-            const scopes = getAvailableScopes();
-            setAvailableScopes(scopes);
+            // Reload scopes after creation/update
+            const oldScopes = getAvailableScopes();
+            const oldScopeIds = new Set(oldScopes.map(s => s.id));
+            
+            // Wait a bit for the scope to be saved
+            setTimeout(() => {
+              const newScopes = getAvailableScopes();
+              const newScope = newScopes.find(s => !oldScopeIds.has(s.id));
+              
+              setAvailableScopes(newScopes);
+              
+              // If creating a new scope and we have a current member, assign it automatically
+              if (currentMemberId && newScope && !editingScope) {
+                const userScopes = getUserScopes(currentMemberId);
+                if (!userScopes.some(s => s.id === newScope.id)) {
+                  handleUserScopeToggle(currentMemberId, newScope.id);
+                }
+              }
+            }, 100);
+            
             setScopeModalOpen(false);
+            setEditingScope(null);
+            setScopeToDuplicate(null);
+            setCurrentMemberId(null);
           }}
         />
       )}

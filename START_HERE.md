@@ -82,3 +82,5 @@ npm run dev:force
 
 **Le serveur est prêt ! Testez maintenant et confirmez que le HMR fonctionne.** 🚀
 
+
+

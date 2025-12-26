@@ -216,3 +216,5 @@
 4. **Filtres sans Mapping** : Les filtres qui ne mappent pas vers une colonne sont ajoutés directement (avec valeurs vides, à configurer plus tard)
 
 
+
+

@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { TeamConfigurationTypeStep, type ConfigurationType } from './TeamConfigurationTypeStep';
@@ -201,6 +202,7 @@ export const OnboardingTeamBuilder: React.FC<OnboardingTeamBuilderProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogDescription className="sr-only">Manage Your Teams wizard with 4 steps: Setup Type, Teams & Routines, Members, Scopes & Review</DialogDescription>
         {/* Hero Header with Gradient */}
         <div className="relative shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />

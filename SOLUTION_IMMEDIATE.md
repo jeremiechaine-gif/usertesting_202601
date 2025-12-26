@@ -65,3 +65,5 @@ Après avoir redémarré, vérifier dans la console du navigateur :
 3. Vérifier les permissions du dossier du projet
 4. Vérifier si un antivirus bloque les fichiers
 
+
+

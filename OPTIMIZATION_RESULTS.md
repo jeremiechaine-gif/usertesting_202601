@@ -226,3 +226,5 @@ npm run test:hmr
 
 **Status :** ✅ Optimisations appliquées - Tests en attente
 
+
+

@@ -43,3 +43,5 @@
 3. Tester en navigation privée (Cmd+Shift+N)
 4. Vérifier les erreurs TypeScript dans l'éditeur
 
+
+

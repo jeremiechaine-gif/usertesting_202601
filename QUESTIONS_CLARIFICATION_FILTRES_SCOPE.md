@@ -151,3 +151,5 @@ Une fois ces questions clarifiées, je pourrai implémenter :
 4. Le style visuel approprié pour distinguer les filtres de scope
 
 
+
+

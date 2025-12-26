@@ -64,3 +64,5 @@ echo "   2. Exécutez: npm run dev:clean"
 echo "   3. Redémarrez: npm run dev"
 echo ""
 
+
+

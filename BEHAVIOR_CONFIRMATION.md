@@ -77,3 +77,5 @@ Le comportement doit être **identique partout**, basé sur ce qui se passe dans
 ✅ **ScopeModal suit exactement le même flux que SortingAndFiltersPopover**
 
 
+
+

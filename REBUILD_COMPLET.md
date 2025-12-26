@@ -63,3 +63,5 @@ Si vous ne pouvez pas supprimer `node_modules`, les caches ont été nettoyés e
 3. Tester dans un autre navigateur (Firefox, Safari)
 4. Vérifier les permissions du dossier du projet
 
+
+

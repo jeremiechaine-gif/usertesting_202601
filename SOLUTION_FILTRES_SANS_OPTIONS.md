@@ -118,3 +118,5 @@ Pour les filtres numériques, générer une plage de valeurs (ex: 0-1000) et per
 4. Tester avec les filtres "Quantity Comparison", "Date Comparison", etc.
 
 
+
+

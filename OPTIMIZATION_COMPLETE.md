@@ -136,3 +136,5 @@ Si le problème persiste après optimisation :
 
 Le serveur devrait être démarré. Testez maintenant avec `QUICK_TEST.md` et confirmez que le HMR fonctionne correctement.
 
+
+

@@ -247,3 +247,5 @@ Si le problème persiste après optimisation :
 **Version du projet :** 0.0.0
 **Dernière modification :** Après optimisation du cache/HMR
 
+
+

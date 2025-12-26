@@ -65,3 +65,5 @@ En attendant vos réponses, je recommande :
 3. **Navigation** : Back → Layer 2, Apply → Layer 1 avec toast de succès
 4. **Footer** : Pas de footer séparé, intégrer les actions dans le contenu
 
+
+
