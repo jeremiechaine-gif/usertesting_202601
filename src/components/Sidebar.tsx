@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban, UserCircle, UsersRound } from 'lucide-react';
+import { Home, AlertTriangle, ShoppingCart, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, ChevronLeft, FolderKanban, UserCircle, UsersRound, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SidebarRoutines } from './SidebarRoutines';
+import { SearchModal } from './SearchModal';
 
 interface SidebarProps {
   activeItem: string;
@@ -26,6 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [userDisplayName, setUserDisplayName] = useState('Jeremie Chaine');
   const [userEmail, setUserEmail] = useState('admin@pelico.com');
   const [userInitials, setUserInitials] = useState('JC');
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -85,6 +88,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Items that are now managed by Pelico Views section (removed from hideable items)
   // These are: supply, production, mro, customer, planning, analytics, upload, config, users, scope-routines, my-routines, shared-routines, settings
 
+  // Handle keyboard shortcut (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchModalOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (isCollapsed) {
     return null;
   }
@@ -92,8 +108,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div className="w-64 bg-muted/50 border-r flex flex-col h-screen transition-all duration-300 ease-in-out">
       {/* Logo/Brand area */}
-      <div className="px-6 py-5 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="px-6 py-5 flex items-center">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <img 
             src="/images/Pelico-long-logo.svg" 
             alt="Pelico" 
@@ -102,14 +118,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
         
         {/* Toggle button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
+        <button
           onClick={onToggle}
+          aria-label="Collapse sidebar"
+          className="shrink-0 ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Search Input */}
+      <div className="px-3 py-3 bg-background/80 backdrop-blur-sm">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            onClick={() => setSearchModalOpen(true)}
+            readOnly
+            className="pl-9 pr-20 cursor-pointer"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground">
+            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+              {navigator.platform.toLowerCase().includes('mac') ? '⌘' : 'Ctrl'}
+            </kbd>
+            <span>+</span>
+            <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">K</kbd>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto py-4">
@@ -181,6 +216,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Search Modal */}
+      <SearchModal
+        open={searchModalOpen}
+        onOpenChange={setSearchModalOpen}
+        onNavigate={onNavigate}
+        onRoutineClick={onRoutineClick}
+      />
     </div>
   );
 };

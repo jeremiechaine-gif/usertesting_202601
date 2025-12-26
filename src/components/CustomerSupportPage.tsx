@@ -23,6 +23,7 @@ const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover')
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
+import { PlanDropdown } from './PlanDropdown';
 import { RoutineDropdown } from './RoutineDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
@@ -54,6 +55,7 @@ export const CustomerSupportPage: React.FC<{ onNavigate?: (page: string) => void
   }, [scopeFilters, userFilters]);
   const [globalFilter, setGlobalFilter] = useState('');
   const debouncedGlobalFilter = useDebounce(globalFilter, 300);
+  const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
@@ -223,8 +225,8 @@ export const CustomerSupportPage: React.FC<{ onNavigate?: (page: string) => void
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <div className="relative border-b bg-background shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
-            <div className="flex items-center justify-between mb-5">
+          <div className="relative px-6 py-3">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
@@ -233,32 +235,22 @@ export const CustomerSupportPage: React.FC<{ onNavigate?: (page: string) => void
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
+                    <img 
+                      src="/images/Pelico-small-logo.svg" 
+                      alt="Pelico" 
+                      className="h-4 w-auto"
+                    />
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Customer Support</h1>
+                <PlanDropdown
+                  selectedPlan={selectedPlan}
+                  onPlanSelect={setSelectedPlan}
+                />
                 <ScopeDropdown
                   selectedScopeId={currentScopeId}
                   onScopeSelect={setCurrentScopeId}
                   onScopeFiltersChange={() => {}}
-                />
-                <RoutineDropdown
-                  selectedRoutineId={selectedRoutineId}
-                  onRoutineSelect={setSelectedRoutineId}
-                  currentFilters={userFilters}
-                  currentSorting={sorting}
-                  currentGroupBy={selectedGroupBy}
-                  currentPageSize={table.getState().pagination.pageSize}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  onUpdateRoutine={handleUpdateRoutine}
-                  onSaveAsRoutine={handleSaveAsRoutine}
                 />
               </div>
 
@@ -268,11 +260,27 @@ export const CustomerSupportPage: React.FC<{ onNavigate?: (page: string) => void
                 </Button>
               </div>
             </div>
+            
+            {/* Page Title */}
+            <div className="mb-3">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Customer Order Book</h1>
+            </div>
           </div>
         </div>
 
         <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-b shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <RoutineDropdown
+              selectedRoutineId={selectedRoutineId}
+              onRoutineSelect={setSelectedRoutineId}
+              currentFilters={userFilters}
+              currentSorting={sorting}
+              currentGroupBy={selectedGroupBy}
+              currentPageSize={table.getState().pagination.pageSize}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onUpdateRoutine={handleUpdateRoutine}
+              onSaveAsRoutine={handleSaveAsRoutine}
+            />
             <Suspense fallback={<div>Loading...</div>}>
               <SortingAndFiltersPopover
                 sorting={sorting}
@@ -291,14 +299,6 @@ export const CustomerSupportPage: React.FC<{ onNavigate?: (page: string) => void
             </Suspense>
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all"
-              onClick={() => setGlobalFilter('')}
-            >
-              <Search className="w-4 h-4" />
-            </Button>
             <GroupByDropdown
               selectedGroupBy={selectedGroupBy}
               onGroupBySelect={setSelectedGroupBy}

@@ -340,7 +340,6 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   const defaultTrigger = (
     <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5 relative">
       <Filter className="w-4 h-4" />
-      Sorting and filters
       {totalActiveCount > 0 ? (
         <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
           {totalActiveCount}

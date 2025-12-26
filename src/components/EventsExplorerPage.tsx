@@ -34,7 +34,7 @@ import { getColumnIdFromFilterId } from './sorting-filters/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 
-export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
+export const EventsExplorerPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
   const { currentScopeId, setCurrentScopeId, getScopeFilters, currentScope } = useScope();
   
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -199,7 +199,7 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
       {!sidebarCollapsed && (
         <Sidebar 
-          activeItem="planning" 
+          activeItem="events-explorer" 
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(true)}
           onNavigate={onNavigate}
@@ -216,7 +216,7 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
               }
             }
             if (onNavigate) {
-              onNavigate('planning');
+              onNavigate('events-explorer');
             }
           }}
         />
@@ -263,7 +263,7 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
             
             {/* Page Title */}
             <div className="mb-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Planning</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Events Explorer</h1>
             </div>
           </div>
         </div>

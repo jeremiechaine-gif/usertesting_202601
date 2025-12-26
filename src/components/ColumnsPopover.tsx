@@ -310,14 +310,9 @@ export const ColumnsPopover: React.FC<ColumnsPopoverProps> = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all">
+        <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5 hover:bg-accent hover:border-[#31C7AD]/30 transition-all">
           <ColumnsIcon className="w-4 h-4" />
           Columns
-          {columnCounts.hidden > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 text-xs font-medium rounded bg-muted text-muted-foreground">
-              {columnCounts.visible}/{columnCounts.total}
-            </span>
-          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent

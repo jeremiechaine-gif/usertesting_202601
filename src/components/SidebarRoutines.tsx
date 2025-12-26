@@ -4,8 +4,8 @@
  * Supports folders, drag and drop, and context menus
  */
 
-import React, { useState, useMemo } from 'react';
-import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound, AlertTriangle, ShoppingCart } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound, AlertTriangle, ShoppingCart, FileText, Box, TrendingUp, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -189,15 +189,24 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
   const [isPelicoViewsExpanded, setIsPelicoViewsExpanded] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Force re-render after folder updates
 
+  // Auto-expand Pelico Views section when an active item belongs to it
+  useEffect(() => {
+    if (activeItem && pelicoViewsItems.some(item => item.id === activeItem)) {
+      setIsPelicoViewsExpanded(true);
+    }
+  }, [activeItem]);
+
   // Pelico Views menu items
   const pelicoViewsItems = [
     { id: 'escalation', label: 'Escalation Room', icon: AlertTriangle },
-    { id: 'supply', label: 'Purchase order book', icon: Package },
-    { id: 'production', label: 'Production Control', icon: Wrench },
-    { id: 'mro', label: 'MRO', icon: Wrench },
-    { id: 'customer', label: 'Customer Support', icon: Headphones },
+    { id: 'supply', label: 'Purchase Order Book', icon: Package },
+    { id: 'so-book', label: 'Service Order Book', icon: FileText },
+    { id: 'customer', label: 'Customer Order Book', icon: Headphones },
+    { id: 'wo-book', label: 'Work Order Book', icon: Wrench },
+    { id: 'missing-parts', label: 'Missing Parts', icon: Box },
+    { id: 'line-of-balance', label: 'Line of Balance', icon: TrendingUp },
     { id: 'planning', label: 'Planning', icon: BarChart3 },
-    { id: 'simulation', label: 'Simulation Basket', icon: ShoppingCart },
+    { id: 'events-explorer', label: 'Events Explorer', icon: Search },
   ];
 
   // Items to display below Pelico Views section
@@ -393,9 +402,8 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
         </button>
         
         {isPelicoViewsExpanded && (
-          <div className={cn("space-y-1", "mt-0.5")}>
+          <div className={cn("space-y-1 ml-8", "mt-0.5")}>
             {pelicoViewsItems.map((item) => {
-              const Icon = item.icon;
               const isActive = activeItem === item.id;
               
               return (
@@ -406,9 +414,11 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                     isActive && 'bg-[#31C7AD] text-white',
                     !isActive && 'hover:bg-muted/50'
                   )}
-                  onClick={() => onNavigate?.(item.id)}
+                  onClick={() => {
+                    setIsPelicoViewsExpanded(true); // Keep section open when clicking an item
+                    onNavigate?.(item.id);
+                  }}
                 >
-                  <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-white' : 'text-muted-foreground')} />
                   <span className={cn('flex-1 text-sm truncate', isActive && 'text-white')}>{item.label}</span>
                 </div>
               );

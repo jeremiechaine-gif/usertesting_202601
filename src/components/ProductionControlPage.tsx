@@ -233,6 +233,11 @@ export const ProductionControlPage: React.FC<{ onNavigate?: (page: string) => vo
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
+                    <img 
+                      src="/images/Pelico-small-logo.svg" 
+                      alt="Pelico" 
+                      className="h-4 w-auto"
+                    />
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}

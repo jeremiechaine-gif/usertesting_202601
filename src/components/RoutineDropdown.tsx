@@ -92,14 +92,9 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
       <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost" 
-                className={cn(
-                  "h-auto px-3 py-1.5 text-sm rounded-md transition-colors relative",
-                  "bg-muted/50 hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  selectedRoutine 
-                    ? "text-foreground font-medium" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
+                variant="outline" 
+                size="sm"
+                className="gap-2 h-auto px-3 py-1.5"
               >
                 <span>
                   {selectedRoutine 
@@ -108,10 +103,7 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
                       ? 'Créer une routine'
                       : 'Routine: No routine Available'}
                 </span>
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
-                {hasUnsavedChanges && (
-                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
-                )}
+                <ChevronDown className="h-4 w-4 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

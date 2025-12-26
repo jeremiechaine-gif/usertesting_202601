@@ -274,9 +274,9 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         {/* Main Header with Gradient */}
         <div className="relative border-b bg-background shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
+          <div className="relative px-6 py-3">
             {/* Top Header Row */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-3">
               {/* Left Side */}
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
@@ -286,19 +286,14 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                     onClick={() => setSidebarCollapsed(false)}
                   >
                     <Menu className="w-4 h-4" />
+                    <img 
+                      src="/images/Pelico-small-logo.svg" 
+                      alt="Pelico" 
+                      className="h-4 w-auto"
+                    />
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                {/* Pelico small logo */}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
-                </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Supply</h1>
-                <div className="h-7 w-px bg-border/60" />
                 <PlanDropdown
                   selectedPlan={selectedPlan}
                   onPlanSelect={setSelectedPlan}
@@ -307,17 +302,6 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                   selectedScopeId={currentScopeId}
                   onScopeSelect={setCurrentScopeId}
                   onScopeFiltersChange={() => {}} // Handled by context
-                />
-                <RoutineDropdown
-                  selectedRoutineId={selectedRoutineId}
-                  onRoutineSelect={setSelectedRoutineId}
-                  currentFilters={userFilters}
-                  currentSorting={sorting}
-                  currentGroupBy={selectedGroupBy}
-                  currentPageSize={table.getState().pagination.pageSize}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  onUpdateRoutine={handleUpdateRoutine}
-                  onSaveAsRoutine={handleSaveAsRoutine}
                 />
               </div>
 
@@ -329,12 +313,28 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                 </Button>
               </div>
             </div>
+            
+            {/* Page Title */}
+            <div className="mb-3">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+            </div>
           </div>
         </div>
 
         {/* Table Controls */}
         <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-b shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <RoutineDropdown
+              selectedRoutineId={selectedRoutineId}
+              onRoutineSelect={setSelectedRoutineId}
+              currentFilters={userFilters}
+              currentSorting={sorting}
+              currentGroupBy={selectedGroupBy}
+              currentPageSize={table.getState().pagination.pageSize}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onUpdateRoutine={handleUpdateRoutine}
+              onSaveAsRoutine={handleSaveAsRoutine}
+            />
             <SortingAndFiltersPopover
               sorting={sorting}
               columnFilters={userFilters}
@@ -351,17 +351,6 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all"
-              onClick={() => {
-                // TODO: Open search functionality
-                setGlobalFilter('');
-              }}
-            >
-              <Search className="w-4 h-4" />
-            </Button>
             <GroupByDropdown
               selectedGroupBy={selectedGroupBy}
               onGroupBySelect={setSelectedGroupBy}

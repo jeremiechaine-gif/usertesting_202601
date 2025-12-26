@@ -6,9 +6,13 @@ import { UsersPage } from './components/UsersPage';
 import { RoutineLibraryPage } from './components/RoutineLibraryPage';
 import { EscalationRoomPage } from './components/EscalationRoomPage';
 import { ProductionControlPage } from './components/ProductionControlPage';
-import { MROPage } from './components/MROPage';
+import { ServiceOrderBookPage } from './components/ServiceOrderBookPage';
+import { WorkOrderBookPage } from './components/WorkOrderBookPage';
 import { CustomerSupportPage } from './components/CustomerSupportPage';
+import { MissingPartsPage } from './components/MissingPartsPage';
+import { LineOfBalancePage } from './components/LineOfBalancePage';
 import { PlanningPage } from './components/PlanningPage';
+import { EventsExplorerPage } from './components/EventsExplorerPage';
 import { SimulationBasketPage } from './components/SimulationBasketPage';
 import { LoginPage } from './components/LoginPage';
 import { SimpleOnboardingWizard } from './components/SimpleOnboardingWizard/SimpleOnboardingWizard';
@@ -186,7 +190,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<{ email: string; firstName: string; lastName: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library' | 'escalation' | 'production' | 'mro' | 'customer' | 'planning' | 'simulation'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library' | 'escalation' | 'production' | 'so-book' | 'wo-book' | 'customer' | 'missing-parts' | 'line-of-balance' | 'planning' | 'events-explorer' | 'simulation'>('home');
   
   // Check if user is already logged in (from localStorage)
   useEffect(() => {
@@ -276,12 +280,20 @@ function App() {
       setCurrentPage('escalation');
     } else if (page === 'production') {
       setCurrentPage('production');
-    } else if (page === 'mro') {
-      setCurrentPage('mro');
+    } else if (page === 'so-book') {
+      setCurrentPage('so-book');
+    } else if (page === 'wo-book') {
+      setCurrentPage('wo-book');
     } else if (page === 'customer') {
       setCurrentPage('customer');
+    } else if (page === 'missing-parts') {
+      setCurrentPage('missing-parts');
+    } else if (page === 'line-of-balance') {
+      setCurrentPage('line-of-balance');
     } else if (page === 'planning') {
       setCurrentPage('planning');
+    } else if (page === 'events-explorer') {
+      setCurrentPage('events-explorer');
     } else if (page === 'simulation') {
       setCurrentPage('simulation');
     }
@@ -345,10 +357,18 @@ function App() {
       );
     }
 
-    if (currentPage === 'mro') {
+    if (currentPage === 'so-book') {
       return (
         <ErrorBoundary>
-          <MROPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <ServiceOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'wo-book') {
+      return (
+        <ErrorBoundary>
+          <WorkOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
@@ -361,10 +381,34 @@ function App() {
       );
     }
 
+    if (currentPage === 'missing-parts') {
+      return (
+        <ErrorBoundary>
+          <MissingPartsPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'line-of-balance') {
+      return (
+        <ErrorBoundary>
+          <LineOfBalancePage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
     if (currentPage === 'planning') {
       return (
         <ErrorBoundary>
           <PlanningPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'events-explorer') {
+      return (
+        <ErrorBoundary>
+          <EventsExplorerPage onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }
