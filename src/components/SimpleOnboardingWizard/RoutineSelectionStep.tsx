@@ -41,6 +41,8 @@ interface RoutineSelectionStepProps {
   onSubstepChange?: (substep: RoutineSelectionSubstep | string) => void;
   routineCreationStep?: CreateRoutineStep | null;
   onRoutineCreationStepChange?: (step: CreateRoutineStep | null) => void;
+  onRoutineNameChange?: (name: string) => void; // Expose routine name for footer validation
+  onCancelRoutineCreation?: () => void; // Callback to cancel routine creation
 }
 
 interface RoutineWithDetails {
@@ -62,6 +64,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   onSubstepChange,
   routineCreationStep,
   onRoutineCreationStepChange,
+  onRoutineNameChange,
+  onCancelRoutineCreation,
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
@@ -264,6 +268,20 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     }
   };
 
+  // Track routine name for validation in footer
+  const [routineNameForValidation, setRoutineNameForValidation] = useState('');
+
+  // Close routine creation when routineCreationStep is reset to null
+  React.useEffect(() => {
+    if (routineCreationStep === null && creatingRoutineForTeam) {
+      setCreatingRoutineForTeam(null);
+      setRoutineNameForValidation('');
+      if (onSubstepChange) {
+        onSubstepChange('team-selection');
+      }
+    }
+  }, [routineCreationStep, creatingRoutineForTeam, onSubstepChange]);
+
   // Show CreateRoutineView if active
   if (creatingRoutineForTeam) {
     const team = teams.find(t => t.id === creatingRoutineForTeam);
@@ -273,6 +291,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         teamPersona={team?.persona}
         onClose={() => {
           setCreatingRoutineForTeam(null);
+          setRoutineNameForValidation('');
           if (onRoutineCreationStepChange) {
             onRoutineCreationStepChange(null);
           }
@@ -283,6 +302,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         onRoutineCreated={(routineId) => {
           handleRoutineCreated(creatingRoutineForTeam, routineId);
           setCreatingRoutineForTeam(null);
+          setRoutineNameForValidation('');
           if (onRoutineCreationStepChange) {
             onRoutineCreationStepChange(null);
           }
@@ -295,6 +315,16 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
           if (onRoutineCreationStepChange) {
             onRoutineCreationStepChange(step);
           }
+        }}
+        routineName={routineNameForValidation}
+        onRoutineNameChange={(name) => {
+          setRoutineNameForValidation(name);
+          if (onRoutineNameChange) {
+            onRoutineNameChange(name);
+          }
+        }}
+        onSaveRequest={() => {
+          // This will be called from footer
         }}
       />
     );

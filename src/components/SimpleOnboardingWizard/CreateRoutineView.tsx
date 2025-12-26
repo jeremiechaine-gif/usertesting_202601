@@ -58,6 +58,9 @@ interface CreateRoutineViewProps {
   onRoutineCreated: (routineId: string) => void;
   currentStep?: CreateRoutineStep;
   onStepChange?: (step: CreateRoutineStep) => void;
+  onSaveRequest?: () => void; // Expose save function to parent
+  routineName?: string; // Expose routine name for validation
+  onRoutineNameChange?: (name: string) => void; // Callback to update routine name in parent
 }
 
 export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
@@ -67,16 +70,15 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
   onRoutineCreated,
   currentStep: externalCurrentStep,
   onStepChange,
+  onSaveRequest,
+  routineName: externalRoutineName,
+  onRoutineNameChange,
 }) => {
   const [internalCurrentStep, setInternalCurrentStep] = useState<CreateRoutineStep>('choose-view');
   const currentStep = externalCurrentStep ?? internalCurrentStep;
   
-  // Sync internal step when external step changes
-  React.useEffect(() => {
-    if (externalCurrentStep) {
-      setInternalCurrentStep(externalCurrentStep);
-    }
-  }, [externalCurrentStep]);
+  // Use external routine name if provided
+  const displayRoutineName = externalRoutineName ?? routineName;
   
   const setCurrentStep = (step: CreateRoutineStep) => {
     if (onStepChange) {
@@ -133,7 +135,7 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
     setCurrentStep('configure-table');
   };
 
-  const handleSave = () => {
+  const handleSave = React.useCallback(() => {
     if (!selectedView || !routineName.trim()) return;
 
     const currentUserId = getCurrentUserId();
@@ -150,18 +152,49 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
 
     onRoutineCreated(routine.id);
     onClose();
-  };
+  }, [selectedView, routineName, routineDescription, columnFilters, sorting, teamId, onRoutineCreated, onClose]);
+
+  // Sync internal step when external step changes
+  React.useEffect(() => {
+    if (externalCurrentStep) {
+      setInternalCurrentStep(externalCurrentStep);
+    }
+  }, [externalCurrentStep]);
+
+  // Expose save function to parent via window (temporary solution)
+  // This allows the footer in SimpleOnboardingWizard to call handleSave
+  React.useEffect(() => {
+    (window as any).__createRoutineViewHandleSave = handleSave;
+    return () => {
+      delete (window as any).__createRoutineViewHandleSave;
+    };
+  }, [handleSave]);
 
   const handleOpenFilterModal = (columnId: string) => {
     setFilterModalColumnId(columnId);
     setFilterModalOpen(true);
   };
 
+  const stepLabels = {
+    'choose-view': 'Choose View',
+    'configure-table': 'Configure',
+    'save': 'Save',
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0 bg-background">
-      {/* Header */}
+      {/* Header with breadcrumb */}
       <div className="shrink-0 border-b border-border bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent">
         <div className="px-6 pt-4 pb-3">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 mb-3 text-xs">
+            <span className="text-muted-foreground">Routines</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-[#2063F0] font-medium">Create Routine</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-foreground font-semibold">{stepLabels[currentStep]}</span>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">Create Routine</h2>
@@ -361,7 +394,12 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
                   id="routine-name"
                   placeholder="e.g., Critical supplier follow-ups"
                   value={routineName}
-                  onChange={(e) => setRoutineName(e.target.value)}
+                  onChange={(e) => {
+                    setRoutineName(e.target.value);
+                    if (onRoutineNameChange) {
+                      onRoutineNameChange(e.target.value);
+                    }
+                  }}
                   className="w-full"
                 />
               </div>
@@ -383,52 +421,6 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
             </div>
           </ScrollArea>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="shrink-0 px-6 py-4 border-t border-border flex items-center justify-between bg-muted/30">
-        <div className="flex items-center gap-2">
-          {currentStep !== 'choose-view' && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (currentStep === 'configure-table') {
-                  setCurrentStep('choose-view');
-                } else if (currentStep === 'save') {
-                  setCurrentStep('configure-table');
-                }
-              }}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          
-          {currentStep === 'configure-table' && (
-            <Button
-              onClick={() => setCurrentStep('save')}
-              className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
-            >
-              Continue
-            </Button>
-          )}
-          
-          {currentStep === 'save' && (
-            <Button
-              onClick={handleSave}
-              disabled={!routineName.trim()}
-              className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
-            >
-              Create Routine
-            </Button>
-          )}
-        </div>
       </div>
 
       {/* Filter Modal */}

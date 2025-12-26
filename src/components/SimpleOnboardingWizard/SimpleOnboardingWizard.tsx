@@ -74,6 +74,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   const step0ContinueHandlerRef = useRef<(() => boolean) | null>(null);
   // Routine creation substeps state
   const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | 'save' | null>(null);
+  const [routineNameForValidation, setRoutineNameForValidation] = useState('');
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -527,45 +528,119 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               }}
               routineCreationStep={routineCreationStep}
               onRoutineCreationStepChange={setRoutineCreationStep}
+              onRoutineNameChange={setRoutineNameForValidation}
+              onCancelRoutineCreation={() => {
+                setRoutineCreationStep(null);
+                setRoutineNameForValidation('');
+              }}
             />
           )}
         </div>
 
-        {/* Fixed Footer - Same height as sidebar progress section */}
-        <div className="py-4 border-t border-border bg-background shrink-0 flex items-center">
-          <div className="px-8 flex items-center justify-between gap-3 w-full">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleBack}
-                disabled={step === 0 && currentSubstep.step0 === 'welcome'}
-                className="gap-2"
+        {/* Fixed Footer - Hide when creating a routine (substep) */}
+        {!routineCreationStep && (
+          <div className="py-4 border-t border-border bg-background shrink-0 flex items-center">
+            <div className="px-8 flex items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleBack}
+                  disabled={step === 0 && currentSubstep.step0 === 'welcome'}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <Button
+                onClick={step === 3 ? handleComplete : handleNext}
+                disabled={!canProceed()}
+                className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleClearAll}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5"
-              >
-                Clear All
+                {step === 3 ? 'Complete Setup' : 'Continue'}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </Button>
             </div>
-            <Button
-              onClick={step === 3 ? handleComplete : handleNext}
-              disabled={!canProceed()}
-              className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {step === 3 ? 'Complete Setup' : 'Continue'}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Button>
           </div>
-        </div>
+        )}
+        
+        {/* Footer for Routine Creation - Only show when creating a routine */}
+        {routineCreationStep && (
+          <div className="py-4 border-t border-border bg-background shrink-0 flex items-center">
+            <div className="px-8 flex items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-2">
+                {routineCreationStep !== 'choose-view' && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      if (routineCreationStep === 'configure-table') {
+                        setRoutineCreationStep('choose-view');
+                      } else if (routineCreationStep === 'save') {
+                        setRoutineCreationStep('configure-table');
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setRoutineCreationStep(null);
+                    setRoutineNameForValidation('');
+                    // Reset creatingRoutineForTeam in RoutineSelectionStep
+                    // This is handled by passing a ref or callback, but for now we'll rely on
+                    // the state reset to trigger the close in RoutineSelectionStep
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
+              {routineCreationStep === 'configure-table' && (
+                <Button
+                  onClick={() => setRoutineCreationStep('save')}
+                  className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
+                >
+                  Continue
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Button>
+              )}
+              {routineCreationStep === 'save' && (
+                <Button
+                  onClick={() => {
+                    // Call handleSave from CreateRoutineView
+                    const handleSave = (window as any).__createRoutineViewHandleSave;
+                    if (handleSave) {
+                      handleSave();
+                    }
+                  }}
+                  disabled={!routineNameForValidation.trim()}
+                  className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Routine
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
