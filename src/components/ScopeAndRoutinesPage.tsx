@@ -237,6 +237,13 @@ export const ScopeAndRoutinesPage: React.FC<{
     loadRoutines();
   };
 
+  const handleViewRoutine = (routine: Routine) => {
+    // Navigate to the Pelico view page associated with this routine
+    if (routine.pelicoView) {
+      onNavigate?.(routine.pelicoView);
+    }
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareLink);
     // You could add a toast notification here
@@ -255,14 +262,6 @@ export const ScopeAndRoutinesPage: React.FC<{
       )}
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Banner */}
-        <div className="bg-muted px-6 py-2.5 text-sm border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-            <span className="font-medium">This is a test banner. You're on a test environment.</span>
-          </div>
-        </div>
-
         {/* Main Header with Gradient */}
         <div className="relative border-b bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
@@ -573,6 +572,23 @@ export const ScopeAndRoutinesPage: React.FC<{
                       )
                       .filter((team): team is Team => team !== null);
                     
+                    // Map pelicoView to display name
+                    const getPelicoViewDisplayName = (view?: string): string => {
+                      const viewMap: Record<string, string> = {
+                        'supply': 'PO Book',
+                        'production': 'WO Book',
+                        'customer': 'CO Book',
+                        'escalation': 'Escalation Room',
+                        'value-engineering': 'Value Engineering',
+                        'event-explorer': 'Events Explorer',
+                        'simulation': 'Planning',
+                      };
+                      return view ? (viewMap[view] || view) : '';
+                    };
+
+                    // Check if routine is suggested (has personas)
+                    const isSuggested = routine.personas && routine.personas.length > 0;
+                    
                     return (
                     <div
                       key={routine.id}
@@ -580,12 +596,30 @@ export const ScopeAndRoutinesPage: React.FC<{
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg truncate">{routine.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-base truncate">{routine.name}</h3>
+                            {isSuggested && (
+                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                <Sparkles className="h-2.5 w-2.5" />
+                                Suggested
+                              </Badge>
+                            )}
+                          </div>
                           {routine.description && (
-                            <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-2">
+                            <p className="text-xs text-muted-foreground mb-2 leading-relaxed line-clamp-2">
                               {routine.description}
                             </p>
                           )}
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {routine.pelicoView && (
+                              <Badge
+                                variant="outline"
+                                className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                              >
+                                {getPelicoViewDisplayName(routine.pelicoView)}
+                              </Badge>
+                            )}
+                          </div>
                           {creator && (
                             <p className="text-xs text-muted-foreground mt-2">
                               Created by <span className="font-medium">{creator.name}</span>
@@ -595,28 +629,6 @@ export const ScopeAndRoutinesPage: React.FC<{
                       </div>
                       
                       <div className="flex flex-wrap items-center gap-2 mt-4">
-                        <Badge variant="outline" className="text-xs bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
-                          {routine.filters.length} filter{routine.filters.length !== 1 ? 's' : ''}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
-                          {routine.sorting.length} sort{routine.sorting.length !== 1 ? 's' : ''}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'text-xs bg-background/50',
-                            routine.scopeMode === 'scope-aware' && 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-300',
-                            routine.scopeMode === 'scope-fixed' && 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-300'
-                          )}
-                        >
-                          {routine.scopeMode === 'scope-aware' ? 'Scope-aware' : 'Scope-fixed'}
-                        </Badge>
-                        {allSharedTeams.map((team) => (
-                          <Badge key={team.id} className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/20">
-                            {team.name}
-                          </Badge>
-                        ))}
-                        
                         <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -291,14 +291,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
       )}
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
-        {/* Top Banner */}
-        <div className="bg-muted px-6 py-2.5 text-sm border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-            <span className="font-medium">This is a test banner. You're on a test environment.</span>
-          </div>
-        </div>
-
         {/* Main Header with Gradient */}
         <div className="relative border-b bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />

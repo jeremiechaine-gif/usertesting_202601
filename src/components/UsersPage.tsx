@@ -166,14 +166,6 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
       )}
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Top Banner */}
-        <div className="bg-muted px-6 py-2.5 text-sm border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-            <span className="font-medium">This is a test banner. You're on a test environment.</span>
-          </div>
-        </div>
-
         {/* Main Header with Gradient */}
         <div className="relative border-b bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
@@ -206,23 +198,6 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-6xl">
-            {/* Hero Section */}
-            <div className="relative mb-8 rounded-xl p-8 overflow-hidden border border-[#31C7AD]/20 bg-background shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
-              <div className="relative flex items-start gap-4">
-                <div className="p-3 rounded-lg bg-gradient-to-br from-[#31C7AD] to-[#2063F0] shadow-md">
-                  <Users2 className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">Manage your teams and members</h2>
-                  <p className="text-muted-foreground max-w-3xl leading-relaxed">
-                    Organize users into teams to share routines and collaborate effectively. 
-                    Assign scopes and routines to streamline workflows and ensure everyone has access to the right tools.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Teams Section */}
             <div className="flex flex-col min-w-0">
               <div className="flex items-center justify-between mb-6">

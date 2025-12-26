@@ -76,12 +76,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const menuItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'escalation', label: 'Escalation Room', icon: AlertTriangle },
     { id: 'simulation', label: 'Simulation Basket', icon: ShoppingCart },
   ];
 
   // Items that should always be visible
-  const alwaysVisibleItems = ['home', 'escalation', 'simulation'];
+  const alwaysVisibleItems = ['home', 'simulation'];
   
   // Items that are now managed by Pelico Views section (removed from hideable items)
   // These are: supply, production, mro, customer, planning, analytics, upload, config, users, scope-routines, my-routines, shared-routines, settings

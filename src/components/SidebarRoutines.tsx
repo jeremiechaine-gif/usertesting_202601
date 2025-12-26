@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound } from 'lucide-react';
+import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -191,11 +191,13 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
 
   // Pelico Views menu items
   const pelicoViewsItems = [
-    { id: 'supply', label: 'Supply', icon: Package },
+    { id: 'escalation', label: 'Escalation Room', icon: AlertTriangle },
+    { id: 'supply', label: 'Purchase order book', icon: Package },
     { id: 'production', label: 'Production Control', icon: Wrench },
     { id: 'mro', label: 'MRO', icon: Wrench },
     { id: 'customer', label: 'Customer Support', icon: Headphones },
     { id: 'planning', label: 'Planning', icon: BarChart3 },
+    { id: 'simulation', label: 'Simulation Basket', icon: ShoppingCart },
   ];
 
   // Items to display below Pelico Views section

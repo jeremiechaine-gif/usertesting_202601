@@ -4,6 +4,12 @@ import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
 import { HomePage } from './components/HomePage';
 import { UsersPage } from './components/UsersPage';
 import { RoutineLibraryPage } from './components/RoutineLibraryPage';
+import { EscalationRoomPage } from './components/EscalationRoomPage';
+import { ProductionControlPage } from './components/ProductionControlPage';
+import { MROPage } from './components/MROPage';
+import { CustomerSupportPage } from './components/CustomerSupportPage';
+import { PlanningPage } from './components/PlanningPage';
+import { SimulationBasketPage } from './components/SimulationBasketPage';
 import { LoginPage } from './components/LoginPage';
 import { SimpleOnboardingWizard } from './components/SimpleOnboardingWizard/SimpleOnboardingWizard';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -180,7 +186,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<{ email: string; firstName: string; lastName: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library' | 'escalation' | 'production' | 'mro' | 'customer' | 'planning' | 'simulation'>('home');
   
   // Check if user is already logged in (from localStorage)
   useEffect(() => {
@@ -266,6 +272,18 @@ function App() {
       setCurrentPage('shared-routines');
     } else if (page === 'routines-library') {
       setCurrentPage('routines-library');
+    } else if (page === 'escalation') {
+      setCurrentPage('escalation');
+    } else if (page === 'production') {
+      setCurrentPage('production');
+    } else if (page === 'mro') {
+      setCurrentPage('mro');
+    } else if (page === 'customer') {
+      setCurrentPage('customer');
+    } else if (page === 'planning') {
+      setCurrentPage('planning');
+    } else if (page === 'simulation') {
+      setCurrentPage('simulation');
     }
   };
 
@@ -311,9 +329,65 @@ function App() {
       );
     }
 
+    if (currentPage === 'escalation') {
+      return (
+        <ErrorBoundary>
+          <EscalationRoomPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'production') {
+      return (
+        <ErrorBoundary>
+          <ProductionControlPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'mro') {
+      return (
+        <ErrorBoundary>
+          <MROPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'customer') {
+      return (
+        <ErrorBoundary>
+          <CustomerSupportPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'planning') {
+      return (
+        <ErrorBoundary>
+          <PlanningPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'simulation') {
+      return (
+        <ErrorBoundary>
+          <SimulationBasketPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'supply') {
+      return (
+        <ErrorBoundary>
+          <PurchaseOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
     return (
       <ErrorBoundary>
-        <PurchaseOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
       </ErrorBoundary>
     );
   };
