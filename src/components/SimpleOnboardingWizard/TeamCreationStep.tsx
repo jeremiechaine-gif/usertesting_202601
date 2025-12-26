@@ -11,7 +11,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Users, Settings, ArrowLeft, User, Plus, Sparkles } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Users, Settings, ArrowLeft, User, Plus, Sparkles, ChevronDown, X, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig, TeamCreationMode } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
@@ -63,6 +65,8 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [manualTeamName, setManualTeamName] = useState('');
   const [manualTeamDescription, setManualTeamDescription] = useState('');
+  const [manualTeamPersonas, setManualTeamPersonas] = useState<string[]>([]);
+  const [personasPopoverOpen, setPersonasPopoverOpen] = useState(false);
   const onStep0ContinueRef = useRef(onStep0Continue);
 
   // Generate team ID
@@ -173,6 +177,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
       id: generateTeamId(),
       name: manualTeamName.trim(),
       description: manualTeamDescription.trim() || undefined,
+      personas: manualTeamPersonas.length > 0 ? manualTeamPersonas : undefined,
       assignedRoutineIds: [],
       memberIds: [],
       createdAt: new Date().toISOString(),
@@ -180,10 +185,20 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     };
 
     onTeamsUpdate([...teams, newTeam]);
+    // Reset form but stay in manual-creation mode to allow creating more teams
     setManualTeamName('');
     setManualTeamDescription('');
-    setCreationMode(null);
-    // Don't return to mode-selection, let the continue handler proceed to next step
+    setManualTeamPersonas([]);
+    // Don't reset creationMode - allow user to create more teams
+  };
+
+  // Handle persona toggle for manual team
+  const handleManualPersonaToggle = (persona: string) => {
+    setManualTeamPersonas(prev => 
+      prev.includes(persona) 
+        ? prev.filter(p => p !== persona)
+        : [...prev, persona]
+    );
   };
 
   // Pre-select personas that already have teams when entering persona-selection
@@ -216,17 +231,17 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
   // Handle continue from substep - exposed to parent
   const handleSubstepContinue = () => {
+    // If teams already exist, always allow proceeding (user can have created teams and be on any substep)
+    if (teams.length > 0) {
+      return true;
+    }
+
+    // Otherwise, check substep-specific validation
     if (currentSubstep === 'welcome') {
       // Welcome screen now shows mode selection directly, so check if teams exist
-      if (teams.length > 0) {
-        return true;
-      }
       return false;
     } else if (currentSubstep === 'mode-selection') {
       // If teams already exist, can proceed
-      if (teams.length > 0) {
-        return true;
-      }
       return false;
     } else if (currentSubstep === 'persona-selection') {
       if (selectedPersonas.length === 0) {
@@ -258,12 +273,19 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
   // Notify parent about validation state
   useEffect(() => {
+    // If teams already exist, always allow proceeding
+    if (teams.length > 0) {
+      onValidationChange?.(true);
+      return;
+    }
+
+    // Otherwise, check substep-specific validation
     let canProceed = false;
     
     if (currentSubstep === 'welcome') {
-      canProceed = teams.length > 0; // Can proceed if teams already exist
+      canProceed = false; // Need to create at least one team
     } else if (currentSubstep === 'mode-selection') {
-      canProceed = teams.length > 0; // Can proceed if teams already exist
+      canProceed = false; // Need to create at least one team
     } else if (currentSubstep === 'persona-selection') {
       canProceed = selectedPersonas.length > 0;
     } else if (currentSubstep === 'manual-creation') {
@@ -496,24 +518,175 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
           {/* Substep 0.2b: Manual Creation */}
           {currentSubstep === 'manual-creation' && (
-            <div className="max-w-2xl space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Team name *</label>
-                <Input
-                  value={manualTeamName}
-                  onChange={(e) => setManualTeamName(e.target.value)}
-                  placeholder="Enter team name"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description (optional)</label>
-                <Textarea
-                  value={manualTeamDescription}
-                  onChange={(e) => setManualTeamDescription(e.target.value)}
-                  placeholder="Enter team description"
-                  className="w-full min-h-[80px]"
-                />
+            <div className="max-w-4xl space-y-6">
+              {/* Created Teams Section - Show if teams exist */}
+              {teams.filter(t => !t.persona).length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">
+                      Created Teams ({teams.filter(t => !t.persona).length})
+                    </h3>
+                    <Badge variant="outline" className="bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      {teams.filter(t => !t.persona).length} team{teams.filter(t => !t.persona).length !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {teams.filter(t => !t.persona).map((team) => (
+                      <div
+                        key={team.id}
+                        className="group relative p-4 rounded-lg border-2 border-[#31C7AD]/30 bg-gradient-to-br from-[#31C7AD]/5 to-transparent hover:border-[#31C7AD]/50 transition-all"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="h-4 w-4 text-[#31C7AD]" />
+                              <h4 className="font-semibold text-sm truncate">{team.name}</h4>
+                            </div>
+                            {team.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                {team.description}
+                              </p>
+                            )}
+                            {team.personas && team.personas.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {team.personas.map((persona) => (
+                                  <Badge key={persona} variant="secondary" className="text-xs">
+                                    {persona}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Team Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#2063F0]/10">
+                    <Plus className="h-5 w-5 text-[#2063F0]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Add New Team</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Create additional teams to organize your workspace
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-xl border-2 border-dashed border-border bg-muted/20 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Team name *</label>
+                    <Input
+                      value={manualTeamName}
+                      onChange={(e) => setManualTeamName(e.target.value)}
+                      placeholder="Enter team name"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Description (optional)</label>
+                    <Textarea
+                      value={manualTeamDescription}
+                      onChange={(e) => setManualTeamDescription(e.target.value)}
+                      placeholder="Enter team description"
+                      className="w-full min-h-[80px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Personas (optional)
+                      <span className="text-xs text-muted-foreground ml-2 font-normal">
+                        Help us suggest relevant routines
+                      </span>
+                    </label>
+                    <Popover open={personasPopoverOpen} onOpenChange={setPersonasPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between"
+                        >
+                          {manualTeamPersonas.length === 0 ? (
+                            <span className="text-muted-foreground">Select personas...</span>
+                          ) : (
+                            <span className="flex items-center gap-2 flex-wrap">
+                              {manualTeamPersonas.map((persona) => (
+                                <Badge key={persona} variant="secondary" className="text-xs">
+                                  {persona}
+                                </Badge>
+                              ))}
+                            </span>
+                          )}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <ScrollArea className="h-64">
+                          <div className="p-2">
+                            {PERSONAS.map((persona) => {
+                              const isSelected = manualTeamPersonas.includes(persona);
+                              return (
+                                <div
+                                  key={persona}
+                                  className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                                  onClick={() => handleManualPersonaToggle(persona)}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => handleManualPersonaToggle(persona)}
+                                  />
+                                  <label className="text-sm font-medium leading-none cursor-pointer flex-1">
+                                    {persona}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                      </PopoverContent>
+                    </Popover>
+                    {manualTeamPersonas.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {manualTeamPersonas.map((persona) => (
+                          <Badge
+                            key={persona}
+                            variant="secondary"
+                            className="text-xs flex items-center gap-1"
+                          >
+                            {persona}
+                            <button
+                              onClick={() => handleManualPersonaToggle(persona)}
+                              className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button
+                      onClick={handleCreateManualTeam}
+                      disabled={!manualTeamName.trim()}
+                      className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Team
+                    </Button>
+                    {manualTeamName.trim() && (
+                      <span className="text-xs text-muted-foreground">
+                        Team will be added to your list above
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

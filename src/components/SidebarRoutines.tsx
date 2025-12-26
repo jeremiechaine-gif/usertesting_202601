@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical } from 'lucide-react';
+import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,8 @@ import { getCurrentUserId } from '@/lib/users';
 interface SidebarRoutinesProps {
   activeRoutineId?: string | null;
   onRoutineClick?: (routineId: string) => void;
+  activeItem?: string;
+  onNavigate?: (page: string) => void;
 }
 
 interface RoutineItemProps {
@@ -178,13 +180,29 @@ const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutine
   );
 };
 
-export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineId, onRoutineClick }) => {
+export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineId, onRoutineClick, activeItem, onNavigate }) => {
   const currentUserId = getCurrentUserId();
   const [showAllMyRoutines, setShowAllMyRoutines] = useState(false);
   const [showAllSharedRoutines, setShowAllSharedRoutines] = useState(false);
   const [isMyRoutinesExpanded, setIsMyRoutinesExpanded] = useState(true);
   const [isSharedRoutinesExpanded, setIsSharedRoutinesExpanded] = useState(true);
+  const [isPelicoViewsExpanded, setIsPelicoViewsExpanded] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Force re-render after folder updates
+
+  // Pelico Views menu items
+  const pelicoViewsItems = [
+    { id: 'supply', label: 'Supply', icon: Package },
+    { id: 'production', label: 'Production Control', icon: Wrench },
+    { id: 'mro', label: 'MRO', icon: Wrench },
+    { id: 'customer', label: 'Customer Support', icon: Headphones },
+    { id: 'planning', label: 'Planning', icon: BarChart3 },
+  ];
+
+  // Items to display below Pelico Views section
+  const belowPelicoViewsItems = [
+    { id: 'users', label: 'Teams & members', icon: Users },
+    { id: 'scope-routines', label: 'Scope & Routines', icon: FolderKanban },
+  ];
 
   // Get routines
   const myRoutines = useMemo(() => {
@@ -241,7 +259,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
         
         {isMyRoutinesExpanded && (
           <div 
-            className="space-y-1 mt-1"
+            className={cn("space-y-1", hasMyRoutines ? "mt-1" : "mt-0.5")}
             onDragOver={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -301,8 +319,8 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                 )}
               </>
             ) : (
-              <div className="px-3 py-4 text-center">
-                <p className="text-xs text-muted-foreground/70">Create your first routine to get started</p>
+              <div className="px-3 py-1.5">
+                <p className="text-xs text-muted-foreground/60 leading-relaxed">Create your first routine to get started</p>
               </div>
             )}
           </div>
@@ -324,7 +342,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
         </button>
         
         {isSharedRoutinesExpanded && (
-          <div className="space-y-1 mt-1">
+          <div className={cn("space-y-1", hasSharedRoutines ? "mt-1" : "mt-0.5")}>
             {hasSharedRoutines ? (
               <>
                 {displayedSharedRoutines.map((routine) => (
@@ -350,12 +368,74 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                 )}
               </>
             ) : (
-              <div className="px-3 py-4 text-center">
-                <p className="text-xs text-muted-foreground/70">Routines shared with you will appear here</p>
+              <div className="px-3 py-1.5">
+                <p className="text-xs text-muted-foreground/60 leading-relaxed">Routines shared with you will appear here</p>
               </div>
             )}
           </div>
         )}
+      </div>
+
+      {/* PELICO VIEWS Section */}
+      <div>
+        <button
+          onClick={() => setIsPelicoViewsExpanded(!isPelicoViewsExpanded)}
+          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted/50 rounded-md transition-colors"
+        >
+          {isPelicoViewsExpanded ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+          <span>PELICO VIEWS</span>
+        </button>
+        
+        {isPelicoViewsExpanded && (
+          <div className={cn("space-y-1", "mt-0.5")}>
+            {pelicoViewsItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeItem === item.id;
+              
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    'flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors',
+                    isActive && 'bg-[#31C7AD] text-white',
+                    !isActive && 'hover:bg-muted/50'
+                  )}
+                  onClick={() => onNavigate?.(item.id)}
+                >
+                  <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-white' : 'text-muted-foreground')} />
+                  <span className={cn('flex-1 text-sm truncate', isActive && 'text-white')}>{item.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Items below Pelico Views */}
+      <div className="space-y-1 mt-2">
+        {belowPelicoViewsItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeItem === item.id;
+          
+          return (
+            <Button
+              key={item.id}
+              variant={isActive ? 'secondary' : 'ghost'}
+              className={cn(
+                'w-full justify-start gap-3 h-auto py-1.5 px-3 text-sm',
+                isActive && 'bg-[#31C7AD] text-white hover:bg-[#2ab89a]'
+              )}
+              onClick={() => onNavigate?.(item.id)}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

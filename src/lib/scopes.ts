@@ -3,6 +3,9 @@
  * Handles localStorage persistence for scopes
  */
 
+import { getUsers, type User } from './users';
+import { getTeams, type Team } from './teams';
+
 export interface ScopeFilter {
   id: string;
   filterId: string;
@@ -259,5 +262,39 @@ export const createInstanceFromTemplate = (
  */
 export const templateHasInstances = (templateId: string): boolean => {
   return getInstancesForTemplate(templateId).length > 0;
+};
+
+/**
+ * Get all users assigned to a scope (directly or via team)
+ */
+export const getUsersAssignedToScope = (scopeId: string): Array<{ user: User; assignmentType: 'direct' | 'via-team'; teamName?: string }> => {
+  const users = getUsers();
+  const teams = getTeams();
+  
+  const assignedUsers: Array<{ user: User; assignmentType: 'direct' | 'via-team'; teamName?: string }> = [];
+  const addedUserIds = new Set<string>();
+  
+  // Users with direct scope assignment
+  users.forEach((user) => {
+    if (user.assignedScopeIds?.includes(scopeId)) {
+      assignedUsers.push({ user, assignmentType: 'direct' });
+      addedUserIds.add(user.id);
+    }
+  });
+  
+  // Users via team assignment
+  teams.forEach((team) => {
+    if (team.assignedScopeIds?.includes(scopeId)) {
+      const teamUsers = users.filter((u) => u.teamId === team.id);
+      teamUsers.forEach((user) => {
+        if (!addedUserIds.has(user.id)) {
+          assignedUsers.push({ user, assignmentType: 'via-team', teamName: team.name });
+          addedUserIds.add(user.id);
+        }
+      });
+    }
+  });
+  
+  return assignedUsers;
 };
 

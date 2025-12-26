@@ -23,7 +23,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onRoutineClick,
   onLogout,
 }) => {
-  const [areItemsHidden, setAreItemsHidden] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState('Jeremie Chaine');
   const [userEmail, setUserEmail] = useState('admin@pelico.com');
   const [userInitials, setUserInitials] = useState('JC');
@@ -79,26 +78,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'home', label: 'Home', icon: Home },
     { id: 'escalation', label: 'Escalation Room', icon: AlertTriangle },
     { id: 'simulation', label: 'Simulation Basket', icon: ShoppingCart },
-    { id: 'supply', label: 'Supply', icon: Package },
-    { id: 'production', label: 'Production Control', icon: Wrench },
-    { id: 'mro', label: 'MRO', icon: Wrench },
-    { id: 'customer', label: 'Customer Support', icon: Headphones },
-    { id: 'planning', label: 'Planning', icon: BarChart3 },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'upload', label: 'Upload Data', icon: Upload },
-    { id: 'config', label: 'Config Editor', icon: Settings },
-    { id: 'users', label: 'Teams & members', icon: Users },
-    { id: 'scope-routines', label: 'Scope & Routines', icon: FolderKanban },
-    { id: 'my-routines', label: 'My Routines', icon: UserCircle },
-    { id: 'shared-routines', label: 'Shared Routines', icon: UsersRound },
-    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   // Items that should always be visible
   const alwaysVisibleItems = ['home', 'escalation', 'simulation'];
   
-  // Items that can be hidden (under SHARED ROUTINES)
-  const hideableItems = menuItems.filter(item => !alwaysVisibleItems.includes(item.id));
+  // Items that are now managed by Pelico Views section (removed from hideable items)
+  // These are: supply, production, mro, customer, planning, analytics, upload, config, users, scope-routines, my-routines, shared-routines, settings
 
   if (isCollapsed) {
     return null;
@@ -155,57 +141,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <SidebarRoutines 
                       activeRoutineId={activeRoutineId}
                       onRoutineClick={onRoutineClick}
+                      activeItem={activeItem}
+                      onNavigate={onNavigate}
                     />
                   )}
                 </React.Fragment>
               );
             })}
-          
-          {/* Hideable items with animation */}
-          <div
-            className={cn(
-              'transition-all duration-300 ease-in-out overflow-hidden',
-              areItemsHidden ? 'max-h-0 opacity-0' : 'max-h-[2000px] opacity-100'
-            )}
-          >
-            {hideableItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeItem === item.id;
-              
-              return (
-                <Button
-                  key={item.id}
-                  variant={isActive ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start gap-3',
-                    isActive && 'bg-[#31C7AD] text-white hover:bg-[#2ab89a]'
-                  )}
-                  onClick={() => onNavigate?.(item.id)}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                </Button>
-              );
-            })}
-          </div>
         </nav>
       </div>
       
       {/* User profile footer */}
       <div className="border-t p-4 bg-background">
         <div className="w-full flex items-center gap-3">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setAreItemsHidden(!areItemsHidden)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setAreItemsHidden(!areItemsHidden);
-              }
-            }}
-            className="flex-1 flex items-center gap-3 hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
+          <div className="flex-1 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-sm shrink-0">
               {userInitials}
             </div>

@@ -16,6 +16,7 @@ import {
   shareScope, 
   duplicateScope,
   setDefaultScope,
+  getUsersAssignedToScope,
   type Scope 
 } from '@/lib/scopes';
 import { 
@@ -27,7 +28,7 @@ import {
   getAccessibleRoutines,
   type Routine 
 } from '@/lib/routines';
-import { getCurrentUserId, getCurrentUser, getUser } from '@/lib/users';
+import { getCurrentUserId, getCurrentUser, getUser, getUsers, updateUser, type User } from '@/lib/users';
 import { getTeam, getTeams, type Team } from '@/lib/teams';
 import { useScope } from '@/contexts/ScopeContext';
 import { 
@@ -44,7 +45,9 @@ import {
   CheckCircle2,
   Sparkles,
   Zap,
-  Eye
+  Eye,
+  Users,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -63,6 +66,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const ScopeAndRoutinesPage: React.FC<{ 
   onNavigate?: (page: string) => void;
@@ -82,6 +86,10 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [shareLink, setShareLink] = useState<string>('');
   const [shareType, setShareType] = useState<'scope' | 'routine'>('scope');
   const [shareItemName, setShareItemName] = useState<string>('');
+  const [reassignScopeDialogOpen, setReassignScopeDialogOpen] = useState(false);
+  const [scopeToReassign, setScopeToReassign] = useState<Scope | null>(null);
+  const [selectedSourceUser, setSelectedSourceUser] = useState<string | null>(null);
+  const [selectedTargetUser, setSelectedTargetUser] = useState<string | null>(null);
 
   useEffect(() => {
     loadScopes();
@@ -155,6 +163,38 @@ export const ScopeAndRoutinesPage: React.FC<{
   const handleSetDefaultScope = (scopeId: string) => {
     setDefaultScope(scopeId);
     loadScopes();
+  };
+
+  const handleReassignScope = () => {
+    if (!scopeToReassign || !selectedSourceUser || !selectedTargetUser) return;
+    
+    const sourceUser = getUser(selectedSourceUser);
+    const targetUser = getUser(selectedTargetUser);
+    
+    if (!sourceUser || !targetUser) return;
+    
+    // Remove scope from source user
+    const sourceScopeIds = sourceUser.assignedScopeIds || [];
+    const updatedSourceScopeIds = sourceScopeIds.filter(id => id !== scopeToReassign.id);
+    updateUser(selectedSourceUser, { 
+      assignedScopeIds: updatedSourceScopeIds,
+      defaultScopeId: sourceUser.defaultScopeId === scopeToReassign.id ? null : sourceUser.defaultScopeId
+    });
+    
+    // Add scope to target user
+    const targetScopeIds = targetUser.assignedScopeIds || [];
+    if (!targetScopeIds.includes(scopeToReassign.id)) {
+      updateUser(selectedTargetUser, { 
+        assignedScopeIds: [...targetScopeIds, scopeToReassign.id]
+      });
+    }
+    
+    // Reload data
+    loadScopes();
+    setReassignScopeDialogOpen(false);
+    setScopeToReassign(null);
+    setSelectedSourceUser(null);
+    setSelectedTargetUser(null);
   };
 
   const handleCreateRoutine = () => {
@@ -352,6 +392,34 @@ export const ScopeAndRoutinesPage: React.FC<{
                         </div>
                       </div>
                       
+                      {/* Assigned Users Section */}
+                      {(() => {
+                        const assignedUsers = getUsersAssignedToScope(scope.id);
+                        return assignedUsers.length > 0 ? (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-medium text-muted-foreground">Assigned to:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {assignedUsers.map(({ user, assignmentType, teamName }) => (
+                                <Badge 
+                                  key={user.id}
+                                  variant="outline" 
+                                  className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                  title={assignmentType === 'via-team' ? `Via team: ${teamName}` : 'Direct assignment'}
+                                >
+                                  {user.name}
+                                  {assignmentType === 'via-team' && (
+                                    <span className="ml-1 text-[10px] opacity-70">({teamName})</span>
+                                  )}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+                      
                       <div className="flex items-center gap-2 mt-4 flex-wrap">
                         <Badge variant="outline" className="text-xs bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
                           {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
@@ -374,6 +442,13 @@ export const ScopeAndRoutinesPage: React.FC<{
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setScopeToReassign(scope);
+                                setReassignScopeDialogOpen(true);
+                              }}>
+                                <Users className="h-4 w-4 mr-2" />
+                                Reassign to User
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleShareScope(scope)}>
                                 <Share2 className="h-4 w-4 mr-2" />
                                 Share
@@ -742,6 +817,94 @@ export const ScopeAndRoutinesPage: React.FC<{
             >
               <CheckCircle2 className="h-4 w-4" />
               Copy Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reassign Scope Dialog */}
+      <Dialog open={reassignScopeDialogOpen} onOpenChange={setReassignScopeDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Reassign Scope
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Transfer scope "{scopeToReassign?.name}" from one user to another
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="source-user" className="text-sm font-semibold">From User</Label>
+              <Select value={selectedSourceUser || ''} onValueChange={setSelectedSourceUser}>
+                <SelectTrigger id="source-user">
+                  <SelectValue placeholder="Select source user..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {scopeToReassign && getUsersAssignedToScope(scopeToReassign.id)
+                    .filter(({ assignmentType }) => assignmentType === 'direct')
+                    .map(({ user }) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-center py-2">
+              <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="target-user" className="text-sm font-semibold">To User</Label>
+              <Select value={selectedTargetUser || ''} onValueChange={setSelectedTargetUser}>
+                <SelectTrigger id="target-user">
+                  <SelectValue placeholder="Select target user..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {getUsers()
+                    .filter(user => {
+                      // Don't show source user in target list
+                      if (selectedSourceUser && user.id === selectedSourceUser) return false;
+                      // Don't show users who already have this scope directly assigned
+                      if (scopeToReassign && user.assignedScopeIds?.includes(scopeToReassign.id)) return false;
+                      return true;
+                    })
+                    .map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReassignScopeDialogOpen(false);
+                setScopeToReassign(null);
+                setSelectedSourceUser(null);
+                setSelectedTargetUser(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReassignScope}
+              disabled={!selectedSourceUser || !selectedTargetUser}
+              className="bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white"
+            >
+              Reassign Scope
             </Button>
           </DialogFooter>
         </DialogContent>

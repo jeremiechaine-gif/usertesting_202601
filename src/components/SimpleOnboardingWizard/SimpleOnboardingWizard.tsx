@@ -30,6 +30,7 @@ export interface SimpleTeamConfig {
   name: string;
   description?: string;
   persona?: string; // French persona name if created from persona
+  personas?: string[]; // Multiple personas (optional, helps with routine suggestions)
   assignedRoutineIds: string[];
   memberIds: string[];
   createdAt: string;
@@ -283,19 +284,28 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
       {/* Sidebar Navigation */}
       <div className="w-72 bg-muted/30 border-r border-border flex flex-col shrink-0">
         {/* Sidebar Header */}
-        <div className="px-6 py-6 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
-              Set-up your workspace
-            </h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        <div className="px-6 py-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
+                Set-up your workspace
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/images/Pelico-small-logo.svg" 
+                alt="Pelico" 
+                className="h-8 w-auto"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground">
             Complete these steps to configure your workspace
@@ -438,7 +448,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="py-4 border-t border-border shrink-0">
+        <div className="py-4 shrink-0">
           <div className="px-4 text-xs text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
               <span>Progress</span>
