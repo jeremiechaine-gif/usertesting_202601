@@ -105,14 +105,15 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
       const matchesSearch = !query || 
         user.name.toLowerCase().includes(query.toLowerCase()) ||
         user.email?.toLowerCase().includes(query.toLowerCase());
-      const isNotSelected = !selectedMemberIds.includes(user.id);
       
-      // Apply filter
+      // Apply filter - show all members by default, or filter by assignment status
       if (filter === 'not-assigned') {
-        return matchesSearch && isNotSelected && isUserNotAssigned(user.id);
+        // Show only members not assigned to any team
+        return matchesSearch && isUserNotAssigned(user.id);
       }
       
-      return matchesSearch && isNotSelected;
+      // Show all members (assigned or not) - don't filter by selection in this team
+      return matchesSearch;
     });
 
     // Sort by first name alphabetically
@@ -129,7 +130,13 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
 
   const handleSelectAllMembers = (teamId: string) => {
     const filteredMembers = getFilteredMembers(teamId);
-    const memberIds = filteredMembers.map(m => m.id);
+    // Only add members that are not already in the team
+    const team = teams.find(t => t.id === teamId);
+    const currentMemberIds = team?.memberIds || [];
+    const memberIds = filteredMembers
+      .map(m => m.id)
+      .filter(id => !currentMemberIds.includes(id));
+    
     const currentSelected = getSelectedMembersInPopover(teamId);
     const newSelected = new Set([...currentSelected, ...memberIds]);
     setSelectedMembersInPopover({ ...selectedMembersInPopover, [teamId]: newSelected });
@@ -218,9 +225,12 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
 
           {/* Teams Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {teams.map((team) => {
+            {teams.map((team, teamIndex) => {
               const teamMembers = getTeamMembers(team.id);
               const availableMembers = getFilteredMembers(team.id);
+              // Determine popover side based on team position: left column = right side, right column = left side
+              const isLeftColumn = teamIndex % 2 === 0;
+              const popoverSide = isLeftColumn ? 'end' : 'start';
               
               return (
                 <div
@@ -236,14 +246,20 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                           <p className="text-xs sm:text-sm text-muted-foreground break-words">{team.description}</p>
                         )}
                       </div>
-                      {team.assignedRoutineIds && team.assignedRoutineIds.length > 0 && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-[#2063F0]/10 to-[#31C7AD]/10 border border-[#2063F0]/20 shrink-0">
-                          <Zap className="h-3.5 w-3.5 text-[#2063F0] shrink-0" />
-                          <span className="text-xs font-semibold text-[#2063F0] whitespace-nowrap">
-                            {team.assignedRoutineIds.length} {team.assignedRoutineIds.length === 1 ? 'routine' : 'routines'}
-                          </span>
-                        </div>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to delete the team "${team.name}"? This will remove all assigned members and make them available again.`)) {
+                            const updatedTeams = teams.filter(t => t.id !== team.id);
+                            onTeamsUpdate(updatedTeams);
+                          }
+                        }}
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Delete team"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
 
@@ -277,7 +293,15 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               Add Member
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-96 p-0 flex flex-col max-h-[500px]" align="end">
+                          <PopoverContent 
+                            className="w-96 p-0 flex flex-col overflow-hidden" 
+                            style={{ height: '500px', maxHeight: '500px' }}
+                            align={popoverSide}
+                            side={isLeftColumn ? 'right' : 'left'}
+                            sideOffset={8}
+                            collisionPadding={16}
+                            avoidCollisions={true}
+                          >
                             <div className="p-3 border-b border-border space-y-3 flex-shrink-0">
                               {/* Search */}
                               <div className="relative">
@@ -339,8 +363,9 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                 )}
                               </div>
                             </div>
-                            <ScrollArea className="flex-1 min-h-0">
-                              <div className="p-2">
+                            <div className="flex-1 min-h-0 overflow-hidden">
+                              <ScrollArea className="h-full">
+                                <div className="p-2">
                                 {availableMembers.length === 0 ? (
                                   <div className="text-center py-8 text-sm text-muted-foreground">
                                     {memberSearchQuery[team.id] 
@@ -379,6 +404,11 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                                   Not assigned
                                                 </Badge>
                                               )}
+                                              {!isNotAssigned && userTeams.length > 0 && (
+                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                  Assigned
+                                                </Badge>
+                                              )}
                                             </div>
                                             {userTeams.length > 0 && (
                                               <div className="flex flex-wrap gap-1 mt-1">
@@ -399,8 +429,9 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                     })}
                                   </div>
                                 )}
-                              </div>
-                            </ScrollArea>
+                                </div>
+                              </ScrollArea>
+                            </div>
                           </PopoverContent>
                         </Popover>
                       </div>

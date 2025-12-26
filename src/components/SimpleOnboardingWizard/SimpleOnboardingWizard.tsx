@@ -305,27 +305,29 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
             {[0, 1, 2, 3].map((stepIndex) => {
               const isActive = step === stepIndex;
               const isCompleted = step > stepIndex;
-              const isAccessible = stepIndex === 0 || step > stepIndex - 1;
+              // Allow navigation to completed steps, current step, and next accessible step
+              const isAccessible = stepIndex === 0 || step >= stepIndex - 1;
+              const canNavigate = isAccessible || isCompleted;
 
               return (
                 <button
                   key={stepIndex}
                   onClick={() => {
-                    if (isAccessible) {
+                    if (canNavigate) {
                       setStep(stepIndex as 0 | 1 | 2 | 3);
                       saveState();
                     }
                   }}
-                  disabled={!isAccessible}
+                  disabled={!canNavigate}
                   className={cn(
                     'w-full flex items-start gap-3 p-4 rounded-lg transition-all text-left',
                     'border-2',
                     isActive
                       ? 'border-[#2063F0] bg-[#2063F0]/10 shadow-md'
                       : isCompleted
-                      ? 'border-[#31C7AD]/30 bg-[#31C7AD]/5 hover:border-[#31C7AD]/50 hover:bg-[#31C7AD]/10'
+                      ? 'border-[#31C7AD]/30 bg-[#31C7AD]/5 hover:border-[#31C7AD]/50 hover:bg-[#31C7AD]/10 cursor-pointer'
                       : isAccessible
-                      ? 'border-border bg-background hover:border-[#2063F0]/30 hover:bg-muted/50'
+                      ? 'border-border bg-background hover:border-[#2063F0]/30 hover:bg-muted/50 cursor-pointer'
                       : 'border-border/50 bg-muted/20 opacity-50 cursor-not-allowed'
                   )}
                 >

@@ -355,31 +355,6 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   </p>
                 </button>
               </div>
-
-              {/* Created Teams Preview (if any) */}
-              {teams.length > 0 && (
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Created Teams ({teams.length})</h3>
-                  <div className="space-y-3">
-                    {teams.map((team) => (
-                      <div
-                        key={team.id}
-                        className="flex items-center gap-3 p-4 border border-border rounded-lg bg-background hover:shadow-sm transition-shadow"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{team.name}</p>
-                          {team.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{team.description}</p>
-                          )}
-                          {team.persona && (
-                            <span className="text-xs text-muted-foreground">From persona: {team.persona}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -516,13 +491,6 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   );
                 })}
               </div>
-              {selectedPersonas.length > 0 && (
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    {selectedPersonas.length} persona{selectedPersonas.length !== 1 ? 's' : ''} selected
-                  </p>
-                </div>
-              )}
             </div>
           )}
 
