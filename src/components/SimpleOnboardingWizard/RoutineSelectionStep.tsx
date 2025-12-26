@@ -25,7 +25,8 @@ import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
-import { CreateRoutineWizard } from './CreateRoutineWizard';
+import { CreateRoutineView } from './CreateRoutineView';
+import { getRoutines } from '@/lib/routines';
 
 export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
 
@@ -59,8 +60,9 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
-  const [openCreateRoutineModal, setOpenCreateRoutineModal] = useState<string | null>(null);
+  const [creatingRoutineForTeam, setCreatingRoutineForTeam] = useState<string | null>(null);
   const [tempSelectedRoutineIds, setTempSelectedRoutineIds] = useState<string[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh when routines are created
 
   // Get all available routines from library
   const availableRoutines: RoutineWithDetails[] = useMemo(() => {
@@ -73,6 +75,35 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       objectives: routine.objectives,
     }));
   }, []);
+
+  // Get user-created routines from localStorage
+  const userCreatedRoutines: RoutineWithDetails[] = useMemo(() => {
+    const routines = getRoutines();
+    // Map PelicoViewPage to PelicoView name for display
+    const pelicoViewPageToName: Record<string, string> = {
+      'supply': 'Supply',
+      'production': 'Production Control',
+      'customer': 'Customer Support',
+      'escalation': 'Escalation Room',
+      'value-engineering': 'Value Engineering',
+      'event-explorer': 'Event Explorer',
+      'simulation': 'Simulation',
+    };
+    
+    return routines.map(routine => ({
+      id: routine.id,
+      name: routine.name,
+      description: routine.description,
+      personas: [], // User-created routines don't have personas
+      pelicoViews: routine.pelicoView ? [pelicoViewPageToName[routine.pelicoView] || routine.pelicoView] : [],
+      objectives: [], // User-created routines don't have objectives
+    }));
+  }, [refreshKey]); // Refresh when refreshKey changes
+
+  // Combine library routines and user-created routines
+  const allRoutines: RoutineWithDetails[] = useMemo(() => {
+    return [...availableRoutines, ...userCreatedRoutines];
+  }, [availableRoutines, userCreatedRoutines]);
 
   // Map French persona names to English for ROUTINE_LIBRARY lookup
   const PERSONA_FR_TO_EN: Record<string, string> = {
@@ -102,7 +133,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   const getTeamRoutines = (teamId: string): RoutineWithDetails[] => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return [];
-    const routines = availableRoutines.filter(r => team.assignedRoutineIds.includes(r.id));
+    // Use allRoutines instead of availableRoutines to include user-created routines
+    const routines = allRoutines.filter(r => team.assignedRoutineIds.includes(r.id));
     
     // Sort by name alphabetically, then by first objective alphabetically
     return routines.sort((a, b) => {
@@ -122,7 +154,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     const team = teams.find(t => t.id === teamId);
     const selectedRoutineIds = team?.assignedRoutineIds || [];
     
-    return availableRoutines.filter(routine => {
+    // Use allRoutines instead of availableRoutines to include user-created routines
+    return allRoutines.filter(routine => {
       const isNotSelected = !selectedRoutineIds.includes(routine.id);
       return isNotSelected;
     });
@@ -136,6 +169,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     const suggestedRoutineIds = getSuggestedRoutinesForPersona(team.persona);
     const selectedRoutineIds = team.assignedRoutineIds || [];
     
+    // Only suggest library routines, not user-created ones
     return availableRoutines.filter(routine => 
       suggestedRoutineIds.includes(routine.id) && !selectedRoutineIds.includes(routine.id)
     );
@@ -188,7 +222,9 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       return t;
     });
     onTeamsUpdate(updatedTeams);
-    setOpenCreateRoutineModal(null);
+    setCreatingRoutineForTeam(null);
+    // Force refresh to reload user-created routines
+    setRefreshKey(prev => prev + 1);
   };
 
   // Add all suggested routines
@@ -214,6 +250,30 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   };
 
   const canContinue = teams.every(team => team.assignedRoutineIds.length > 0);
+
+  // Show CreateRoutineView if active
+  if (creatingRoutineForTeam) {
+    const team = teams.find(t => t.id === creatingRoutineForTeam);
+    return (
+      <CreateRoutineView
+        teamId={creatingRoutineForTeam}
+        teamPersona={team?.persona}
+        onClose={() => {
+          setCreatingRoutineForTeam(null);
+          if (onSubstepChange) {
+            onSubstepChange('team-selection');
+          }
+        }}
+        onRoutineCreated={(routineId) => {
+          handleRoutineCreated(creatingRoutineForTeam, routineId);
+          setCreatingRoutineForTeam(null);
+          if (onSubstepChange) {
+            onSubstepChange('team-selection');
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -343,7 +403,10 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setOpenCreateRoutineModal(team.id);
+                                  setCreatingRoutineForTeam(team.id);
+                                  if (onSubstepChange) {
+                                    onSubstepChange('create-routine');
+                                  }
                                 }}
                                 className="h-7 gap-1.5 text-xs"
                               >
@@ -372,7 +435,10 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setOpenCreateRoutineModal(team.id);
+                                  setCreatingRoutineForTeam(team.id);
+                                  if (onSubstepChange) {
+                                    onSubstepChange('create-routine');
+                                  }
                                 }}
                                 className="h-7 gap-1.5 text-xs"
                               >
@@ -512,23 +578,6 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         );
       })()}
 
-      {/* Create Routine Wizard */}
-      {openCreateRoutineModal && (() => {
-        const team = teams.find(t => t.id === openCreateRoutineModal);
-        return (
-          <CreateRoutineWizard
-            open={openCreateRoutineModal !== null}
-            onOpenChange={(open) => {
-              if (!open) {
-                setOpenCreateRoutineModal(null);
-              }
-            }}
-            teamId={openCreateRoutineModal}
-            teamPersona={team?.persona}
-            onRoutineCreated={(routineId) => handleRoutineCreated(openCreateRoutineModal, routineId)}
-          />
-        );
-      })()}
     </div>
   );
 };
