@@ -31,6 +31,9 @@ import {
 import { getCurrentUserId, getCurrentUser, getUser, getUsers, updateUser, type User } from '@/lib/users';
 import { getTeam, getTeams, type Team } from '@/lib/teams';
 import { useScope } from '@/contexts/ScopeContext';
+import { useRoutine } from '@/contexts/RoutineContext';
+import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
+import type { Objective } from '@/lib/onboarding/types';
 import { 
   Plus, 
   Edit, 
@@ -41,7 +44,6 @@ import {
   Copy,
   Menu,
   ChevronDown,
-  Link as LinkIcon,
   CheckCircle2,
   Sparkles,
   Zap,
@@ -74,6 +76,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   onLogout?: () => void;
 }> = ({ onNavigate, viewMode = 'scope-routines', onLogout }) => {
   const { refreshScopes, currentScopeId, setCurrentScopeId } = useScope();
+  const { refreshRoutines, refreshKey } = useRoutine();
   const [scopes, setScopes] = useState<Scope[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
@@ -94,7 +97,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   useEffect(() => {
     loadScopes();
     loadRoutines();
-  }, [viewMode]);
+  }, [viewMode, refreshKey]); // Reload when routines change
 
   const loadScopes = () => {
     setScopes(getScopes());
@@ -112,6 +115,56 @@ export const ScopeAndRoutinesPage: React.FC<{
     } else {
       setRoutines(getRoutines());
     }
+  };
+
+  // Get objectives for a routine (from library or empty array)
+  const getRoutineObjectives = (routine: Routine): Objective[] => {
+    // Try to find routine in library by ID first
+    const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id);
+    if (libraryRoutine) {
+      return libraryRoutine.objectives;
+    }
+    
+    // Try to find by name (label)
+    const libraryRoutineByName = ROUTINE_LIBRARY.find(r => r.label === routine.name);
+    if (libraryRoutineByName) {
+      return libraryRoutineByName.objectives;
+    }
+    
+    // User-created routines don't have objectives
+    return [];
+  };
+
+  // Group routines by objectives
+  const getRoutinesGroupedByObjectives = (routinesList: Routine[]): Record<string, Routine[]> => {
+    const grouped: Record<string, Routine[]> = {};
+    
+    routinesList.forEach(routine => {
+      const objectives = getRoutineObjectives(routine);
+      const primaryObjective = objectives.length > 0 ? objectives[0] : 'Other';
+      
+      if (!grouped[primaryObjective]) {
+        grouped[primaryObjective] = [];
+      }
+      grouped[primaryObjective].push(routine);
+    });
+    
+    // Sort routines within each group alphabetically by name
+    Object.keys(grouped).forEach(objective => {
+      grouped[objective].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    
+    return grouped;
+  };
+
+  // Define objective display order (for consistent ordering)
+  const OBJECTIVE_ORDER: Record<string, number> = {
+    'Anticipate': 1,
+    'Monitor': 2,
+    'Correct': 3,
+    'Prioritize': 4,
+    'Report': 5,
+    'Other': 6,
   };
 
   const handleCreateScope = () => {
@@ -217,6 +270,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   const handleDeleteRoutine = (routineId: string) => {
     if (confirm('Are you sure you want to delete this routine?')) {
       deleteRoutine(routineId);
+      refreshRoutines(); // Notify all components that routines have changed
       loadRoutines();
     }
   };
@@ -234,6 +288,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   const handleDuplicateRoutine = (routine: Routine) => {
     const currentUserId = getCurrentUserId();
     duplicateRoutine(routine.id, currentUserId);
+    refreshRoutines(); // Notify all components that routines have changed
     loadRoutines();
   };
 
@@ -302,19 +357,7 @@ export const ScopeAndRoutinesPage: React.FC<{
 
               {/* Right Side */}
               <div className="flex items-center gap-3">
-                {/* Link Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
-                      <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
-                    <DropdownMenuItem>Share</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Empty - removed Save and Link dropdowns */}
               </div>
             </div>
           </div>
@@ -551,142 +594,146 @@ export const ScopeAndRoutinesPage: React.FC<{
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {routines.map((routine) => {
-                    const creator = getUser(routine.createdBy);
-                    const currentUserId = getCurrentUserId();
-                    const isOwner = routine.createdBy === currentUserId;
-                    const canEdit = isOwner; // Only owner can edit
-                    
-                    // Find teams that share this routine (via teamIds or legacy teamId or assignedRoutineIds)
-                    const allTeams = getTeams();
-                    const sharedTeamIds = routine.teamIds || (routine.teamId ? [routine.teamId] : []);
-                    const sharedTeams = sharedTeamIds
-                      .map(teamId => getTeam(teamId))
-                      .filter(Boolean);
-                    
-                    // Also check if routine is assigned to any team via assignedRoutineIds
-                    const assignedTeams = allTeams.filter(team => 
-                      team.assignedRoutineIds?.includes(routine.id)
-                    );
-                    
-                    // Combine and deduplicate teams
-                    const allSharedTeams = [...sharedTeams, ...assignedTeams]
-                      .filter((team, index, self) => 
-                        team && index === self.findIndex(t => t && t.id === team.id)
-                      )
-                      .filter((team): team is Team => team !== null);
-                    
-                    // Map pelicoView to display name
-                    const getPelicoViewDisplayName = (view?: string): string => {
-                      const viewMap: Record<string, string> = {
-                        'supply': 'PO Book',
-                        'production': 'WO Book',
-                        'customer': 'CO Book',
-                        'escalation': 'Escalation Room',
-                        'value-engineering': 'Value Engineering',
-                        'event-explorer': 'Events Explorer',
-                        'simulation': 'Planning',
-                      };
-                      return view ? (viewMap[view] || view) : '';
-                    };
+                (() => {
+                  const routinesGrouped = getRoutinesGroupedByObjectives(routines);
+                  const sortedObjectives = Object.keys(routinesGrouped).sort((a, b) => {
+                    const orderA = OBJECTIVE_ORDER[a] || 999;
+                    const orderB = OBJECTIVE_ORDER[b] || 999;
+                    return orderA - orderB;
+                  });
+                  
+                  return (
+                    <div className="space-y-6">
+                      {sortedObjectives.map((objective) => {
+                        const objectiveRoutines = routinesGrouped[objective];
+                        return (
+                          <div key={objective} className="space-y-3">
+                            {/* Objective Section Title */}
+                            <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
+                              {objective}
+                            </h4>
+                            {/* Routines for this objective */}
+                            <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                              {objectiveRoutines.map((routine) => {
+                                const creator = getUser(routine.createdBy);
+                                const currentUserId = getCurrentUserId();
+                                const isOwner = routine.createdBy === currentUserId;
+                                const canEdit = isOwner; // Only owner can edit
+                                
+                                // Map pelicoView to display name
+                                const getPelicoViewDisplayName = (view?: string): string => {
+                                  const viewMap: Record<string, string> = {
+                                    'supply': 'PO Book',
+                                    'production': 'WO Book',
+                                    'customer': 'CO Book',
+                                    'escalation': 'Escalation Room',
+                                    'value-engineering': 'Value Engineering',
+                                    'event-explorer': 'Events Explorer',
+                                    'simulation': 'Planning',
+                                  };
+                                  return view ? (viewMap[view] || view) : '';
+                                };
 
-                    // Check if routine is suggested (has personas)
-                    const isSuggested = routine.personas && routine.personas.length > 0;
-                    
-                    return (
-                    <div
-                      key={routine.id}
-                      className="group border border-border/60 rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#2063F0]/30"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-base truncate">{routine.name}</h3>
-                            {isSuggested && (
-                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
-                                <Sparkles className="h-2.5 w-2.5" />
-                                Suggested
-                              </Badge>
-                            )}
+                                // Check if routine is suggested (exists in library with personas)
+                                const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id || r.label === routine.name);
+                                const isSuggested = libraryRoutine && libraryRoutine.personas && libraryRoutine.personas.length > 0;
+                                
+                                return (
+                                  <div
+                                    key={routine.id}
+                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-sm font-medium text-foreground">
+                                          {routine.name}
+                                        </span>
+                                        {isSuggested && (
+                                          <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                            <Sparkles className="h-2.5 w-2.5" />
+                                            Suggested
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {routine.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                                          {routine.description}
+                                        </p>
+                                      )}
+                                      <div className="flex flex-wrap gap-1 items-center">
+                                        {routine.pelicoView && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                          >
+                                            {getPelicoViewDisplayName(routine.pelicoView)}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {creator && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Created by <span className="font-medium">{creator.name}</span>
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
+                                          >
+                                            <Share2 className="h-4 w-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            View
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
+                                            <Share2 className="h-4 w-4 mr-2" />
+                                            Share
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleDuplicateRoutine(routine)}>
+                                            <Copy className="h-4 w-4 mr-2" />
+                                            Duplicate
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                      
+                                      {canEdit && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
+                                            onClick={() => handleEditRoutine(routine)}
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() => handleDeleteRoutine(routine.id)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          {routine.description && (
-                            <p className="text-xs text-muted-foreground mb-2 leading-relaxed line-clamp-2">
-                              {routine.description}
-                            </p>
-                          )}
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {routine.pelicoView && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                              >
-                                {getPelicoViewDisplayName(routine.pelicoView)}
-                              </Badge>
-                            )}
-                          </div>
-                          {creator && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Created by <span className="font-medium">{creator.name}</span>
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-2 mt-4">
-                        <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
-                                <Share2 className="h-4 w-4 mr-2" />
-                                Share
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDuplicateRoutine(routine)}>
-                                <Copy className="h-4 w-4 mr-2" />
-                                Duplicate
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          
-                          {canEdit && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                                onClick={() => handleEditRoutine(routine)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteRoutine(routine.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                        );
+                      })}
                     </div>
-                    );
-                  })}
-                </div>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -768,6 +815,7 @@ export const ScopeAndRoutinesPage: React.FC<{
           onOpenChange={setRoutineModalOpen}
           routine={editingRoutine}
           onSave={() => {
+            refreshRoutines(); // Notify all components that routines have changed
             loadRoutines();
             setRoutineModalOpen(false);
             setEditingRoutine(null);

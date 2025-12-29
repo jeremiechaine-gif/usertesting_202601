@@ -13,9 +13,6 @@ import { resetScopesAndRoutines } from '@/lib/resetData';
 import { 
   Bell, 
   Menu, 
-  Save, 
-  ChevronDown, 
-  Link as LinkIcon,
   CheckCircle2,
   Video,
   FileText,
@@ -332,36 +329,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
 
               {/* Right Side */}
               <div className="flex items-center gap-3">
-                {/* Save/Download Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
-                      <Save className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Save</DropdownMenuItem>
-                    <DropdownMenuItem>Download</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Link Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
-                      <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
-                    <DropdownMenuItem>Share</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <div className="h-6 w-px bg-border/60" />
-
                 {/* Notifications */}
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
                   <Bell className="w-5 h-5" />

@@ -681,14 +681,14 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
               Team <span className="text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Select 
-              value={teamId || ''} 
-              onValueChange={(value) => setTeamId(value || null)}
+              value={teamId || 'none'} 
+              onValueChange={(value) => setTeamId(value === 'none' ? null : value)}
             >
               <SelectTrigger id="user-team" className="h-10 border-border/60 hover:border-[#2063F0]/30 transition-colors">
                 <SelectValue placeholder="No team" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No team</SelectItem>
+                <SelectItem value="none">No team</SelectItem>
                 {teams.map((team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}

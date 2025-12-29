@@ -219,14 +219,23 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
         <ScrollArea className="flex-1 min-h-0">
           <div className="px-8 pt-4 space-y-6 pb-0">
             {/* Info Banner */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
-              <div className="p-2 rounded-lg bg-[#31C7AD]/10">
-                <Target className="h-5 w-5 text-[#31C7AD]" />
+            <div className="flex items-start gap-4 p-5 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/10 to-[#2063F0]/10 shrink-0">
+                <Target className="h-6 w-6 text-[#31C7AD]" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium mb-1">Assign scopes to team members</p>
-                <p className="text-xs text-muted-foreground">
-                  Assign scopes to each team member individually. Each member can have multiple scopes, with one set as the default primary scope.
+                <h3 className="text-base font-semibold mb-2">What is a Scope?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                  A <strong>scope</strong> defines your personal data perimeter—the specific subset of data you need to see and work with. Think of it as a filter that shows only what's relevant to your role, such as:
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1.5 mb-3 ml-4 list-disc">
+                  <li>Specific plants, production lines, or work centers</li>
+                  <li>Certain product codes, suppliers, or customer segments</li>
+                  <li>Particular time periods or project phases</li>
+                  <li>Any combination of filters that match your responsibilities</li>
+                </ul>
+                <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-[#31C7AD]/10 italic">
+                  💡 <strong>Tip:</strong> Assign scopes to each team member individually. Each member can have multiple scopes, with one set as the default primary scope.
                 </p>
               </div>
             </div>

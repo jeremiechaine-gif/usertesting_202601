@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getRoutinesByCreator, getAccessibleRoutines, type Routine } from '@/lib/routines';
-import { getFolders, updateFolder, type RoutineFolder } from '@/lib/folders';
+import { getFolders, updateFolder, deleteFolder, type RoutineFolder } from '@/lib/folders';
 import { getCurrentUserId } from '@/lib/users';
+import { useRoutine } from '@/contexts/RoutineContext';
 
 interface SidebarRoutinesProps {
   activeRoutineId?: string | null;
@@ -182,12 +183,13 @@ const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutine
 
 export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineId, onRoutineClick, activeItem, onNavigate }) => {
   const currentUserId = getCurrentUserId();
+  const { refreshKey: routineRefreshKey } = useRoutine(); // Get refresh key from context
   const [showAllMyRoutines, setShowAllMyRoutines] = useState(false);
   const [showAllSharedRoutines, setShowAllSharedRoutines] = useState(false);
   const [isMyRoutinesExpanded, setIsMyRoutinesExpanded] = useState(true);
   const [isSharedRoutinesExpanded, setIsSharedRoutinesExpanded] = useState(true);
   const [isPelicoViewsExpanded, setIsPelicoViewsExpanded] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0); // Force re-render after folder updates
+  const [folderRefreshKey, setFolderRefreshKey] = useState(0); // Force re-render after folder updates
 
   // Auto-expand Pelico Views section when an active item belongs to it
   useEffect(() => {
@@ -215,25 +217,48 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
     { id: 'scope-routines', label: 'Scope & Routines', icon: FolderKanban },
   ];
 
-  // Get routines
+  // Get routines (re-fetch when routineRefreshKey changes)
   const myRoutines = useMemo(() => {
     return getRoutinesByCreator(currentUserId).sort((a, b) => a.name.localeCompare(b.name));
-  }, [currentUserId]);
+  }, [currentUserId, routineRefreshKey]);
 
   const sharedRoutines = useMemo(() => {
     const allAccessible = getAccessibleRoutines(currentUserId);
     return allAccessible
       .filter((r) => r.createdBy !== currentUserId)
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [currentUserId]);
+  }, [currentUserId, routineRefreshKey]);
 
-  // Get folders (re-fetch when refreshKey changes)
+  // Get folders (re-fetch when folderRefreshKey or routineRefreshKey changes)
   const myFolders = useMemo(() => {
-    return getFolders(currentUserId).sort((a, b) => a.name.localeCompare(b.name));
-  }, [currentUserId, refreshKey]);
+    const folders = getFolders(currentUserId);
+    const routines = getRoutinesByCreator(currentUserId);
+    const routineIds = new Set(routines.map((r) => r.id));
+    
+    // Clean up folders: remove deleted routines and delete empty folders
+    folders.forEach((folder) => {
+      const validRoutineIds = folder.routineIds.filter((id) => routineIds.has(id));
+      if (validRoutineIds.length === 0) {
+        // Folder is empty, delete it
+        deleteFolder(folder.id);
+      } else if (validRoutineIds.length !== folder.routineIds.length) {
+        // Some routines were deleted, update folder
+        updateFolder(folder.id, { routineIds: validRoutineIds });
+      }
+    });
+    
+    // Re-fetch folders after cleanup
+    const updatedFolders = getFolders(currentUserId);
+    // Filter out folders that have no routines (shouldn't happen after cleanup, but just in case)
+    const validFolders = updatedFolders.filter((folder) => {
+      return folder.routineIds.some((id) => routineIds.has(id));
+    });
+    
+    return validFolders.sort((a, b) => a.name.localeCompare(b.name));
+  }, [currentUserId, folderRefreshKey, routineRefreshKey]);
 
   const handleFolderUpdate = () => {
-    setRefreshKey((prev) => prev + 1);
+    setFolderRefreshKey((prev) => prev + 1);
   };
 
   // Separate routines into those in folders and those not in folders

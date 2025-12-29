@@ -27,8 +27,6 @@ import {
   Users,
   Eye,
   Menu,
-  ChevronDown,
-  Link as LinkIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -231,18 +229,7 @@ export const RoutineLibraryPage: React.FC<{
               </div>
 
               <div className="flex items-center gap-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 px-3 gap-1.5 hover:bg-[#31C7AD]/10">
-                      <LinkIcon className="w-4 h-4" />
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Copy Link</DropdownMenuItem>
-                    <DropdownMenuItem>Share</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Empty - removed Link dropdown */}
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { RoutineModal } from './RoutineModal';
 import { getRoutines, deleteRoutine, type Routine } from '@/lib/routines';
+import { useRoutine } from '@/contexts/RoutineContext';
 import { ChevronDown, Plus, Edit, Trash2, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
@@ -45,13 +46,9 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
   onUpdateRoutine,
   onSaveAsRoutine,
 }) => {
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const { routines, refreshRoutines, refreshKey } = useRoutine();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editRoutine, setEditRoutine] = useState<Routine | null>(null);
-
-  useEffect(() => {
-    setRoutines(getRoutines());
-  }, []);
 
   const selectedRoutine = selectedRoutineId 
     ? routines.find((r) => r.id === selectedRoutineId) 
@@ -70,7 +67,7 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
   const handleDelete = (routineId: string) => {
     if (confirm('Are you sure you want to delete this routine?')) {
       deleteRoutine(routineId);
-      setRoutines(getRoutines());
+      refreshRoutines(); // Notify all components that routines have changed
       if (selectedRoutineId === routineId) {
         onRoutineSelect(null);
       }
@@ -78,7 +75,7 @@ export const RoutineDropdown: React.FC<RoutineDropdownProps> = ({
   };
 
   const handleRoutineSaved = (routineId?: string) => {
-    setRoutines(getRoutines());
+    refreshRoutines(); // Notify all components that routines have changed
     setCreateModalOpen(false);
     setEditRoutine(null);
     // If a new routine was created, select it automatically

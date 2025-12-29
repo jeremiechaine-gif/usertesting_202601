@@ -156,6 +156,28 @@ export const deleteRoutine = (id: string): boolean => {
   const filtered = routines.filter((r) => r.id !== id);
   if (filtered.length === routines.length) return false;
   saveRoutines(filtered);
+  
+  // Clean up empty folders that contained this routine
+  // Use dynamic import to avoid circular dependency
+  import('./folders').then((foldersModule) => {
+    const folders = foldersModule.getFolders();
+    folders.forEach((folder) => {
+      if (folder.routineIds.includes(id)) {
+        // Remove routine from folder
+        const updatedRoutineIds = folder.routineIds.filter((rid) => rid !== id);
+        if (updatedRoutineIds.length === 0) {
+          // Folder is now empty, delete it
+          foldersModule.deleteFolder(folder.id);
+        } else {
+          // Update folder with remaining routines
+          foldersModule.updateFolder(folder.id, { routineIds: updatedRoutineIds });
+        }
+      }
+    });
+  }).catch((error) => {
+    console.error('Error cleaning up folders after routine deletion:', error);
+  });
+  
   return true;
 };
 
