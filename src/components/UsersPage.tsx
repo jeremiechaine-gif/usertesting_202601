@@ -24,7 +24,10 @@ import {
   type Team 
 } from '@/lib/teams';
 import { getRoutines, getTeamRoutinesCount } from '@/lib/routines';
-import { getScopes } from '@/lib/scopes';
+import { getScopes, type ScopeFilter } from '@/lib/scopes';
+import { filterDefinitions } from '@/lib/filterDefinitions';
+import { getFilterDisplayValues } from '@/components/sorting-filters/utils';
+import type { FilterDefinition } from '@/components/SortingAndFiltersPopover';
 import { createMockUsersForTeams } from '@/lib/onboarding/teamWizardUtils';
 import { 
   Plus, 
@@ -35,7 +38,6 @@ import {
   Users2,
   Shield,
   Layers,
-  FolderKanban,
   Sparkles,
   Zap,
   ArrowRight,
@@ -44,6 +46,7 @@ import {
   Square,
   Filter,
   X,
+  ArrowUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -81,6 +84,9 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
   const [memberSearchQuery, setMemberSearchQuery] = useState<Record<string, string>>({});
   const [memberFilter, setMemberFilter] = useState<Record<string, 'all' | 'not-assigned'>>({});
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [memberSortOrder, setMemberSortOrder] = useState<Record<string, 'alphabetical' | 'role'>>({});
+  const [scopesModalOpen, setScopesModalOpen] = useState(false);
+  const [selectedUserForScopes, setSelectedUserForScopes] = useState<User | null>(null);
   const currentUser = getCurrentUser();
   const isManager = currentUser?.role === 'manager';
 
@@ -399,13 +405,13 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                   </p>
                                 )}
                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-xs border-none">
                                     {teamUsers.length} {teamUsers.length === 1 ? 'member' : 'members'}
                                   </Badge>
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    className="h-6 px-2 text-xs gap-1.5 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
+                                    className="h-6 px-2 text-xs gap-1.5 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] border"
                                     onClick={() => {
                                       if (onNavigate) {
                                         onNavigate(`team-routines/${team.id}`);
@@ -610,7 +616,39 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                           )}
                           {teamUsers.length > 0 ? (
                             <div className="space-y-3">
-                              {teamUsers.map((user) => {
+                              {/* Sort Controls */}
+                              <div className="flex items-center justify-end gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <Select
+                                    value={memberSortOrder[team.id] || 'alphabetical'}
+                                    onValueChange={(value: 'alphabetical' | 'role') => {
+                                      setMemberSortOrder({ ...memberSortOrder, [team.id]: value });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 w-[140px] text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                                      <SelectItem value="role">By Role</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              {(() => {
+                                const sortOrder = memberSortOrder[team.id] || 'alphabetical';
+                                const sortedUsers = [...teamUsers].sort((a, b) => {
+                                  if (sortOrder === 'alphabetical') {
+                                    return a.name.localeCompare(b.name);
+                                  } else {
+                                    // Sort by role: managers first, then users
+                                    if (a.role === 'manager' && b.role !== 'manager') return -1;
+                                    if (a.role !== 'manager' && b.role === 'manager') return 1;
+                                    return a.name.localeCompare(b.name); // Secondary sort by name
+                                  }
+                                });
+                                return sortedUsers.map((user) => {
                                 // Get user's team
                                 const userTeam = user.teamId ? teams.find(t => t.id === user.teamId) : null;
                                 
@@ -621,162 +659,109 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                 const accessibleScopeIds = [...new Set([...individualScopeIds, ...teamScopeIds])];
                                 const accessibleScopes = allScopes.filter(s => accessibleScopeIds.includes(s.id));
                                 
-                                // Get routines accessible to user (individual + team)
-                                const allRoutines = getRoutines();
-                                const individualRoutineIds = user.assignedRoutineIds || [];
-                                const teamRoutineIds = userTeam?.assignedRoutineIds || [];
-                                const accessibleRoutineIds = [...new Set([...individualRoutineIds, ...teamRoutineIds])];
-                                const accessibleRoutines = allRoutines.filter(r => {
-                                  const routineTeamIds = r.teamIds || (r.teamId ? [r.teamId] : []);
-                                  return accessibleRoutineIds.includes(r.id) || 
-                                         (userTeam && routineTeamIds.includes(userTeam.id));
-                                });
+                                // Split name into first and last name
+                                const nameParts = user.name.split(' ');
+                                const firstName = nameParts[0] || '';
+                                const lastName = nameParts.slice(1).join(' ') || '';
                                 
                                 return (
                                 <div
                                   key={user.id}
                                   className={cn(
-                                    'rounded-lg p-4 transition-all bg-muted/30 hover:bg-muted/50 cursor-pointer border border-transparent hover:border-[#31C7AD]/20',
-                                    user.id === currentUser?.id && 'ring-2 ring-[#31C7AD] ring-offset-2'
+                                    'group rounded-lg p-4 transition-all bg-background border border-border hover:border-[#31C7AD]/40 hover:shadow-md',
+                                    user.id === currentUser?.id && 'ring-2 ring-[#31C7AD] ring-offset-1'
                                   )}
-                                  onClick={() => {
-                                    setSelectedUserForScopesRoutines(user);
-                                    setUserScopesRoutinesModalOpen(true);
-                                  }}
                                 >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <h4 className="font-semibold text-sm truncate">{user.name}</h4>
-                                        {user.id === currentUser?.id && (
-                                          <Badge variant="outline" className="text-xs shrink-0 bg-[#31C7AD]/10 border-[#31C7AD] text-[#31C7AD]">
-                                            You
-                                          </Badge>
-                                        )}
-                                        {user.role === 'manager' && (
-                                          <Badge className="text-xs shrink-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                                            Manager
-                                          </Badge>
-                                        )}
+                                  <div className="flex items-center justify-between gap-4">
+                                    {/* Left: User Info */}
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      {/* Avatar */}
+                                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#2063F0] to-[#31C7AD] flex items-center justify-center text-white text-sm font-semibold">
+                                        {firstName[0]?.toUpperCase()}{lastName[0]?.toUpperCase() || firstName[1]?.toUpperCase() || ''}
                                       </div>
-                                      <p className="text-xs text-muted-foreground truncate mb-3">{user.email}</p>
                                       
-                                      {/* Scopes and Routines Sections - Horizontal Layout */}
-                                      <div className="grid grid-cols-2 gap-4">
-                                        {/* Scopes Section */}
-                                        <div className="flex flex-col gap-2">
-                                          <div className="flex items-center gap-1.5">
-                                            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                                            <p className="text-xs font-medium text-muted-foreground">Scopes</p>
+                                      {/* User Details */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <span className="font-semibold text-sm text-foreground truncate">
+                                              {firstName}
+                                            </span>
+                                            {lastName && (
+                                              <span className="font-semibold text-sm text-foreground truncate">
+                                                {lastName}
+                                              </span>
+                                            )}
                                           </div>
-                                          {accessibleScopes.length > 0 ? (
-                                            <div className="flex flex-wrap items-center gap-1">
-                                              {accessibleScopes.slice(0, 2).map((scope) => (
-                                                <Badge 
-                                                  key={scope.id}
-                                                  variant="secondary" 
-                                                  className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"
-                                                  title={scope.name}
-                                                >
-                                                  {scope.name.length > 10 ? `${scope.name.substring(0, 10)}...` : scope.name}
-                                                </Badge>
-                                              ))}
-                                              {accessibleScopes.length > 2 && (
-                                                <Badge variant="outline" className="text-xs">
-                                                  +{accessibleScopes.length - 2}
-                                                </Badge>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <Button
-                                              variant="default"
-                                              size="sm"
-                                              className="h-7 px-2 text-xs w-fit"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedUserForScopesRoutines(user);
-                                                setUserScopesRoutinesModalOpen(true);
-                                              }}
-                                            >
-                                              <Plus className="h-3 w-3 mr-1" />
-                                              Add
-                                            </Button>
+                                          {user.id === currentUser?.id && (
+                                            <Badge variant="outline" className="text-xs shrink-0 bg-[#31C7AD]/10 border-[#31C7AD] text-[#31C7AD] h-5 px-1.5">
+                                              You
+                                            </Badge>
+                                          )}
+                                          {user.role === 'manager' && (
+                                            <Badge className="text-xs shrink-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 h-5 px-1.5">
+                                              Manager
+                                            </Badge>
                                           )}
                                         </div>
-                                        
-                                        {/* Routines Section */}
-                                        <div className="flex flex-col gap-2">
-                                          <div className="flex items-center gap-1.5">
-                                            <FolderKanban className="h-3.5 w-3.5 text-muted-foreground" />
-                                            <p className="text-xs font-medium text-muted-foreground">Routines</p>
-                                          </div>
-                                          {accessibleRoutines.length > 0 ? (
-                                            <div className="flex flex-wrap items-center gap-1">
-                                              {accessibleRoutines.slice(0, 2).map((routine) => (
-                                                <Badge 
-                                                  key={routine.id}
-                                                  variant="secondary" 
-                                                  className="text-xs bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"
-                                                  title={routine.name}
-                                                >
-                                                  {routine.name.length > 10 ? `${routine.name.substring(0, 10)}...` : routine.name}
-                                                </Badge>
-                                              ))}
-                                              {accessibleRoutines.length > 2 && (
-                                                <Badge variant="outline" className="text-xs">
-                                                  +{accessibleRoutines.length - 2}
-                                                </Badge>
-                                              )}
-                                            </div>
-                                          ) : (
-                                            <Button
-                                              variant="default"
-                                              size="sm"
-                                              className="h-7 px-2 text-xs w-fit"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedUserForScopesRoutines(user);
-                                                setUserScopesRoutinesModalOpen(true);
-                                              }}
-                                            >
-                                              <Plus className="h-3 w-3 mr-1" />
-                                              Add
-                                            </Button>
-                                          )}
-                                        </div>
+                                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                       </div>
                                     </div>
-                                    {isManager && (
-                                      <div className="flex items-center gap-1 ml-3 shrink-0">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleEditUser(user);
-                                          }}
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 text-destructive hover:text-destructive"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteUser(user.id);
-                                          }}
-                                          disabled={user.id === currentUser?.id}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                    )}
+                                    
+                                    {/* Right: Scopes Count & Actions */}
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      {/* Scopes Count - Clickable */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedUserForScopes(user);
+                                          setScopesModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-muted transition-colors group/scope"
+                                      >
+                                        <Layers className="h-4 w-4 text-muted-foreground group-hover/scope:text-[#31C7AD]" />
+                                        <span className="text-sm font-medium text-foreground">
+                                          {accessibleScopes.length}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          {accessibleScopes.length === 1 ? 'scope' : 'scopes'}
+                                        </span>
+                                      </button>
+                                      
+                                      {/* Action Buttons */}
+                                      {isManager && (
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEditUser(user);
+                                            }}
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteUser(user.id);
+                                            }}
+                                            disabled={user.id === currentUser?.id}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 );
-                              })}
+                              });
+                              })()}
                             </div>
                           ) : (
                             <div className="rounded-lg border-2 border-dashed p-8 text-center">
@@ -841,6 +826,178 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
             loadTeams();
           }}
         />
+      )}
+
+      {/* User Scopes Display Modal */}
+      {scopesModalOpen && selectedUserForScopes && (
+        <Dialog open={scopesModalOpen} onOpenChange={setScopesModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Layers className="h-5 w-5 text-[#31C7AD]" />
+                Scopes for {selectedUserForScopes.name}
+              </DialogTitle>
+              <DialogDescription>
+                {(() => {
+                  const userTeam = selectedUserForScopes.teamId ? teams.find(t => t.id === selectedUserForScopes.teamId) : null;
+                  const allScopes = getScopes();
+                  const individualScopeIds = selectedUserForScopes.assignedScopeIds || [];
+                  const teamScopeIds = userTeam?.assignedScopeIds || [];
+                  const accessibleScopeIds = [...new Set([...individualScopeIds, ...teamScopeIds])];
+                  const accessibleScopes = allScopes.filter(s => accessibleScopeIds.includes(s.id));
+                  return accessibleScopes.length === 0 ? 'No scopes assigned' : `${accessibleScopes.length} ${accessibleScopes.length === 1 ? 'scope' : 'scopes'} assigned`;
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2 py-2">
+                {(() => {
+                  const userTeam = selectedUserForScopes.teamId ? teams.find(t => t.id === selectedUserForScopes.teamId) : null;
+                  const allScopes = getScopes();
+                  const individualScopeIds = selectedUserForScopes.assignedScopeIds || [];
+                  const teamScopeIds = userTeam?.assignedScopeIds || [];
+                  const accessibleScopeIds = [...new Set([...individualScopeIds, ...teamScopeIds])];
+                  const accessibleScopes = allScopes.filter(s => accessibleScopeIds.includes(s.id));
+                  const individualScopes = allScopes.filter(s => individualScopeIds.includes(s.id));
+                  const teamScopes = allScopes.filter(s => teamScopeIds.includes(s.id) && !individualScopeIds.includes(s.id));
+                  
+                  // Helper functions for filter display
+                  const getFilterLabel = (filterId: string) => {
+                    const def = filterDefinitions.find(f => f.id === filterId);
+                    return def?.label || filterId;
+                  };
+                  
+                  const getFilterDisplayText = (filter: ScopeFilter) => {
+                    const def = filterDefinitions.find(f => f.id === filter.filterId);
+                    const displayValues = getFilterDisplayValues(filter, def);
+                    const condition = filter.condition || 'is';
+                    
+                    // Format condition for display
+                    const conditionLabels: Record<string, string> = {
+                      'is': 'is',
+                      'equals': 'equals',
+                      'contains': 'contains',
+                      'greaterThan': '>',
+                      'lessThan': '<',
+                      'greaterThanOrEqual': '≥',
+                      'lessThanOrEqual': '≤',
+                      'notEquals': '≠',
+                      'notContains': 'does not contain',
+                    };
+                    const conditionLabel = conditionLabels[condition] || condition;
+                    
+                    const valuesText = displayValues.length > 0 
+                      ? displayValues.join(', ')
+                      : filter.values.length > 0 
+                        ? filter.values.join(', ')
+                        : 'No values';
+                    return `${conditionLabel} ${valuesText}`;
+                  };
+                  
+                  const renderScopeCard = (scope: typeof allScopes[0], badgeType: 'Individual' | 'Team') => (
+                    <div
+                      key={scope.id}
+                      className="p-3 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm mb-1">{scope.name}</p>
+                          {scope.description && (
+                            <p className="text-xs text-muted-foreground mb-2">{scope.description}</p>
+                          )}
+                          {badgeType === 'Team' && userTeam && (
+                            <p className="text-xs text-muted-foreground mb-2">From team: {userTeam.name}</p>
+                          )}
+                          {scope.filters && scope.filters.length > 0 && (
+                            <div className="space-y-1.5 mt-2 pt-2 border-t border-border/50">
+                              {scope.filters.map((filter) => (
+                                <div
+                                  key={filter.id}
+                                  className="flex items-start gap-2 text-xs"
+                                >
+                                  <span className="font-medium text-muted-foreground min-w-[120px] shrink-0">
+                                    {getFilterLabel(filter.filterId)}:
+                                  </span>
+                                  <span className="text-foreground break-words">
+                                    {getFilterDisplayText(filter)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Badge 
+                          variant="secondary" 
+                          className={cn(
+                            "text-xs shrink-0",
+                            badgeType === 'Individual' 
+                              ? "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"
+                              : "bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300"
+                          )}
+                        >
+                          {badgeType}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                  
+                  if (accessibleScopes.length === 0) {
+                    return (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Layers className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>No scopes assigned to this user</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <>
+                      {individualScopes.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            Individual Scopes ({individualScopes.length})
+                          </h4>
+                          {individualScopes.map((scope) => renderScopeCard(scope, 'Individual'))}
+                        </div>
+                      )}
+                      {teamScopes.length > 0 && (
+                        <div className="space-y-2">
+                          {individualScopes.length > 0 && <div className="h-4" />}
+                          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            Team Scopes ({teamScopes.length})
+                          </h4>
+                          {teamScopes.map((scope) => renderScopeCard(scope, 'Team'))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setScopesModalOpen(false);
+                  setSelectedUserForScopes(null);
+                }}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setScopesModalOpen(false);
+                  setSelectedUserForScopes(null);
+                  setSelectedUserForScopesRoutines(selectedUserForScopes);
+                  setUserScopesRoutinesModalOpen(true);
+                }}
+                className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
+              >
+                Manage Scopes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

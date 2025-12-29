@@ -6,15 +6,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sidebar } from './Sidebar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft,
   Zap,
   Plus,
   X,
-  Sparkles,
   Building2,
-  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getTeam, updateTeam, type Team } from '@/lib/teams';
@@ -173,7 +171,7 @@ export const TeamRoutinesPage: React.FC<{
 
   if (!team) {
     return (
-      <div className="flex h-screen bg-[var(--color-bg-primary)]">
+      <div className="fixed inset-0 z-50 bg-background flex h-screen">
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Team not found</p>
         </div>
@@ -191,166 +189,214 @@ export const TeamRoutinesPage: React.FC<{
   });
 
   return (
-    <div className="flex h-screen bg-[var(--color-bg-primary)]">
-      {!sidebarCollapsed && (
-        <Sidebar 
-          activeItem="users" 
-          isCollapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(true)}
-          onNavigate={onNavigate}
-          onLogout={onLogout}
-        />
-      )}
-      
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Main Header */}
-        <div className="relative border-b bg-background">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
+    <div className="fixed inset-0 z-50 bg-background flex h-screen">
+      {/* Sidebar Navigation */}
+      <div className="w-72 bg-muted/30 border-r border-border flex flex-col shrink-0">
+        {/* Sidebar Header */}
+        <div className="px-6 py-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
+                Team Routines
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/images/Pelico-small-logo.svg" 
+                alt="Pelico" 
+                className="h-8 w-auto"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (onNavigate) {
+                    onNavigate('users');
+                  }
+                }}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Manage routines for {team.name}
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                if (onNavigate) {
+                  onNavigate('users');
+                }
+              }}
+              className="w-full flex items-start gap-3 p-4 rounded-lg transition-all text-left border-2 border-border bg-background hover:border-[#2063F0]/30 hover:bg-muted/50 cursor-pointer"
+            >
+              <div className="flex-shrink-0 mt-0.5">
+                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground mb-1">
+                  Back to Teams
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Return to Teams & members
+                </div>
+              </div>
+            </button>
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="py-4 shrink-0">
+          <div className="px-4 text-xs text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {sidebarCollapsed && (
-                  <Button 
-                    variant="ghost" 
-                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
-                    onClick={() => setSidebarCollapsed(false)}
-                  >
-                    <Menu className="w-4 h-4" />
-                    <img 
-                      src="/images/Pelico-small-logo.svg" 
-                      alt="Pelico" 
-                      className="h-4 w-auto"
-                    />
-                    <span className="text-sm font-medium">Menu</span>
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9"
+              <span>Routines</span>
+              <span className="font-semibold text-foreground">
+                {teamRoutinesCount}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Top Header */}
+        <div className="px-8 py-4 border-b border-border bg-background shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-2 mb-3 text-xs">
+                <button
                   onClick={() => {
                     if (onNavigate) {
                       onNavigate('users');
                     }
                   }}
+                  className="text-muted-foreground hover:text-[#2063F0] transition-colors"
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <Building2 className="w-5 h-5 shrink-0 brightness-0 invert" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                    {team.name} - Routines
-                  </h1>
-                  {team.description && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {team.description}
-                    </p>
-                  )}
-                </div>
+                  Teams & members
+                </button>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-[#2063F0] font-medium">{team.name}</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-foreground font-semibold">Routines</span>
               </div>
+              
+              <h2 className="text-2xl font-bold">{team.name} - Routines</h2>
+              {team.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {team.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-6xl mx-auto">
-            {/* Routines Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-[#31C7AD]" />
-                  <span className="text-sm font-medium">Routines ({teamRoutinesCount})</span>
+        {/* Content area */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="px-6 pt-6 pb-6">
+              {/* Routines Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-[#31C7AD]" />
+                    <span className="text-sm font-medium">Routines ({teamRoutinesCount})</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setTempSelectedRoutineIds([]);
+                      setOpenAddRoutinesModal(true);
+                    }}
+                    className="h-7 gap-1.5 text-xs"
+                    disabled={availableRoutinesForTeam.length === 0}
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add manually
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setTempSelectedRoutineIds([]);
-                    setOpenAddRoutinesModal(true);
-                  }}
-                  className="h-7 gap-1.5 text-xs"
-                  disabled={availableRoutinesForTeam.length === 0}
-                >
-                  <Plus className="h-3 w-3" />
-                  Add manually
-                </Button>
-              </div>
 
-              {/* Assigned Routines Display */}
-              {teamRoutinesCount === 0 ? (
-                <div className="flex items-center justify-center py-8 px-4 rounded-lg border-2 border-dashed border-border bg-muted/30">
-                  <p className="text-sm text-muted-foreground">No routines assigned</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {sortedObjectives.map((objective) => {
-                    const routines = teamRoutinesGrouped[objective];
-                    return (
-                      <div key={objective} className="space-y-2">
-                        {/* Objective Section Title */}
-                        <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
-                          {objective}
-                        </h4>
-                        {/* Routines for this objective */}
-                        <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                          {routines.map((routine) => {
-                            return (
-                              <div
-                                key={routine.id}
-                                className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all cursor-pointer"
-                                onClick={() => handleViewRoutine(routine.id)}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-sm font-medium text-foreground">
-                                      {routine.name}
-                                    </span>
-                                  </div>
-                                  {routine.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
-                                      {routine.description}
-                                    </p>
-                                  )}
-                                  <div className="flex flex-wrap gap-1 items-center">
-                                    {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-                                      <>
-                                        {routine.pelicoViews.map((view) => (
-                                          <Badge
-                                            key={view}
-                                            variant="outline"
-                                            className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                                          >
-                                            {view}
-                                          </Badge>
-                                        ))}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRoutineToggle(routine.id);
-                                  }}
-                                  className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                  title="Remove routine"
+                {/* Assigned Routines Display */}
+                {teamRoutinesCount === 0 ? (
+                  <div className="flex items-center justify-center py-8 px-4 rounded-lg border-2 border-dashed border-border bg-muted/30">
+                    <p className="text-sm text-muted-foreground">No routines assigned</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sortedObjectives.map((objective) => {
+                      const routines = teamRoutinesGrouped[objective];
+                      return (
+                        <div key={objective} className="space-y-2">
+                          {/* Objective Section Title */}
+                          <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
+                            {objective}
+                          </h4>
+                          {/* Routines for this objective */}
+                          <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                            {routines.map((routine) => {
+                              return (
+                                <div
+                                  key={routine.id}
+                                  className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all cursor-pointer"
+                                  onClick={() => handleViewRoutine(routine.id)}
                                 >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            );
-                          })}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-foreground">
+                                        {routine.name}
+                                      </span>
+                                    </div>
+                                    {routine.description && (
+                                      <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                                        {routine.description}
+                                      </p>
+                                    )}
+                                    <div className="flex flex-wrap gap-1 items-center">
+                                      {routine.pelicoViews && routine.pelicoViews.length > 0 && (
+                                        <>
+                                          {routine.pelicoViews.map((view) => (
+                                            <Badge
+                                              key={view}
+                                              variant="outline"
+                                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                            >
+                                              {view}
+                                            </Badge>
+                                          ))}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRoutineToggle(routine.id);
+                                    }}
+                                    className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Remove routine"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </div>
       </div>
 
