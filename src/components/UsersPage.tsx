@@ -23,8 +23,9 @@ import {
   deleteTeam,
   type Team 
 } from '@/lib/teams';
-import { getRoutines } from '@/lib/routines';
+import { getRoutines, getTeamRoutinesCount } from '@/lib/routines';
 import { getScopes } from '@/lib/scopes';
+import { createMockUsersForTeams } from '@/lib/onboarding/teamWizardUtils';
 import { 
   Plus, 
   Edit, 
@@ -36,6 +37,13 @@ import {
   Layers,
   FolderKanban,
   Sparkles,
+  Zap,
+  ArrowRight,
+  Search,
+  CheckSquare,
+  Square,
+  Filter,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -51,6 +59,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserScopesRoutinesModal } from './UserScopesRoutinesModal';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -63,6 +77,10 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
   const [selectedUserForScopesRoutines, setSelectedUserForScopesRoutines] = useState<User | null>(null);
   const [selectedTeamForNewUser, setSelectedTeamForNewUser] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [openMemberPopover, setOpenMemberPopover] = useState<string | null>(null);
+  const [memberSearchQuery, setMemberSearchQuery] = useState<Record<string, string>>({});
+  const [memberFilter, setMemberFilter] = useState<Record<string, 'all' | 'not-assigned'>>({});
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const currentUser = getCurrentUser();
   const isManager = currentUser?.role === 'manager';
 
@@ -70,6 +88,26 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
     loadUsers();
     loadTeams();
   }, []);
+
+  useEffect(() => {
+    if (teams.length > 0) {
+      loadAvailableUsers();
+    }
+  }, [teams]);
+
+  const loadAvailableUsers = () => {
+    const teamNames = teams.map(t => t.name);
+    const allUsers = createMockUsersForTeams(teamNames);
+    const adminId = getCurrentUserId();
+    const filteredUsers = allUsers.filter(u => u.id !== adminId);
+    
+    // Remove duplicates by name (keep first occurrence)
+    const uniqueUsers = filteredUsers.filter((user, index, self) =>
+      index === self.findIndex(u => u.name.toLowerCase() === user.name.toLowerCase())
+    );
+    
+    setAvailableUsers(uniqueUsers);
+  };
 
   const loadUsers = () => {
     setUsers(getUsers());
@@ -126,6 +164,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
     if (confirm('Are you sure you want to delete this user?')) {
       deleteUser(userId);
       loadUsers();
+      loadAvailableUsers();
     }
   };
 
@@ -150,7 +189,78 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
       });
       loadTeams();
       loadUsers();
+      loadAvailableUsers();
     }
+  };
+
+  const handleAddExistingMember = (teamId: string, userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      updateUser(userId, { teamId });
+      loadUsers();
+      loadAvailableUsers();
+    }
+  };
+
+  const handleRemoveMember = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      updateUser(userId, { teamId: null });
+      loadUsers();
+      loadAvailableUsers();
+    }
+  };
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const isUserNotAssigned = (userId: string): boolean => {
+    return !users.some(u => u.id === userId && u.teamId);
+  };
+
+  const getUserTeams = (userId: string): Team[] => {
+    const user = users.find(u => u.id === userId);
+    if (!user || !user.teamId) return [];
+    const team = teams.find(t => t.id === user.teamId);
+    return team ? [team] : [];
+  };
+
+  const getFilteredMembers = (teamId: string): User[] => {
+    const query = memberSearchQuery[teamId] || '';
+    const filter = memberFilter[teamId] || 'all';
+    const team = teams.find(t => t.id === teamId);
+    const teamMemberIds = team ? users.filter(u => u.teamId === team.id).map(u => u.id) : [];
+    
+    let filtered = availableUsers.filter(user => {
+      const matchesSearch = !query || 
+        user.name.toLowerCase().includes(query.toLowerCase()) ||
+        user.email?.toLowerCase().includes(query.toLowerCase());
+      
+      if (filter === 'not-assigned') {
+        return matchesSearch && isUserNotAssigned(user.id);
+      }
+      
+      return matchesSearch && !teamMemberIds.includes(user.id);
+    });
+
+    return filtered.sort((a, b) => {
+      const firstNameA = a.name.split(' ')[0].toLowerCase();
+      const firstNameB = b.name.split(' ')[0].toLowerCase();
+      return firstNameA.localeCompare(firstNameB);
+    });
+  };
+
+  const handleSelectAllMembers = (teamId: string) => {
+    const filteredMembers = getFilteredMembers(teamId);
+    filteredMembers.forEach(member => {
+      handleAddExistingMember(teamId, member.id);
+    });
   };
 
   return (
@@ -288,10 +398,24 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                     {team.description}
                                   </p>
                                 )}
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
                                   <Badge variant="outline" className="text-xs">
                                     {teamUsers.length} {teamUsers.length === 1 ? 'member' : 'members'}
                                   </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs gap-1.5 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
+                                    onClick={() => {
+                                      if (onNavigate) {
+                                        onNavigate(`team-routines/${team.id}`);
+                                      }
+                                    }}
+                                  >
+                                    <Zap className="h-3 w-3" />
+                                    {getTeamRoutinesCount(team.id, team.assignedRoutineIds)} {getTeamRoutinesCount(team.id, team.assignedRoutineIds) === 1 ? 'routine' : 'routines'}
+                                    <ArrowRight className="h-3 w-3" />
+                                  </Button>
                                   {isAdminTeam && (
                                     <Badge className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                                       System
@@ -326,15 +450,163 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                         {/* Team Members */}
                         <div className="px-5 py-4">
                           {isManager && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCreateUser(team.id)}
-                              className="gap-2 mb-3"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Add Member
-                            </Button>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Popover 
+                                open={openMemberPopover === team.id}
+                                onOpenChange={(open) => {
+                                  setOpenMemberPopover(open ? team.id : null);
+                                  if (!open) {
+                                    setMemberSearchQuery({ ...memberSearchQuery, [team.id]: '' });
+                                  }
+                                }}
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                    Add Member
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="w-96 p-0 flex flex-col overflow-hidden" 
+                                  style={{ height: '500px', maxHeight: '500px' }}
+                                  align="end"
+                                  side="bottom"
+                                  sideOffset={8}
+                                >
+                                  <div className="p-3 border-b border-border space-y-3 flex-shrink-0">
+                                    {/* Search */}
+                                    <div className="relative">
+                                      <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        placeholder="Search members..."
+                                        value={memberSearchQuery[team.id] || ''}
+                                        onChange={(e) => setMemberSearchQuery({ ...memberSearchQuery, [team.id]: e.target.value })}
+                                        className="pl-8 h-9 text-sm"
+                                      />
+                                    </div>
+                                    
+                                    {/* Total Users Count */}
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs text-muted-foreground">
+                                        {getFilteredMembers(team.id).length} {getFilteredMembers(team.id).length === 1 ? 'user' : 'users'} available
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Filter and Select All */}
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <button
+                                          onClick={() => {
+                                            const currentFilter = memberFilter[team.id] || 'all';
+                                            setMemberFilter({ ...memberFilter, [team.id]: currentFilter === 'all' ? 'not-assigned' : 'all' });
+                                          }}
+                                          className={cn(
+                                            "text-xs px-2 py-1 rounded-md transition-colors",
+                                            (memberFilter[team.id] || 'all') === 'not-assigned'
+                                              ? "bg-[#2063F0]/10 text-[#2063F0] font-medium"
+                                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                          )}
+                                        >
+                                          Not assigned
+                                        </button>
+                                      </div>
+                                      {getFilteredMembers(team.id).length > 0 && (
+                                        <button
+                                          onClick={() => handleSelectAllMembers(team.id)}
+                                          className="text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center gap-1"
+                                        >
+                                          <CheckSquare className="h-3 w-3" />
+                                          Select all
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex-1 min-h-0 overflow-hidden">
+                                    <ScrollArea className="h-full">
+                                      <div className="p-2">
+                                        {getFilteredMembers(team.id).length === 0 ? (
+                                          <div className="text-center py-8 text-sm text-muted-foreground">
+                                            {memberSearchQuery[team.id] 
+                                              ? 'No members found' 
+                                              : (memberFilter[team.id] === 'not-assigned' 
+                                                ? 'All members are assigned to teams' 
+                                                : 'All members assigned to this team')}
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-1">
+                                            {getFilteredMembers(team.id).map((user) => {
+                                              const userTeams = getUserTeams(user.id);
+                                              const isNotAssigned = isUserNotAssigned(user.id);
+                                              
+                                              return (
+                                                <div
+                                                  key={user.id}
+                                                  className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors group cursor-pointer"
+                                                  onClick={() => handleAddExistingMember(team.id, user.id)}
+                                                >
+                                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[#2063F0] to-[#31C7AD] flex items-center justify-center text-white text-xs font-semibold">
+                                                    {getInitials(user.name)}
+                                                  </div>
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <div className="text-sm font-medium text-foreground group-hover:text-[#2063F0] transition-colors">
+                                                        {user.name}
+                                                      </div>
+                                                      {isNotAssigned && (
+                                                        <Badge variant="outline" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
+                                                          Not assigned
+                                                        </Badge>
+                                                      )}
+                                                      {!isNotAssigned && userTeams.length > 0 && (
+                                                        <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                          Assigned
+                                                        </Badge>
+                                                      )}
+                                                    </div>
+                                                    {user.email && (
+                                                      <div className="text-xs text-muted-foreground truncate">
+                                                        {user.email}
+                                                      </div>
+                                                    )}
+                                                    {userTeams.length > 0 && (
+                                                      <div className="flex flex-wrap gap-1 mt-1">
+                                                        {userTeams.map((userTeam) => (
+                                                          <Badge
+                                                            key={userTeam.id}
+                                                            variant="outline"
+                                                            className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30"
+                                                          >
+                                                            {userTeam.name}
+                                                          </Badge>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </ScrollArea>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCreateUser(team.id)}
+                                className="gap-2"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Create User
+                              </Button>
+                            </div>
                           )}
                           {teamUsers.length > 0 ? (
                             <div className="space-y-3">
@@ -535,6 +807,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
           defaultTeamId={selectedTeamForNewUser || undefined}
           onSave={() => {
             loadUsers();
+            loadAvailableUsers();
             setUserModalOpen(false);
             setEditingUser(null);
             setSelectedTeamForNewUser(null);

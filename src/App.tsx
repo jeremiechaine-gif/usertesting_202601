@@ -14,6 +14,7 @@ import { LineOfBalancePage } from './components/LineOfBalancePage';
 import { PlanningPage } from './components/PlanningPage';
 import { EventsExplorerPage } from './components/EventsExplorerPage';
 import { SimulationBasketPage } from './components/SimulationBasketPage';
+import { TeamRoutinesPage } from './components/TeamRoutinesPage';
 import { LoginPage } from './components/LoginPage';
 import { SimpleOnboardingWizard } from './components/SimpleOnboardingWizard/SimpleOnboardingWizard';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -190,7 +191,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<{ email: string; firstName: string; lastName: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library' | 'escalation' | 'production' | 'so-book' | 'wo-book' | 'customer' | 'missing-parts' | 'line-of-balance' | 'planning' | 'events-explorer' | 'simulation'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'supply' | 'scope-routines' | 'users' | 'my-routines' | 'shared-routines' | 'routines-library' | 'escalation' | 'production' | 'so-book' | 'wo-book' | 'customer' | 'missing-parts' | 'line-of-balance' | 'planning' | 'events-explorer' | 'simulation' | 'team-routines'>('home');
+  const [teamRoutinesTeamId, setTeamRoutinesTeamId] = useState<string | null>(null);
   
   // Check if user is already logged in (from localStorage)
   useEffect(() => {
@@ -296,6 +298,10 @@ function App() {
       setCurrentPage('events-explorer');
     } else if (page === 'simulation') {
       setCurrentPage('simulation');
+    } else if (page.startsWith('team-routines/')) {
+      const teamId = page.replace('team-routines/', '');
+      setTeamRoutinesTeamId(teamId);
+      setCurrentPage('team-routines');
     }
   };
 
@@ -321,6 +327,14 @@ function App() {
       return (
         <ErrorBoundary>
           <UsersPage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </ErrorBoundary>
+      );
+    }
+
+    if (currentPage === 'team-routines' && teamRoutinesTeamId) {
+      return (
+        <ErrorBoundary>
+          <TeamRoutinesPage teamId={teamRoutinesTeamId} onNavigate={handleNavigate} onLogout={handleLogout} />
         </ErrorBoundary>
       );
     }

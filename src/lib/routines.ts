@@ -246,6 +246,38 @@ export const getRoutinesByCreator = (userId: string): Routine[] => {
 };
 
 /**
+ * Get routines assigned to a team
+ * Combines team.assignedRoutineIds and routines shared via routine.teamIds
+ * This is the optimal approach: it includes both directly assigned routines and shared routines
+ */
+export const getTeamRoutines = (teamId: string, teamAssignedRoutineIds?: string[]): Routine[] => {
+  const routines = getRoutines();
+  const teamRoutineIds = new Set<string>();
+  
+  // Add routines from team.assignedRoutineIds (directly assigned)
+  if (teamAssignedRoutineIds) {
+    teamAssignedRoutineIds.forEach(id => teamRoutineIds.add(id));
+  }
+  
+  // Add routines shared via routine.teamIds
+  routines.forEach(routine => {
+    const routineTeamIds = routine.teamIds || (routine.teamId ? [routine.teamId] : []);
+    if (routineTeamIds.includes(teamId)) {
+      teamRoutineIds.add(routine.id);
+    }
+  });
+  
+  return routines.filter(r => teamRoutineIds.has(r.id));
+};
+
+/**
+ * Get count of routines assigned to a team
+ */
+export const getTeamRoutinesCount = (teamId: string, teamAssignedRoutineIds?: string[]): number => {
+  return getTeamRoutines(teamId, teamAssignedRoutineIds).length;
+};
+
+/**
  * Get routines shared with a team
  */
 export const getRoutinesByTeam = (teamId: string): Routine[] => {

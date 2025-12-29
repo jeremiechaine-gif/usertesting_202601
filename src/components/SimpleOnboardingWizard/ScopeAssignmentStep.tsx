@@ -237,6 +237,18 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                 <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-[#31C7AD]/10 italic">
                   💡 <strong>Tip:</strong> Assign scopes to each team member individually. Each member can have multiple scopes, with one set as the default primary scope.
                 </p>
+                <div className="mt-4">
+                  <Button 
+                    className="bg-[#31C7AD] hover:bg-[#31C7AD]/90 text-white"
+                    onClick={() => {
+                      setEditingScope(null);
+                      setScopeToDuplicate(null);
+                      setScopeModalOpen(true);
+                    }}
+                  >
+                    Create template scope
+                  </Button>
+                </div>
               </div>
             </div>
 
