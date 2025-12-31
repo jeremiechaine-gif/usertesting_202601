@@ -288,55 +288,60 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-b shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Suspense fallback={<div>Loading...</div>}>
-              <SortingAndFiltersPopover
-                sorting={sorting}
-                columnFilters={userFilters}
-                onSortingChange={setSorting}
-                onColumnFiltersChange={setUserFilters}
-                columns={columns}
-                filterDefinitions={filterDefinitions}
-                selectedRoutineId={selectedRoutineId}
-                onSaveAsRoutine={handleSaveAsRoutine}
-                onUpdateRoutine={handleUpdateRoutine}
-                onOpenFilterModal={handleOpenFilterModal}
-                scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
-                currentScopeName={currentScope?.name}
-                routineFilters={routineFilters}
+        {/* Table with wrapper structure matching Step3ConfigureRoutine */}
+        <div className="px-6 py-4">
+          <div className="border rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+          {/* Header with controls */}
+          <div className="p-4 bg-muted/30 border-b flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <Suspense fallback={<div>Loading...</div>}>
+                <SortingAndFiltersPopover
+                  sorting={sorting}
+                  columnFilters={userFilters}
+                  onSortingChange={setSorting}
+                  onColumnFiltersChange={setUserFilters}
+                  columns={columns}
+                  filterDefinitions={filterDefinitions}
+                  selectedRoutineId={selectedRoutineId}
+                  onSaveAsRoutine={handleSaveAsRoutine}
+                  onUpdateRoutine={handleUpdateRoutine}
+                  onOpenFilterModal={handleOpenFilterModal}
+                  scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
+                  currentScopeName={currentScope?.name}
+                  routineFilters={routineFilters}
+                />
+              </Suspense>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all"
+                onClick={() => setGlobalFilter('')}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+              <GroupByDropdown
+                selectedGroupBy={selectedGroupBy}
+                onGroupBySelect={setSelectedGroupBy}
               />
-            </Suspense>
+              <ColumnsPopover 
+                table={table} 
+                columns={columns}
+                highlightedColumnId={highlightedColumnId}
+                onHighlightChange={setHighlightedColumnId}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="gap-2 h-9 px-3 py-2 hover:bg-accent hover:border-[#31C7AD]/30 transition-all"
-              onClick={() => setGlobalFilter('')}
-            >
-              <Search className="w-4 h-4" />
-            </Button>
-            <GroupByDropdown
-              selectedGroupBy={selectedGroupBy}
-              onGroupBySelect={setSelectedGroupBy}
-            />
-            <ColumnsPopover 
-              table={table} 
-              columns={columns}
-              highlightedColumnId={highlightedColumnId}
-              onHighlightChange={setHighlightedColumnId}
-            />
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-auto px-6 pb-4">
-          <div className="inline-block min-w-full align-middle">
-            <table
-              className="min-w-full divide-y divide-border/60"
-              style={{ 
-                width: table.getCenterTotalSize() || '100%',
-                tableLayout: 'fixed',
+          {/* Table container */}
+          <div className="flex-1 overflow-auto">
+            <div className="inline-block min-w-full align-middle">
+              <table
+                className="min-w-full divide-y divide-border/60"
+                style={{ 
+                  width: table.getCenterTotalSize() || '100%',
+                  tableLayout: 'fixed',
                 borderCollapse: 'separate',
                 borderSpacing: 0,
               }}
@@ -472,8 +477,9 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
                   ))
                 )}
               </tbody>
-            </table>
-            <div className="h-4" />
+              </table>
+            </div>
+          </div>
           </div>
         </div>
 

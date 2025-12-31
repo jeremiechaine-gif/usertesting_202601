@@ -291,51 +291,56 @@ export const ServiceOrderBookPage: React.FC<{ onNavigate?: (page: string) => voi
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gradient-to-b from-muted/30 to-muted/50 border-b shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Suspense fallback={<div>Loading...</div>}>
-              <SortingAndFiltersPopover
-                sorting={sorting}
-                columnFilters={userFilters}
-                onSortingChange={setSorting}
-                onColumnFiltersChange={setUserFilters}
-                columns={columns}
-                filterDefinitions={filterDefinitions}
-                selectedRoutineId={selectedRoutineId}
-                onSaveAsRoutine={handleSaveAsRoutine}
-                onUpdateRoutine={handleUpdateRoutine}
-                onOpenFilterModal={handleOpenFilterModal}
-                scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
-                currentScopeName={currentScope?.name}
-                routineFilters={routineFilters}
+        {/* Table with wrapper structure matching Step3ConfigureRoutine */}
+        <div className="px-6 py-4">
+          <div className="border rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+          {/* Header with controls */}
+          <div className="p-4 bg-muted/30 border-b flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <Suspense fallback={<div>Loading...</div>}>
+                <SortingAndFiltersPopover
+                  sorting={sorting}
+                  columnFilters={userFilters}
+                  onSortingChange={setSorting}
+                  onColumnFiltersChange={setUserFilters}
+                  columns={columns}
+                  filterDefinitions={filterDefinitions}
+                  selectedRoutineId={selectedRoutineId}
+                  onSaveAsRoutine={handleSaveAsRoutine}
+                  onUpdateRoutine={handleUpdateRoutine}
+                  onOpenFilterModal={handleOpenFilterModal}
+                  scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
+                  currentScopeName={currentScope?.name}
+                  routineFilters={routineFilters}
+                />
+              </Suspense>
+            </div>
+            <div className="flex items-center gap-2">
+              <GroupByDropdown
+                selectedGroupBy={selectedGroupBy}
+                onGroupBySelect={setSelectedGroupBy}
               />
-            </Suspense>
+              <ColumnsPopover 
+                table={table} 
+                columns={columns}
+                highlightedColumnId={highlightedColumnId}
+                onHighlightChange={setHighlightedColumnId}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <GroupByDropdown
-              selectedGroupBy={selectedGroupBy}
-              onGroupBySelect={setSelectedGroupBy}
-            />
-            <ColumnsPopover 
-              table={table} 
-              columns={columns}
-              highlightedColumnId={highlightedColumnId}
-              onHighlightChange={setHighlightedColumnId}
-            />
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-auto px-6 pb-4">
-          <div className="inline-block min-w-full align-middle">
-            <table
-              className="min-w-full divide-y divide-border/60"
-              style={{ 
-                width: table.getCenterTotalSize() || '100%',
-                tableLayout: 'fixed',
-                borderCollapse: 'separate',
-                borderSpacing: 0,
-              }}
-            >
+          {/* Table container */}
+          <div className="flex-1 overflow-auto">
+            <div className="inline-block min-w-full align-middle">
+              <table
+                className="min-w-full divide-y divide-border/60"
+                style={{ 
+                  width: table.getCenterTotalSize() || '100%',
+                  tableLayout: 'fixed',
+                  borderCollapse: 'separate',
+                  borderSpacing: 0,
+                }}
+              >
               <thead className="bg-muted/40 sticky top-0 z-10 shadow-sm border-b border-border/60">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
@@ -467,33 +472,58 @@ export const ServiceOrderBookPage: React.FC<{ onNavigate?: (page: string) => voi
                   ))
                 )}
               </tbody>
-            </table>
-            <div className="h-4" />
+              </table>
+            </div>
+          </div>
           </div>
         </div>
 
-        {/* Pagination - Responsive */}
-        <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-t from-muted/30 to-background border-t shadow-inner">
-          {/* Mobile: Stack vertically, Desktop: Horizontal layout */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
-            {/* Show Page Totals - Icon only on mobile */}
-            <div className="flex items-center justify-between sm:justify-start">
-              <Button variant="ghost" size="sm" className="gap-1.5 sm:gap-2 hover:bg-accent transition-colors">
-                <span className="text-base">Σ</span>
-                <span className="hidden sm:inline">Show Page Totals</span>
+        {/* Pagination - Enhanced UX & Responsive */}
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-t from-muted/30 to-background border-t">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left Section: Show Page Totals */}
+            <div className="flex items-center justify-between sm:justify-start order-3 sm:order-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2.5 sm:px-3 gap-1.5 sm:gap-2 text-xs sm:text-sm hover:bg-accent/50 transition-all"
+              >
+                <span className="text-base sm:text-lg">Σ</span>
+                <span className="hidden sm:inline font-medium">Show Page Totals</span>
               </Button>
             </div>
             
-            {/* Controls Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 lg:gap-6">
-              {/* Page Size - Label hidden on mobile */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                <span className="hidden sm:inline text-sm font-medium text-muted-foreground">Page Size:</span>
+            {/* Center Section: Page Info & Size - Priority on mobile */}
+            <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-4 order-1 sm:order-2 flex-1 sm:flex-initial">
+              {/* Page Info - Enhanced */}
+              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md bg-muted/50 border border-border/50">
+                <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                  <span className="hidden md:inline">
+                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                    {Math.min(
+                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                      table.getFilteredRowModel().rows.length
+                    )}{' '}
+                    of{' '}
+                  </span>
+                  <span className="md:hidden">
+                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-{Math.min(
+                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                      table.getFilteredRowModel().rows.length
+                    )}{' '}/{' '}
+                  </span>
+                  <span className="font-semibold text-[#2063F0]">{table.getFilteredRowModel().rows.length}</span>
+                </span>
+              </div>
+              
+              {/* Page Size - Compact */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="hidden lg:inline text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Page Size:</span>
                 <Select
                   value={String(table.getState().pagination.pageSize)}
                   onValueChange={(value) => table.setPageSize(Number(value))}
                 >
-                  <SelectTrigger className="w-full sm:w-[100px] border-border/60 hover:border-[#31C7AD]/40 transition-colors">
+                  <SelectTrigger className="h-8 w-[70px] sm:w-[85px] text-xs sm:text-sm border-border/60 hover:border-[#31C7AD]/40 transition-colors">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -504,72 +534,63 @@ export const ServiceOrderBookPage: React.FC<{ onNavigate?: (page: string) => voi
                   </SelectContent>
                 </Select>
               </div>
-              
-              {/* Page Info - Compact on mobile */}
-              <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-muted/40">
-                <span className="text-xs sm:text-sm font-medium">
-                  <span className="hidden sm:inline">
-                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-                    {Math.min(
-                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                      table.getFilteredRowModel().rows.length
-                    )}{' '}
-                    of{' '}
-                  </span>
-                  <span className="sm:hidden">
-                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-{Math.min(
-                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                      table.getFilteredRowModel().rows.length
-                    )}{' '}/{' '}
-                  </span>
-                  <span className="font-semibold text-[#2063F0]">{table.getFilteredRowModel().rows.length}</span>
-                </span>
-              </div>
-              
-              {/* Pagination Controls */}
-              <div className="flex items-center justify-center sm:justify-end gap-1 bg-muted/50 p-1 rounded-lg border border-border/60 shadow-sm">
+            </div>
+            
+            {/* Right Section: Pagination Controls */}
+            <div className="flex items-center justify-end gap-0.5 sm:gap-1 order-2 sm:order-3">
+              <div className="flex items-center gap-0.5 bg-muted/40 p-0.5 rounded-md border border-border/50">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
                   aria-label="First page"
+                  title="First page"
                 >
-                  <ChevronsLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <ChevronsLeft className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                   aria-label="Previous page"
+                  title="Previous page"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <span className="px-2 sm:px-3 text-xs sm:text-sm font-semibold text-foreground min-w-[60px] sm:min-w-[80px] text-center">
-                  {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-                </span>
+                <div className="px-2 sm:px-3 py-1 min-w-[50px] sm:min-w-[65px] text-center">
+                  <span className="text-xs sm:text-sm font-semibold text-foreground">
+                    {table.getState().pagination.pageIndex + 1}
+                  </span>
+                  <span className="text-xs sm:text-sm text-muted-foreground mx-0.5">/</span>
+                  <span className="text-xs sm:text-sm text-muted-foreground">
+                    {table.getPageCount()}
+                  </span>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
                   aria-label="Next page"
+                  title="Next page"
                 >
-                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
                   aria-label="Last page"
+                  title="Last page"
                 >
-                  <ChevronsRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <ChevronsRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
