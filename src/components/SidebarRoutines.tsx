@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { getRoutinesByCreator, getAccessibleRoutines, type Routine } from '@/lib/routines';
+import { getRoutinesByCreator, getAccessibleRoutines, getRoutine, type Routine } from '@/lib/routines';
 import { getFolders, updateFolder, deleteFolder, type RoutineFolder } from '@/lib/folders';
 import { getCurrentUserId } from '@/lib/users';
 import { useRoutine } from '@/contexts/RoutineContext';
@@ -271,7 +271,32 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
   const displayedSharedRoutines = showAllSharedRoutines ? sharedRoutines : sharedRoutines.slice(0, 5);
 
   const handleRoutineClick = (routineId: string) => {
-    onRoutineClick?.(routineId);
+    const routine = getRoutine(routineId);
+    if (!routine) {
+      console.error(`Routine with ID ${routineId} not found`);
+      return;
+    }
+
+    // Check if routine has a pelicoView (should always have one)
+    if (!routine.pelicoView) {
+      alert(`Error: Routine "${routine.name}" does not have a Pelico View associated. Please edit the routine to assign a view.`);
+      return;
+    }
+
+    // Check if we're already on the correct Pelico View page
+    const isOnCorrectPage = activeItem === routine.pelicoView;
+    
+    if (isOnCorrectPage) {
+      // We're already on the correct page, just select the routine
+      onRoutineClick?.(routineId);
+    } else {
+      // We need to navigate to the Pelico View page
+      // Store routine ID in sessionStorage to auto-apply it when page loads
+      sessionStorage.setItem('pendingRoutineId', routineId);
+      
+      // Navigate to the Pelico View page
+      onNavigate?.(routine.pelicoView);
+    }
   };
 
   const hasMyRoutines = myRoutines.length > 0 || myFolders.length > 0;

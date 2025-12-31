@@ -8,13 +8,33 @@ import type { Persona } from '@/lib/onboarding/pelicoViews';
 import type { Objective } from '@/lib/onboarding/types';
 
 export type PelicoViewPage = 
-  | 'supply'
-  | 'production'
-  | 'customer'
-  | 'escalation'
-  | 'value-engineering'
-  | 'event-explorer'
-  | 'simulation';
+  | 'escalation'      // Escalation Room
+  | 'supply'          // Purchase Order Book
+  | 'so-book'         // Service Order Book
+  | 'customer'        // Customer Order Book
+  | 'wo-book'         // Work Order Book
+  | 'missing-parts'    // Missing Parts
+  | 'line-of-balance'  // Line of Balance
+  | 'planning'         // Planning
+  | 'events-explorer'; // Events Explorer
+
+/**
+ * Get display name for a Pelico View Page
+ */
+export function getPelicoViewDisplayName(view?: PelicoViewPage): string {
+  const viewMap: Record<PelicoViewPage, string> = {
+    'escalation': 'Escalation Room',
+    'supply': 'Purchase Order Book',
+    'so-book': 'Service Order Book',
+    'customer': 'Customer Order Book',
+    'wo-book': 'Work Order Book',
+    'missing-parts': 'Missing Parts',
+    'line-of-balance': 'Line of Balance',
+    'planning': 'Planning',
+    'events-explorer': 'Events Explorer',
+  };
+  return view ? viewMap[view] : 'Not set';
+}
 
 export interface Routine {
   id: string;

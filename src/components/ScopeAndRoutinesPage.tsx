@@ -270,6 +270,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   const handleRoutineCreated = (routineId: string) => {
     loadRoutines();
     refreshRoutines();
+    setCreateRoutineWizardOpen(false);
   };
 
   const handleSelectView = (view: string) => {
@@ -327,9 +328,18 @@ export const ScopeAndRoutinesPage: React.FC<{
 
   const handleViewRoutine = (routine: Routine) => {
     // Navigate to the Pelico view page associated with this routine
-    if (routine.pelicoView) {
-      onNavigate?.(routine.pelicoView);
+    if (!routine.pelicoView) {
+      // Error: routine should always have a pelicoView
+      alert(`Error: Routine "${routine.name}" does not have a Pelico View associated. Please edit the routine to assign a view.`);
+      return;
     }
+    
+    // Store routine ID in sessionStorage to auto-apply it when page loads
+    sessionStorage.setItem('pendingRoutineId', routine.id);
+    
+    // Navigate to the Pelico View page
+    const pelicoViewPage = routine.pelicoView;
+    onNavigate?.(pelicoViewPage);
   };
 
   const copyToClipboard = () => {
@@ -496,7 +506,8 @@ export const ScopeAndRoutinesPage: React.FC<{
                                 return (
                                   <div
                                     key={routine.id}
-                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
+                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all cursor-pointer"
+                                    onClick={() => handleViewRoutine(routine)}
                                   >
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
@@ -746,53 +757,62 @@ export const ScopeAndRoutinesPage: React.FC<{
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {scopes.map((scope) => (
-                    <div
-                      key={scope.id}
-                      className={cn(
-                        'group border border-border/60 rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#31C7AD]/30',
-                        currentScopeId === scope.id && 'ring-2 ring-[#31C7AD] shadow-md bg-[#31C7AD]/5'
-                      )}
-                    >
-                      <div className="flex items-start justify-between mb-3">
+                <div className="space-y-2">
+                  {scopes.map((scope) => {
+                    const assignedUsers = getUsersAssignedToScope(scope.id);
+                    return (
+                      <div
+                        key={scope.id}
+                        className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
+                      >
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-bold text-lg truncate">{scope.name}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-foreground">
+                              {scope.name}
+                            </span>
                             {scope.isDefault && (
-                              <Star className="h-4 w-4 text-[#31C7AD] fill-[#31C7AD] shrink-0" />
+                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
+                                <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
+                                Default
+                              </Badge>
                             )}
                             {currentScopeId === scope.id && (
-                              <Badge className="text-xs shrink-0 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/20">
+                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                                 Active
+                              </Badge>
+                            )}
+                            {scope.isGlobal && (
+                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-muted/50 border-border/60">
+                                Global
                               </Badge>
                             )}
                           </div>
                           {scope.description && (
-                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                            <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
                               {scope.description}
                             </p>
                           )}
-                        </div>
-                      </div>
-                      
-                      {/* Assigned Users Section */}
-                      {(() => {
-                        const assignedUsers = getUsersAssignedToScope(scope.id);
-                        return assignedUsers.length > 0 ? (
-                          <div className="mt-3 pt-3 border-t border-border/50">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">Assigned to:</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1 items-center mb-2">
+                            <Badge
+                              variant="outline"
+                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                            >
+                              {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          
+                          {/* Assigned Users Section */}
+                          {assignedUsers.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-border/30">
+                              <span className="text-xs text-muted-foreground">Assigned to:</span>
                               {assignedUsers.map(({ user, assignmentType, teamName }) => (
-                                <Badge 
+                                <Badge
                                   key={user.id}
-                                  variant="outline" 
-                                  className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                  variant="outline"
+                                  className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1"
                                   title={assignmentType === 'via-team' ? `Via team: ${teamName}` : 'Direct assignment'}
                                 >
+                                  <Users className="h-3 w-3" />
                                   {user.name}
                                   {assignmentType === 'via-team' && (
                                     <span className="ml-1 text-[10px] opacity-70">({teamName})</span>
@@ -800,29 +820,17 @@ export const ScopeAndRoutinesPage: React.FC<{
                                 </Badge>
                               ))}
                             </div>
-                          </div>
-                        ) : null;
-                      })()}
-                      
-                      <div className="flex items-center gap-2 mt-4 flex-wrap">
-                        <Badge variant="outline" className="text-xs bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
-                          {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
-                        </Badge>
-                        {scope.isGlobal && (
-                          <Badge variant="secondary" className="text-xs bg-muted/50">
-                            Global
-                          </Badge>
-                        )}
-                        
-                        <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
+                                className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
                               >
-                                <Share2 className="h-4 w-4" />
+                                <Share2 className="h-3.5 w-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -835,7 +843,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleShareScope(scope)}>
                                 <Share2 className="h-4 w-4 mr-2" />
-                                Share
+                                Share link
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleDuplicateScope(scope)}>
                                 <Copy className="h-4 w-4 mr-2" />
@@ -853,24 +861,23 @@ export const ScopeAndRoutinesPage: React.FC<{
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD]"
+                            className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
                             onClick={() => handleEditScope(scope)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3.5 w-3.5" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          <button
                             onClick={() => handleDeleteScope(scope.id)}
+                            className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                            title="Remove scope"
                             disabled={scope.isDefault}
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                            <X className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

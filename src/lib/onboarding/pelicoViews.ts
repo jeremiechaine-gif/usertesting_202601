@@ -4,6 +4,8 @@
  * Used for routine creation and persona-based recommendations
  */
 
+import type { PelicoViewPage } from '@/lib/routines';
+
 export type ViewStructure = 
   | 'table' 
   | 'timeline' 
@@ -44,7 +46,7 @@ export interface PelicoViewDefinition {
   intent: ViewIntent;
   typicalDecisions: string[]; // What kind of decisions are made from this view
   notMeantFor: string[]; // What this view is NOT meant to do
-  pelicoViewPage: 'supply' | 'production' | 'customer' | 'escalation' | 'value-engineering' | 'event-explorer' | 'simulation';
+  pelicoViewPage: PelicoViewPage;
 }
 
 export const PELICO_VIEWS: PelicoViewDefinition[] = [
@@ -120,7 +122,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Customer order tracking',
       'Strategic planning',
     ],
-    pelicoViewPage: 'production',
+    pelicoViewPage: 'so-book',
   },
   {
     id: 'co-book',
@@ -169,7 +171,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Customer order management',
       'Long-term planning',
     ],
-    pelicoViewPage: 'production',
+    pelicoViewPage: 'wo-book',
   },
   {
     id: 'missing-parts',
@@ -194,7 +196,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Customer order tracking',
       'Time-phased planning',
     ],
-    pelicoViewPage: 'supply',
+    pelicoViewPage: 'missing-parts',
   },
   {
     id: 'line-of-balance',
@@ -219,7 +221,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Customer order management',
       'Financial analysis',
     ],
-    pelicoViewPage: 'supply',
+    pelicoViewPage: 'line-of-balance',
   },
   {
     id: 'planning',
@@ -244,7 +246,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Supplier follow-up',
       'Root cause investigation',
     ],
-    pelicoViewPage: 'value-engineering',
+    pelicoViewPage: 'planning',
   },
   {
     id: 'events-explorer',
@@ -269,7 +271,7 @@ export const PELICO_VIEWS: PelicoViewDefinition[] = [
       'Customer order management',
       'Strategic planning',
     ],
-    pelicoViewPage: 'event-explorer',
+    pelicoViewPage: 'events-explorer',
   },
 ];
 

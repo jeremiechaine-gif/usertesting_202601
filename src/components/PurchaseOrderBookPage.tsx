@@ -28,7 +28,7 @@ import { PlanDropdown } from './PlanDropdown';
 import { RoutineDropdown } from './RoutineDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
-import { getRoutine, updateRoutine } from '@/lib/routines';
+import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
@@ -45,6 +45,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   // Separate scope filters (applied to table but not shown in modal) from user/routine filters
   const [scopeFilters, setScopeFilters] = useState<ColumnFiltersState>([]);
   const [userFilters, setUserFilters] = useState<ColumnFiltersState>([]);
+  const [routineFilters, setRoutineFilters] = useState<ColumnFiltersState>([]); // Filters from the currently selected routine
   // Combined filters for table (scope + user)
   const columnFilters = useMemo(() => {
     // Combine scope filters and user filters
@@ -166,11 +167,14 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
         
         // Set user filters from routine (scope filters are separate and already applied)
         setUserFilters(normalizedFilters);
+        // Store routine filters for comparison (to show blue indicator for routine filters)
+        setRoutineFilters(normalizedFilters);
         setScopeOverridden(false);
       }
     } else {
       // No routine selected, clear user filters
       setUserFilters([]);
+      setRoutineFilters([]);
       setScopeOverridden(false);
     }
   }, [selectedRoutineId]);
@@ -316,7 +320,26 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
             
             {/* Page Title */}
             <div className="mb-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+              {selectedRoutineId ? (() => {
+                const routine = getRoutine(selectedRoutineId);
+                return routine ? (
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                      {routine.name}
+                    </h1>
+                    <Badge
+                      variant="outline"
+                      className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
+                    >
+                      {getPelicoViewDisplayName(routine.pelicoView)}
+                    </Badge>
+                  </div>
+                ) : (
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+                );
+              })() : (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+              )}
             </div>
           </div>
         </div>
@@ -348,6 +371,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
               onOpenFilterModal={handleOpenFilterModal}
               scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
               currentScopeName={currentScope?.name}
+              routineFilters={routineFilters}
             />
           </div>
           <div className="flex items-center gap-2">
@@ -434,6 +458,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                               columnFilters={columnFilters}
                               userFilters={userFilters}
                               scopeFilters={scopeFilters}
+                              routineFilters={routineFilters}
                               onSortingChange={setSorting}
                               onColumnFiltersChange={(filters) => {
                                 // When filters change from column header, update user filters

@@ -90,6 +90,9 @@ interface SortingAndFiltersPopoverProps {
   scopeFilters?: Array<{ id: string; filterId: string; values: (string | number)[] }>;
   currentScopeName?: string;
   
+  // Routine filters for comparison (to show red dot if at least one filter is not saved)
+  routineFilters?: ColumnFiltersState;
+  
   // Trigger button (optional, can be passed as children)
   trigger?: React.ReactNode;
 }
@@ -107,6 +110,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   onUpdateRoutine,
   scopeFilters = [],
   currentScopeName,
+  routineFilters = [],
   trigger,
 }) => {
   const [open, setOpen] = useState(false);
@@ -329,13 +333,56 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
                           JSON.stringify(routineSorting.sort((a, b) => a.id.localeCompare(b.id)));
     
     // Compare draft filters with routine filters
-    const routineFilters = tableStateToDraftFilters(routine.filters);
+    const routineFiltersDraft = tableStateToDraftFilters(routine.filters);
     const filtersMatches = JSON.stringify(draftFilters.sort((a, b) => a.id.localeCompare(b.id))) === 
-                          JSON.stringify(routineFilters.sort((a, b) => a.id.localeCompare(b.id)));
+                          JSON.stringify(routineFiltersDraft.sort((a, b) => a.id.localeCompare(b.id)));
     
     // Return true if there are changes
     return !sortingMatches || !filtersMatches;
   }, [selectedRoutineId, draftSorting, draftFilters]);
+
+  // Check if at least one filter is not saved in routine (for red dot indicator)
+  const hasUnsavedFilter = useMemo(() => {
+    if (!selectedRoutineId || routineFilters.length === 0) {
+      // If no routine selected or no routine filters, check if there are any user filters
+      return columnFilters.length > 0;
+    }
+    
+    // Normalize filter values for comparison
+    const normalizeValue = (val: unknown) => {
+      if (typeof val === 'object' && val !== null) {
+        return JSON.stringify(val);
+      }
+      return String(val);
+    };
+    
+    // Check if at least one filter in columnFilters doesn't match routineFilters
+    for (const userFilter of columnFilters) {
+      const routineFilter = routineFilters.find((rf: any) => rf.id === userFilter.id);
+      
+      if (!routineFilter) {
+        // Filter exists in user filters but not in routine filters
+        return true;
+      }
+      
+      // Compare values
+      if (normalizeValue(userFilter.value) !== normalizeValue(routineFilter.value)) {
+        // Filter value doesn't match routine filter value
+        return true;
+      }
+    }
+    
+    // Also check if routine has filters that user doesn't have (shouldn't happen, but check anyway)
+    for (const routineFilter of routineFilters) {
+      const userFilter = columnFilters.find((uf: any) => uf.id === routineFilter.id);
+      if (!userFilter) {
+        // Routine has a filter that user doesn't have (routine was modified)
+        return true;
+      }
+    }
+    
+    return false;
+  }, [selectedRoutineId, columnFilters, routineFilters]);
 
   const defaultTrigger = (
     <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5 relative">
@@ -345,7 +392,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
           {totalActiveCount}
         </Badge>
       ) : null}
-      {hasUnsavedChanges && (
+      {hasUnsavedFilter && (
         <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
       )}
     </Button>

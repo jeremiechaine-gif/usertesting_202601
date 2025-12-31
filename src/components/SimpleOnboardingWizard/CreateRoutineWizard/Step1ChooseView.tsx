@@ -6,6 +6,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Sparkles, Target, AlertCircle, Zap, TrendingUp, Users, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PelicoViewDefinition, ViewIntent } from '@/lib/onboarding/pelicoViews';
@@ -19,6 +20,7 @@ interface Step1ChooseViewProps {
   onViewSelect: (view: PelicoViewDefinition) => void;
   hasPersona: boolean;
   personaName?: string; // French persona name to display
+  selectedViewId?: string; // ID of currently selected view
 }
 
 const INTENT_LABELS: Record<ViewIntent, { label: string; icon: React.ReactNode; description: string }> = {
@@ -58,6 +60,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
   onViewSelect,
   hasPersona,
   personaName,
+  selectedViewId,
 }) => {
   return (
     <div className="space-y-6">
@@ -89,41 +92,60 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {recommendedViews.map((view) => (
-              <button
-                key={view.id}
-                onClick={() => onViewSelect(view)}
-                className={cn(
-                  'p-4 rounded-lg border-2 text-left transition-all hover:shadow-md',
-                  'border-[#2063F0]/20 hover:border-[#2063F0]/40 bg-gradient-to-br from-[#2063F0]/5 to-transparent'
-                )}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-[#2063F0]" />
-                    <span className="text-sm font-semibold">{view.name}</span>
+          <RadioGroup
+            value={selectedViewId}
+            onValueChange={(value) => {
+              const view = allViews.find(v => v.id === value);
+              if (view) {
+                onViewSelect(view);
+              }
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-3"
+          >
+            {recommendedViews.map((view) => {
+              const isSelected = selectedViewId === view.id;
+              return (
+                <label
+                  key={view.id}
+                  htmlFor={`view-${view.id}`}
+                    className={cn(
+                      'relative p-4 rounded-lg border-2 text-left transition-all hover:shadow-md cursor-pointer bg-background',
+                      isSelected
+                        ? 'border-orange-500 bg-gradient-to-br from-orange-50/50 to-transparent'
+                        : 'border-[#2063F0]/20 hover:border-[#2063F0]/40 bg-gradient-to-br from-[#2063F0]/5 to-transparent'
+                    )}
+                >
+                  <RadioGroupItem
+                    value={view.id}
+                    id={`view-${view.id}`}
+                    className="absolute top-4 right-4 h-5 w-5 border-orange-500 data-[state=checked]:border-orange-500 [&>span>svg]:fill-orange-500"
+                  />
+                  <div className="flex items-start justify-between mb-2 pr-8">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4 text-[#2063F0]" />
+                      <span className="text-sm font-semibold">{view.name}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                      <Sparkles className="h-2.5 w-2.5 mr-1" />
+                      Recommended
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
-                    <Sparkles className="h-2.5 w-2.5 mr-1" />
-                    Recommended
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {view.shortDescription}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {view.structure === 'table' && 'Table'}
-                    {view.structure === 'timeline' && 'Timeline'}
-                    {view.structure === 'time-phased-grid' && 'Time-phased'}
-                    {view.structure === 'hybrid' && 'Hybrid'}
-                    {view.structure === 'relational-table' && 'Relational'}
-                  </Badge>
-                </div>
-              </button>
-            ))}
-          </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {view.shortDescription}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {view.structure === 'table' && 'Table'}
+                      {view.structure === 'timeline' && 'Timeline'}
+                      {view.structure === 'time-phased-grid' && 'Time-phased'}
+                      {view.structure === 'hybrid' && 'Hybrid'}
+                      {view.structure === 'relational-table' && 'Relational'}
+                    </Badge>
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
         </div>
       )}
 
@@ -161,22 +183,39 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <RadioGroup
+                  value={selectedViewId}
+                  onValueChange={(value) => {
+                    const view = allViews.find(v => v.id === value);
+                    if (view) {
+                      onViewSelect(view);
+                    }
+                  }}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                >
                   {views.map((view) => {
                     const isRecommended = recommendedViews.some(v => v.id === view.id);
+                    const isSelected = selectedViewId === view.id;
                     
                     return (
-                      <button
+                      <label
                         key={view.id}
-                        onClick={() => onViewSelect(view)}
+                        htmlFor={`view-${view.id}`}
                         className={cn(
-                          'p-4 rounded-lg border-2 text-left transition-all hover:shadow-md',
-                          isRecommended
+                          'relative p-4 rounded-lg border-2 text-left transition-all hover:shadow-md cursor-pointer bg-background',
+                          isSelected
+                            ? 'border-orange-500 bg-gradient-to-br from-orange-50/50 to-transparent'
+                            : isRecommended
                             ? 'border-[#2063F0]/20 hover:border-[#2063F0]/40 bg-gradient-to-br from-[#2063F0]/5 to-transparent'
-                            : 'border-border hover:border-[#2063F0]/30 bg-background'
+                            : 'border-border hover:border-[#2063F0]/30'
                         )}
                       >
-                        <div className="flex items-start justify-between mb-2">
+                        <RadioGroupItem
+                          value={view.id}
+                          id={`view-${view.id}`}
+                          className="absolute top-4 right-4 h-5 w-5 border-orange-500 data-[state=checked]:border-orange-500 [&>span>svg]:fill-orange-500"
+                        />
+                        <div className="flex items-start justify-between mb-2 pr-8">
                           <div className="flex items-center gap-2">
                             <Target className="h-4 w-4 text-[#2063F0]" />
                             <span className="text-sm font-semibold">{view.name}</span>
@@ -200,10 +239,10 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                             {view.structure === 'relational-table' && 'Relational'}
                           </Badge>
                         </div>
-                      </button>
+                      </label>
                     );
                   })}
-                </div>
+                </RadioGroup>
               </div>
             );
           })}

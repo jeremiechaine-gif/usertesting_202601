@@ -31,6 +31,7 @@ interface ColumnHeaderProps {
   columnFilters: Array<{ id: string; value: unknown }>; // Combined filters (scope + user) - used for table filtering
   userFilters?: Array<{ id: string; value: unknown }>; // User/routine filters (should show visual feedback)
   scopeFilters?: Array<{ id: string; value: unknown }>; // Scope filters (read-only, shown with different indicator)
+  routineFilters?: Array<{ id: string; value: unknown }>; // Filters from the currently selected routine (if any)
   onSortingChange: (updater: any) => void;
   onColumnFiltersChange: (updater: any) => void;
   onFilterClick?: (columnId: string) => void;
@@ -44,6 +45,7 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
   columnFilters: _columnFilters, // Combined filters - kept for potential future use
   userFilters = [],
   scopeFilters = [],
+  routineFilters = [],
   onSortingChange,
   onColumnFiltersChange,
   onFilterClick,
@@ -75,6 +77,26 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
     () => !!scopeFilters.find((f) => f.id === columnId),
     [scopeFilters, columnId]
   );
+
+  // Check if the user filter matches a routine filter (i.e., is saved in routine)
+  const isRoutineFilter = useMemo(() => {
+    if (!hasUserFilter || routineFilters.length === 0) return false;
+    const userFilter = userFilters.find((f) => f.id === columnId);
+    const routineFilter = routineFilters.find((f) => f.id === columnId);
+    if (!userFilter || !routineFilter) return false;
+    
+    // Compare filter values (normalize for comparison)
+    const normalizeValue = (val: unknown) => {
+      if (typeof val === 'object' && val !== null) {
+        return JSON.stringify(val);
+      }
+      return String(val);
+    };
+    return normalizeValue(userFilter.value) === normalizeValue(routineFilter.value);
+  }, [hasUserFilter, userFilters, routineFilters, columnId]);
+
+  // Determine if it's an unsaved filter (user filter that doesn't match routine)
+  const isUnsavedFilter = hasUserFilter && !isRoutineFilter;
 
   // Show filter indicator if there's either a user filter or scope filter
   const hasFilter = hasUserFilter || hasScopeFilter;
@@ -293,8 +315,11 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
                   }}
                 >
                   <MoreHorizontal className="h-4 w-4" />
-                  {hasUserFilter && (
+                  {isUnsavedFilter && (
                     <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 bg-red-500 rounded-full" />
+                  )}
+                  {isRoutineFilter && (
+                    <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 bg-blue-500 rounded-full" />
                   )}
                   {hasScopeFilter && !hasUserFilter && (
                     <span className="absolute top-0.5 right-0.5 h-1.5 w-1.5 bg-[#31C7AD] rounded-full" />
@@ -306,8 +331,11 @@ const ColumnHeaderComponent: React.FC<ColumnHeaderProps> = ({
                 <DropdownMenuItem onClick={handleFilterClick} className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
                   <span>Filter</span>
-                  {hasUserFilter && (
+                  {isUnsavedFilter && (
                     <span className="ml-auto h-2 w-2 bg-red-500 rounded-full" />
+                  )}
+                  {isRoutineFilter && (
+                    <span className="ml-auto h-2 w-2 bg-blue-500 rounded-full" />
                   )}
                   {hasScopeFilter && !hasUserFilter && (
                     <span className="ml-auto h-2 w-2 bg-[#31C7AD] rounded-full" />

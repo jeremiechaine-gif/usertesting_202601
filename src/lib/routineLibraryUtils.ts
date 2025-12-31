@@ -5,7 +5,7 @@
 
 import type { RoutineLibraryEntry, RoutineFilter } from './onboarding/types';
 import type { ColumnFiltersState, SortingState } from '@tanstack/react-table';
-import { getRoutine, createRoutine } from './routines';
+import { getRoutine, createRoutine, type PelicoViewPage } from './routines';
 import { getCurrentUserId } from './users';
 
 /**
@@ -149,15 +149,15 @@ export function applyGenericRoutine(
 /**
  * Map PelicoView to PelicoViewPage
  */
-function mapPelicoViewToPage(view: string): 'supply' | 'production' | 'customer' | 'escalation' | 'value-engineering' | 'event-explorer' | 'simulation' {
-  const viewMap: Record<string, 'supply' | 'production' | 'customer' | 'escalation' | 'value-engineering' | 'event-explorer' | 'simulation'> = {
+function mapPelicoViewToPage(view: string): PelicoViewPage {
+  const viewMap: Record<string, PelicoViewPage> = {
     'Supply': 'supply',
-    'Production Control': 'production',
+    'Production Control': 'so-book', // Map to Service Order Book as closest match
     'Customer Support': 'customer',
     'Escalation Room': 'escalation',
-    'Value Engineering': 'value-engineering',
-    'Event Explorer': 'event-explorer',
-    'Simulation': 'simulation',
+    'Value Engineering': 'planning', // Map to Planning as closest match
+    'Event Explorer': 'events-explorer',
+    'Simulation': 'events-explorer', // Map to Events Explorer as closest match (Simulation is not in Pelico Views sidebar)
   };
   
   return viewMap[view] || 'supply';

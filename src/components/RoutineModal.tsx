@@ -69,6 +69,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const [showNewTeamInput, setShowNewTeamInput] = useState(false);
   const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
   const [selectedObjectives, setSelectedObjectives] = useState<Objective[]>([]);
+  const [selectedPelicoView, setSelectedPelicoView] = useState<PelicoViewPage | undefined>(undefined);
   const [personasPopoverOpen, setPersonasPopoverOpen] = useState(false);
   const [createPersonaModalOpen, setCreatePersonaModalOpen] = useState(false);
   const [availablePersonas, setAvailablePersonas] = useState<string[]>([]);
@@ -121,33 +122,40 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     return ROLE_PROFILES.find(rp => rp.french === frenchName);
   };
 
+  // Available Pelico Views (matching sidebar items)
+  const PELICO_VIEWS: { value: PelicoViewPage; label: string }[] = [
+    { value: 'escalation', label: 'Escalation Room' },
+    { value: 'supply', label: 'Purchase Order Book' },
+    { value: 'so-book', label: 'Service Order Book' },
+    { value: 'customer', label: 'Customer Order Book' },
+    { value: 'wo-book', label: 'Work Order Book' },
+    { value: 'missing-parts', label: 'Missing Parts' },
+    { value: 'line-of-balance', label: 'Line of Balance' },
+    { value: 'planning', label: 'Planning' },
+    { value: 'events-explorer', label: 'Events Explorer' },
+  ];
+
   // Get PelicoView display name
   const getPelicoViewDisplayName = (view?: PelicoViewPage): string => {
     const viewMap: Record<PelicoViewPage, string> = {
-      'supply': 'Supply',
-      'production': 'Production Control',
-      'customer': 'Customer Support',
       'escalation': 'Escalation Room',
-      'value-engineering': 'Value Engineering',
-      'event-explorer': 'Event Explorer',
-      'simulation': 'Simulation',
+      'supply': 'Purchase Order Book',
+      'so-book': 'Service Order Book',
+      'customer': 'Customer Order Book',
+      'wo-book': 'Work Order Book',
+      'missing-parts': 'Missing Parts',
+      'line-of-balance': 'Line of Balance',
+      'planning': 'Planning',
+      'events-explorer': 'Events Explorer',
     };
     return view ? viewMap[view] : 'Not set';
   };
 
-  // Map PelicoViewPage to navigation page
+  // Map PelicoViewPage to navigation page (same as value for most)
   const getPelicoViewPage = (view?: PelicoViewPage): string | null => {
     if (!view) return null;
-    const pageMap: Record<PelicoViewPage, string> = {
-      'supply': 'supply',
-      'production': 'production',
-      'customer': 'customer',
-      'escalation': 'escalation',
-      'value-engineering': 'value-engineering',
-      'event-explorer': 'events-explorer',
-      'simulation': 'simulation',
-    };
-    return pageMap[view] || null;
+    // Most PelicoViewPage values match navigation page IDs directly
+    return view || null;
   };
 
   useEffect(() => {
@@ -175,6 +183,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
         setSelectedPersonas([]);
       }
       setSelectedObjectives(routine.objectives || []);
+      setSelectedPelicoView(routine.pelicoView);
     } else {
       setName('');
       setDescription('');
@@ -185,6 +194,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setShowNewTeamInput(false);
       setSelectedPersonas([]);
       setSelectedObjectives([]);
+      setSelectedPelicoView(undefined);
     }
   }, [routine, open]);
 
@@ -219,6 +229,12 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     if (!validation.isValid) {
       // Show first error (could be enhanced to show all errors)
       alert(validation.errors[0] || 'Invalid routine data');
+      return;
+    }
+
+    // Validate Pelico View is selected when creating a new routine
+    if (!routine && !selectedPelicoView) {
+      alert('Please select a Pelico View');
       return;
     }
 
@@ -260,6 +276,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       teamIds: finalTeamIds.length > 0 ? finalTeamIds : [],
       personas: englishPersonas.length > 0 ? englishPersonas : undefined,
       objectives: selectedObjectives.length > 0 ? selectedObjectives : undefined,
+      pelicoView: selectedPelicoView,
     };
 
     if (routine) {
@@ -520,31 +537,55 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
             {/* Pelico View */}
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">Pelico View</Label>
-              <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
-                    {getPelicoViewDisplayName(routine?.pelicoView)}
-                  </Badge>
+              <Label className="text-sm font-semibold">
+                Pelico View {!routine && <span className="text-destructive">*</span>}
+              </Label>
+              {routine ? (
+                // Edit mode: Read-only display with View Routine button
+                <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                      {getPelicoViewDisplayName(routine.pelicoView)}
+                    </Badge>
+                  </div>
+                  {routine.pelicoView && onNavigate && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-2"
+                      onClick={() => {
+                        const page = getPelicoViewPage(routine.pelicoView);
+                        if (page && routine.id) {
+                          // Store routine ID in sessionStorage to auto-apply it when page loads
+                          sessionStorage.setItem('pendingRoutineId', routine.id);
+                          onNavigate(page);
+                          onOpenChange(false);
+                        }
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Routine
+                    </Button>
+                  )}
                 </div>
-                {routine?.pelicoView && onNavigate && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-2"
-                    onClick={() => {
-                      const page = getPelicoViewPage(routine.pelicoView);
-                      if (page) {
-                        onNavigate(page);
-                        onOpenChange(false);
-                      }
-                    }}
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Routine
-                  </Button>
-                )}
-              </div>
+              ) : (
+                // Create mode: Dropdown to select Pelico View
+                <Select
+                  value={selectedPelicoView || ''}
+                  onValueChange={(value) => setSelectedPelicoView(value as PelicoViewPage)}
+                >
+                  <SelectTrigger className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20">
+                    <SelectValue placeholder="Select a Pelico View..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PELICO_VIEWS.map((view) => (
+                      <SelectItem key={view.value} value={view.value}>
+                        {view.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Scope Mode - Hidden */}
@@ -727,7 +768,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={!name.trim()}
+            disabled={!name.trim() || (!routine && !selectedPelicoView)}
             className="h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {routine ? 'Update' : 'Create'} Routine

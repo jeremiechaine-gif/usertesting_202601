@@ -20,7 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Info } from 'lucide-react';
-import { createRoutine, getRoutines } from '@/lib/routines';
+import { createRoutine, getRoutines, type PelicoViewPage } from '@/lib/routines';
 import { getCurrentUserId } from '@/lib/users';
 import type { 
   Persona, 
@@ -67,15 +67,15 @@ const PELICO_VIEWS: PelicoView[] = [
 ];
 
 // Map PelicoView to PelicoViewPage
-function mapPelicoViewToPage(view: PelicoView): 'supply' | 'production' | 'customer' | 'escalation' | 'value-engineering' | 'event-explorer' | 'simulation' {
-  const viewMap: Record<PelicoView, 'supply' | 'production' | 'customer' | 'escalation' | 'value-engineering' | 'event-explorer' | 'simulation'> = {
+function mapPelicoViewToPage(view: PelicoView): PelicoViewPage {
+  const viewMap: Record<PelicoView, PelicoViewPage> = {
     'Supply': 'supply',
-    'Production Control': 'production',
+    'Production Control': 'so-book', // Map to Service Order Book as closest match
     'Customer Support': 'customer',
     'Escalation Room': 'escalation',
-    'Value Engineering': 'value-engineering',
-    'Event Explorer': 'event-explorer',
-    'Simulation': 'simulation',
+    'Value Engineering': 'planning', // Map to Planning as closest match
+    'Event Explorer': 'events-explorer',
+    'Simulation': 'events-explorer', // Map to Events Explorer as closest match (Simulation is not in Pelico Views sidebar)
   };
   return viewMap[view] || 'supply';
 }

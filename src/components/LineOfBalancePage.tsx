@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
 import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
+import { Badge } from '@/components/ui/badge';
 
 export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
   const { currentScopeId, setCurrentScopeId, getScopeFilters, currentScope } = useScope();
@@ -41,6 +42,7 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const [scopeFilters, setScopeFilters] = useState<ColumnFiltersState>([]);
   const [userFilters, setUserFilters] = useState<ColumnFiltersState>([]);
+  const [routineFilters, setRoutineFilters] = useState<ColumnFiltersState>([]); // Filters from the currently selected routine
   const columnFilters = useMemo(() => {
     const combined: ColumnFiltersState = [...scopeFilters];
     userFilters.forEach(userFilter => {
@@ -134,9 +136,12 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
         });
         
         setUserFilters(normalizedFilters);
+        // Store routine filters for comparison (to show blue indicator for routine filters)
+        setRoutineFilters(normalizedFilters);
       }
     } else {
       setUserFilters([]);
+      setRoutineFilters([]);
     }
   }, [selectedRoutineId]);
 
@@ -263,7 +268,26 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
             
             {/* Page Title */}
             <div className="mb-3">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
+              {selectedRoutineId ? (() => {
+                const routine = getRoutine(selectedRoutineId);
+                return routine ? (
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                      {routine.name}
+                    </h1>
+                    <Badge
+                      variant="outline"
+                      className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
+                    >
+                      {getPelicoViewDisplayName(routine.pelicoView)}
+                    </Badge>
+                  </div>
+                ) : (
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
+                );
+              })() : (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
+              )}
             </div>
           </div>
         </div>
@@ -295,6 +319,7 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
                 onOpenFilterModal={handleOpenFilterModal}
                 scopeFilters={currentScope && currentScope.filters ? currentScope.filters.filter((f) => f.values && f.values.length > 0) : []}
                 currentScopeName={currentScope?.name}
+                routineFilters={routineFilters}
               />
             </Suspense>
           </div>
@@ -378,6 +403,7 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
                               columnFilters={columnFilters}
                               userFilters={userFilters}
                               scopeFilters={scopeFilters}
+                              routineFilters={routineFilters}
                               onSortingChange={setSorting}
                               onColumnFiltersChange={(filters) => {
                                 const scopeFilterIds = new Set(scopeFilters.map((f: any) => f.id));
