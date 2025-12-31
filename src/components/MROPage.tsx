@@ -23,7 +23,6 @@ const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover')
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
-import { RoutineDropdown } from './RoutineDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
@@ -278,17 +277,6 @@ export const MROPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?:
                   onScopeSelect={setCurrentScopeId}
                   onScopeFiltersChange={() => {}}
                 />
-                <RoutineDropdown
-                  selectedRoutineId={selectedRoutineId}
-                  onRoutineSelect={setSelectedRoutineId}
-                  currentFilters={userFilters}
-                  currentSorting={sorting}
-                  currentGroupBy={selectedGroupBy}
-                  currentPageSize={table.getState().pagination.pageSize}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  onUpdateRoutine={handleUpdateRoutine}
-                  onSaveAsRoutine={handleSaveAsRoutine}
-                />
               </div>
 
               <div className="flex items-center gap-2">
@@ -489,84 +477,106 @@ export const MROPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?:
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gradient-to-t from-muted/30 to-background border-t shadow-inner flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="gap-2 hover:bg-accent transition-colors">
-              <span className="text-base">Σ</span>
-              Show Page Totals
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Page Size:</span>
-              <Select
-                value={String(table.getState().pagination.pageSize)}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="w-[100px] border-border/60 hover:border-[#31C7AD]/40 transition-colors">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                  <SelectItem value="200">200</SelectItem>
-                  <SelectItem value="500">500</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Pagination - Responsive */}
+        <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-t from-muted/30 to-background border-t shadow-inner">
+          {/* Mobile: Stack vertically, Desktop: Horizontal layout */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-6">
+            {/* Show Page Totals - Icon only on mobile */}
+            <div className="flex items-center justify-between sm:justify-start">
+              <Button variant="ghost" size="sm" className="gap-1.5 sm:gap-2 hover:bg-accent transition-colors">
+                <span className="text-base">Σ</span>
+                <span className="hidden sm:inline">Show Page Totals</span>
+              </Button>
             </div>
             
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40">
-              <span className="text-sm font-medium">
-                {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
-                {Math.min(
-                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                  table.getFilteredRowModel().rows.length
-                )}{' '}
-                of <span className="font-semibold text-[#2063F0]">{table.getFilteredRowModel().rows.length}</span>
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border/60 shadow-sm">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="px-3 text-sm font-semibold text-foreground min-w-[80px] text-center">
-                {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </Button>
+            {/* Controls Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 lg:gap-6">
+              {/* Page Size - Label hidden on mobile */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="hidden sm:inline text-sm font-medium text-muted-foreground">Page Size:</span>
+                <Select
+                  value={String(table.getState().pagination.pageSize)}
+                  onValueChange={(value) => table.setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-full sm:w-[100px] border-border/60 hover:border-[#31C7AD]/40 transition-colors">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="200">200</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Page Info - Compact on mobile */}
+              <div className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-muted/40">
+                <span className="text-xs sm:text-sm font-medium">
+                  <span className="hidden sm:inline">
+                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+                    {Math.min(
+                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                      table.getFilteredRowModel().rows.length
+                    )}{' '}
+                    of{' '}
+                  </span>
+                  <span className="sm:hidden">
+                    {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-{Math.min(
+                      (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                      table.getFilteredRowModel().rows.length
+                    )}{' '}/{' '}
+                  </span>
+                  <span className="font-semibold text-[#2063F0]">{table.getFilteredRowModel().rows.length}</span>
+                </span>
+              </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-center sm:justify-end gap-1 bg-muted/50 p-1 rounded-lg border border-border/60 shadow-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="First page"
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
+                <span className="px-2 sm:px-3 text-xs sm:text-sm font-semibold text-foreground min-w-[60px] sm:min-w-[80px] text-center">
+                  {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] transition-all disabled:opacity-50"
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Last page"
+                >
+                  <ChevronsRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -668,6 +678,7 @@ export const MROPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?:
           currentSorting={sorting}
           currentGroupBy={selectedGroupBy}
           currentPageSize={table.getState().pagination.pageSize}
+          currentPelicoView={undefined}
         />
       )}
     </div>

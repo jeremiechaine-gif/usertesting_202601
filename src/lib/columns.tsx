@@ -304,6 +304,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Escalation Level',
         cell: (info) => <EscalationIndicator level={info.getValue()} />,
         size: 80,
+        filterFn: customFilterFn,
         enableResizing: true,
       }),
       columnHelper.accessor('partNumber', {
@@ -359,6 +360,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm">{info.getValue().toLocaleString()}</span>
         ),
         size: 120,
+        filterFn: customFilterFn,
         enableResizing: true,
       }),
       columnHelper.accessor('price', {
@@ -368,6 +370,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm font-medium">{formatCurrency(info.getValue())}</span>
         ),
         size: 130,
+        filterFn: customFilterFn,
         enableResizing: true,
       }),
       columnHelper.accessor('inventoryValue', {
@@ -377,6 +380,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
           <span className="text-sm font-medium">{formatCurrency(info.getValue())}</span>
         ),
         size: 140,
+        filterFn: customFilterFn,
         enableResizing: true,
       }),
       columnHelper.accessor('supplier', {
@@ -414,6 +418,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       );
     },
     size: 100,
+    filterFn: customFilterFn,
     enableResizing: true,
     meta: {
       headerTint: 'green',
@@ -429,6 +434,7 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
       return <span className="text-sm">{formatted}</span>;
     },
     size: 100,
+    filterFn: customFilterFn,
     enableResizing: true,
     meta: {
       headerTint: 'green',

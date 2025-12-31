@@ -45,6 +45,8 @@ interface RoutineModalProps {
   currentPageSize?: number;
   // Navigation function for viewing routine
   onNavigate?: (page: string) => void;
+  // Current Pelico View when creating from a Pelico View page (hides dropdown)
+  currentPelicoView?: PelicoViewPage;
 }
 
 export const RoutineModal: React.FC<RoutineModalProps> = ({
@@ -57,6 +59,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   currentGroupBy = null,
   currentPageSize = 100,
   onNavigate,
+  currentPelicoView,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -194,9 +197,10 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setShowNewTeamInput(false);
       setSelectedPersonas([]);
       setSelectedObjectives([]);
-      setSelectedPelicoView(undefined);
+      // Use currentPelicoView if provided (when creating from a Pelico View page)
+      setSelectedPelicoView(currentPelicoView);
     }
-  }, [routine, open]);
+  }, [routine, open, currentPelicoView]);
 
   // Handle persona creation
   const handlePersonaCreated = (personaName: string) => {
@@ -233,10 +237,14 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     }
 
     // Validate Pelico View is selected when creating a new routine
-    if (!routine && !selectedPelicoView) {
+    // If currentPelicoView is provided, it's already set, so no need to check
+    if (!routine && !selectedPelicoView && !currentPelicoView) {
       alert('Please select a Pelico View');
       return;
     }
+    
+    // Use currentPelicoView if provided, otherwise use selectedPelicoView
+    const finalPelicoView = currentPelicoView || selectedPelicoView;
 
     // Handle new team creation if manager
     let finalTeamIds: string[] = [...selectedTeamIds];
@@ -276,7 +284,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       teamIds: finalTeamIds.length > 0 ? finalTeamIds : [],
       personas: englishPersonas.length > 0 ? englishPersonas : undefined,
       objectives: selectedObjectives.length > 0 ? selectedObjectives : undefined,
-      pelicoView: selectedPelicoView,
+      pelicoView: finalPelicoView!,
     };
 
     if (routine) {
@@ -538,17 +546,17 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
             {/* Pelico View */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold">
-                Pelico View {!routine && <span className="text-destructive">*</span>}
+                Pelico View {!routine && !currentPelicoView && <span className="text-destructive">*</span>}
               </Label>
-              {routine ? (
-                // Edit mode: Read-only display with View Routine button
+              {routine || (currentPelicoView && !routine) ? (
+                // Edit mode OR Create mode from Pelico View page: Read-only display
                 <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
-                      {getPelicoViewDisplayName(routine.pelicoView)}
+                      {getPelicoViewDisplayName(routine?.pelicoView || currentPelicoView)}
                     </Badge>
                   </div>
-                  {routine.pelicoView && onNavigate && (
+                  {(routine?.pelicoView || currentPelicoView) && onNavigate && routine && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -569,7 +577,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                   )}
                 </div>
               ) : (
-                // Create mode: Dropdown to select Pelico View
+                // Create mode from Scope & Routines: Dropdown to select Pelico View
                 <Select
                   value={selectedPelicoView || ''}
                   onValueChange={(value) => setSelectedPelicoView(value as PelicoViewPage)}
@@ -585,6 +593,9 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {!routine && !selectedPelicoView && !currentPelicoView && (
+                <p className="text-xs text-destructive">Pelico View is required for new routines.</p>
               )}
             </div>
 
