@@ -2,12 +2,12 @@
  * Onboarding Routine Library
  * 
  * Normalized routine library with tags for multiple discovery paths.
- * Each routine can belong to multiple personas and have multiple objectives.
+ * Each routine can belong to multiple Role profiles and have multiple objectives.
  * 
  * Naming convention for IDs: kebab-case, descriptive (e.g., 'commandes-sans-ar')
  * 
- * IMPORTANT: Routines with identical labels across personas share the same ID
- * (e.g., "Suivi des priorités" appears for multiple personas but has one ID)
+ * IMPORTANT: Routines with identical labels across Role profiles share the same ID
+ * (e.g., "Suivi des priorités" appears for multiple Role profiles but has one ID)
  */
 
 import type {
@@ -847,7 +847,7 @@ export const ROUTINE_LIBRARY: RoutineLibraryEntry[] = [
 ];
 
 /**
- * Default routine sets per persona
+ * Default routine sets per Role profile
  * These are preselected when a user selects a role
  */
 export const PERSONA_DEFAULT_SETS: PersonaDefaultSets = {
@@ -993,14 +993,14 @@ export function getRoutineById(id: string): RoutineLibraryEntry | undefined {
 }
 
 /**
- * Get all routines for a persona
+ * Get all routines for a Role profile
  */
 export function getRoutinesByPersona(persona: Persona): RoutineLibraryEntry[] {
   return ROUTINE_LIBRARY.filter((r) => r.personas.includes(persona));
 }
 
 /**
- * Get default routines for a persona
+ * Get default routines for a Role profile
  */
 export function getDefaultRoutinesForPersona(persona: Persona): RoutineLibraryEntry[] {
   const defaultIds = PERSONA_DEFAULT_SETS[persona] || [];

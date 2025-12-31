@@ -2,7 +2,7 @@
  * Simple Onboarding Wizard
  * 
  * Progressive 4-step flow:
- * 0. Welcome + Create teams (from personas or manually)
+ * 0. Welcome + Create teams (from Role profiles or manually)
  * 1. Add members to each team
  * 2. Create and apply scopes for each member
  * 3. Choose routines for each team (with sub-step modal)
@@ -29,8 +29,8 @@ export interface SimpleTeamConfig {
   id: string;
   name: string;
   description?: string;
-  persona?: string; // French persona name if created from persona
-  personas?: string[]; // Multiple personas (optional, helps with routine suggestions)
+  persona?: string; // French Role profile name if created from Role profile
+  personas?: string[]; // Multiple Role profiles (optional, helps with routine suggestions)
   assignedRoutineIds: string[];
   memberIds: string[];
   createdAt: string;
@@ -475,7 +475,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               <div>
                 <h2 className="text-2xl font-bold">{stepLabels[step]}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {step === 0 && 'Welcome and create teams from personas or manually'}
+                  {step === 0 && 'Welcome and create teams from Role profiles or manually'}
                   {step === 1 && 'Add members to each team'}
                   {step === 2 && 'Assign scopes to team members'}
                   {step === 3 && 'Assign routines to each team'}

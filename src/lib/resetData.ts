@@ -10,6 +10,7 @@ const ONBOARDING_TASKS_STORAGE_KEY = 'pelico-onboarding-tasks-status';
 const ONBOARDING_STATE_KEY = 'pelico-onboarding-state';
 const TEAM_WIZARD_PERSONAS_KEY = 'pelico-team-wizard-personas';
 const TEAMS_STORAGE_KEY = 'pelico-teams';
+const CUSTOM_PERSONAS_STORAGE_KEY = 'pelico-custom-personas';
 
 /**
  * Reset all onboarding data
@@ -38,6 +39,9 @@ export function resetScopesAndRoutines(): void {
     
     // Reset team wizard personas
     localStorage.removeItem(TEAM_WIZARD_PERSONAS_KEY);
+    
+    // Reset custom personas
+    localStorage.removeItem(CUSTOM_PERSONAS_STORAGE_KEY);
     
     // Reset user assignments (scopes and routines assigned during onboarding)
     // Note: We preserve users but reset their assignments

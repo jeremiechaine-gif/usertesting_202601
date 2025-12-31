@@ -8,8 +8,8 @@
  * 
  * Data Model:
  * - Normalized routine library with tags for multiple entry points
- * - Default sets per persona (list of routine IDs)
- * - Scoring function computes relevance based on persona + intents
+ * - Default sets per Role profile (list of routine IDs)
+ * - Scoring function computes relevance based on Role profile + intents
  */
 
 export type Persona =
@@ -66,13 +66,13 @@ export interface RoutineFilter {
 
 /**
  * Routine Library Entry
- * Normalized structure supporting multiple personas and discovery paths
+ * Normalized structure supporting multiple Role profiles and discovery paths
  */
 export interface RoutineLibraryEntry {
   id: string; // Stable identifier (e.g., 'commandes-sans-ar')
   label: string; // Short neutral name (e.g., 'Commandes sans AR')
   description: string; // 1 line, value-oriented
-  personas: Persona[]; // Primary + secondary personas
+  personas: Persona[]; // Primary + secondary Role profiles
   objectives: Objective[]; // What this routine helps achieve
   horizon: Horizon;
   impactZones: ImpactZone[];
@@ -87,8 +87,8 @@ export interface RoutineLibraryEntry {
 }
 
 /**
- * Default routine sets per persona
- * Maps persona to list of routine IDs that should be preselected
+ * Default routine sets per Role profile
+ * Maps Role profile to list of routine IDs that should be preselected
  */
 export type PersonaDefaultSets = Record<Persona, string[]>;
 

@@ -536,23 +536,6 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                 );
               })}
             </div>
-
-            {/* Create Scope Option */}
-            {availableScopes.length === 0 && (
-              <div className="p-4 rounded-xl border-2 border-dashed border-border bg-muted/30 text-center">
-                <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-                <p className="text-sm text-muted-foreground mb-3">No scopes available</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setScopeModalOpen(true)}
-                  className="h-9"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Create Scope
-                </Button>
-              </div>
-            )}
           </div>
         </ScrollArea>
       </div>

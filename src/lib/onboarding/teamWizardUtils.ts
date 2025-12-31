@@ -12,7 +12,7 @@ import { createUser, getUsers, type User } from '../users';
 import { getScopes, type Scope } from '../scopes';
 
 /**
- * Mapping from French persona names (used in UI) to English persona names (used in types)
+ * Mapping from French Role profile names (used in UI) to English Role profile names (used in types)
  */
 const PERSONA_FR_TO_EN: Record<string, Persona> = {
   'Approvisionneur': 'Supply Planner',
@@ -30,13 +30,13 @@ const PERSONA_FR_TO_EN: Record<string, Persona> = {
 };
 
 /**
- * Get personas selected in the "Create Routine" wizard
- * Returns personas from localStorage if available, otherwise empty array
- * Converts French persona names to English persona names
+ * Get Role profiles selected in the "Create Routine" wizard
+ * Returns Role profiles from localStorage if available, otherwise empty array
+ * Converts French Role profile names to English Role profile names
  * 
  * Checks two locations:
  * 1. Current onboarding state (if wizard is still open)
- * 2. Saved personas for Team Wizard (if wizard was completed)
+ * 2. Saved Role profiles for Team Wizard (if wizard was completed)
  */
 export const getPersonasFromRoutineWizard = (): Persona[] => {
   if (typeof window === 'undefined') return [];
@@ -46,12 +46,12 @@ export const getPersonasFromRoutineWizard = (): Persona[] => {
     const stored = localStorage.getItem('pelico-onboarding-state');
     if (stored) {
       const state = JSON.parse(stored);
-      // Return personas if they were selected (not from "Complete List")
+      // Return Role profiles if they were selected (not from "Complete List")
       if (state.selectedPersonas && Array.isArray(state.selectedPersonas) && state.selectedPersonas.length > 0) {
-        // Convert French persona names to English persona names
+        // Convert French Role profile names to English Role profile names
         const englishPersonas = state.selectedPersonas
           .map((persona: string) => {
-            // Check if it's already in English (valid Persona)
+            // Check if it's already in English (valid Role profile)
             if (Object.values(PERSONA_FR_TO_EN).includes(persona as Persona)) {
               return persona as Persona;
             }
@@ -59,12 +59,12 @@ export const getPersonasFromRoutineWizard = (): Persona[] => {
             return PERSONA_FR_TO_EN[persona];
           })
           .filter((persona: Persona | undefined): persona is Persona => {
-            // Filter out undefined values and keep only valid Personas
+            // Filter out undefined values and keep only valid Role profiles
             return persona !== undefined && Object.values(PERSONA_FR_TO_EN).includes(persona);
           });
         
-        console.log('[getPersonasFromRoutineWizard] From current state - French personas:', state.selectedPersonas);
-        console.log('[getPersonasFromRoutineWizard] From current state - English personas:', englishPersonas);
+        console.log('[getPersonasFromRoutineWizard] From current state - French Role profiles:', state.selectedPersonas);
+        console.log('[getPersonasFromRoutineWizard] From current state - English Role profiles:', englishPersonas);
         
         if (englishPersonas.length > 0) {
           return englishPersonas;
@@ -72,15 +72,15 @@ export const getPersonasFromRoutineWizard = (): Persona[] => {
       }
     }
     
-    // If not found in current state, try to get from saved personas for Team Wizard
+    // If not found in current state, try to get from saved Role profiles for Team Wizard
     const savedPersonas = localStorage.getItem('pelico-team-wizard-personas');
     if (savedPersonas) {
       const teamWizardState = JSON.parse(savedPersonas);
       if (teamWizardState.selectedPersonas && Array.isArray(teamWizardState.selectedPersonas) && teamWizardState.selectedPersonas.length > 0) {
-        // Convert French persona names to English persona names
+        // Convert French Role profile names to English Role profile names
         const englishPersonas = teamWizardState.selectedPersonas
           .map((persona: string) => {
-            // Check if it's already in English (valid Persona)
+            // Check if it's already in English (valid Role profile)
             if (Object.values(PERSONA_FR_TO_EN).includes(persona as Persona)) {
               return persona as Persona;
             }
@@ -88,12 +88,12 @@ export const getPersonasFromRoutineWizard = (): Persona[] => {
             return PERSONA_FR_TO_EN[persona];
           })
           .filter((persona: Persona | undefined): persona is Persona => {
-            // Filter out undefined values and keep only valid Personas
+            // Filter out undefined values and keep only valid Role profiles
             return persona !== undefined && Object.values(PERSONA_FR_TO_EN).includes(persona);
           });
         
-        console.log('[getPersonasFromRoutineWizard] From saved state - French personas:', teamWizardState.selectedPersonas);
-        console.log('[getPersonasFromRoutineWizard] From saved state - English personas:', englishPersonas);
+        console.log('[getPersonasFromRoutineWizard] From saved state - French Role profiles:', teamWizardState.selectedPersonas);
+        console.log('[getPersonasFromRoutineWizard] From saved state - English Role profiles:', englishPersonas);
         
         if (englishPersonas.length > 0) {
           return englishPersonas;
@@ -141,8 +141,8 @@ export const wasCompleteListSelected = (): boolean => {
 };
 
 /**
- * Get unique personas from routines created by current user
- * Fallback method if personas weren't stored directly
+ * Get unique Role profiles from routines created by current user
+ * Fallback method if Role profiles weren't stored directly
  */
 export const getPersonasFromCreatedRoutines = (): Persona[] => {
   const routines = getRoutines();
@@ -154,7 +154,7 @@ export const getPersonasFromCreatedRoutines = (): Persona[] => {
   const personasSet = new Set<Persona>();
   
   for (const routine of userRoutines) {
-    // Try to find the routine in the library to get its personas
+    // Try to find the routine in the library to get its Role profiles
     // We need to match by name since routine IDs are different
     const libraryRoutine = ROUTINE_LIBRARY.find(
       (lr: any) => lr.label === routine.name
@@ -178,7 +178,7 @@ export const getCreatedRoutines = () => {
 };
 
 /**
- * Get suggested routines for a persona
+ * Get suggested routines for a Role profile
  */
 export const getSuggestedRoutinesForPersona = (persona: Persona): string[] => {
   const routines = getCreatedRoutines();

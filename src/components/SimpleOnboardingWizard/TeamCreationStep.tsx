@@ -1,7 +1,7 @@
 /**
  * Step 0: Team Creation with Substeps
- * Substep 0.1: Choose mode (Create from personas / Manual setup)
- * Substep 0.2a: Select personas (if personas mode)
+ * Substep 0.1: Choose mode (Create from Role profiles / Manual setup)
+ * Substep 0.2a: Select Role profiles (if Role profiles mode)
  * Substep 0.2b: Manual team creation (if manual mode)
  */
 
@@ -13,26 +13,92 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Users, Settings, ArrowLeft, User, Plus, Sparkles, ChevronDown, X, CheckCircle2 } from 'lucide-react';
+import { Users, Settings, ArrowLeft, User, Plus, Sparkles, ChevronDown, X, CheckCircle2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig, TeamCreationMode } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
+import { getAllAvailablePersonas, getCustomPersonas } from '@/lib/personas';
+import { CreatePersonaModal } from './CreatePersonaModal';
+import { getRoutines } from '@/lib/routines';
+import { getCurrentUserId } from '@/lib/users';
 
-// French personas (as shown in the image)
-const PERSONAS = [
-  'Approvisionneur',
-  'Acheteur',
-  'Manager Appro',
-  'Ordonnanceur Assemblage',
-  'Ordonnanceur',
-  'Master Planner',
-  'Support Logistique',
-  'Recette',
-  'Responsable Supply Chain',
-  'Directeur Supply Chain',
-  'Responsable Ordo & Support log',
-  'Autre / Mixte',
+// Role profile definitions with translations and descriptions
+interface RoleProfileInfo {
+  french: string;
+  english: string;
+  description: string;
+}
+
+const ROLE_PROFILES: RoleProfileInfo[] = [
+  {
+    french: 'Approvisionneur',
+    english: 'Supply Planner',
+    description: 'Manages supplier orders and inventory levels to ensure production continuity'
+  },
+  {
+    french: 'Acheteur',
+    english: 'Buyer',
+    description: 'Handles purchasing negotiations and supplier relationships'
+  },
+  {
+    french: 'Manager Appro',
+    english: 'Procurement Manager',
+    description: 'Oversees procurement strategy and team performance'
+  },
+  {
+    french: 'Ordonnanceur Assemblage',
+    english: 'Assembly Scheduler',
+    description: 'Plans and schedules assembly operations and production sequences'
+  },
+  {
+    french: 'Ordonnanceur',
+    english: 'Scheduler',
+    description: 'Coordinates production schedules and resource allocation'
+  },
+  {
+    french: 'Master Planner',
+    english: 'Master Planner',
+    description: 'Develops strategic production plans and manages customer commitments'
+  },
+  {
+    french: 'Support Logistique',
+    english: 'Logistics Support',
+    description: 'Manages customer deliveries and shipping coordination'
+  },
+  {
+    french: 'Recette',
+    english: 'Quality Control',
+    description: 'Ensures product quality and compliance with standards'
+  },
+  {
+    french: 'Responsable Supply Chain',
+    english: 'Supply Chain Manager',
+    description: 'Leads supply chain operations and strategic planning'
+  },
+  {
+    french: 'Directeur Supply Chain',
+    english: 'Supply Chain Director',
+    description: 'Defines supply chain strategy and executive oversight'
+  },
+  {
+    french: 'Responsable Ordo & Support log',
+    english: 'Scheduling & Logistics Manager',
+    description: 'Manages both production scheduling and logistics operations'
+  },
+  {
+    french: 'Autre / Mixte',
+    english: 'Other / Mixed',
+    description: 'Combines multiple roles or custom responsibilities'
+  },
 ];
+
+// Helper function to get role profile info
+const getRoleProfileInfo = (frenchName: string): RoleProfileInfo | undefined => {
+  return ROLE_PROFILES.find(rp => rp.french === frenchName);
+};
+
+// For backward compatibility, keep the list of French names
+const PERSONAS = ROLE_PROFILES.map(rp => rp.french);
 
 export type TeamCreationSubstep = 'welcome' | 'mode-selection' | 'persona-selection' | 'manual-creation';
 
@@ -67,12 +133,15 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   const [manualTeamDescription, setManualTeamDescription] = useState('');
   const [manualTeamPersonas, setManualTeamPersonas] = useState<string[]>([]);
   const [personasPopoverOpen, setPersonasPopoverOpen] = useState(false);
+  const [createPersonaModalOpen, setCreatePersonaModalOpen] = useState(false);
+  const [availablePersonas, setAvailablePersonas] = useState<string[]>(getAllAvailablePersonas());
+  const [personaSearchQuery, setPersonaSearchQuery] = useState('');
   const onStep0ContinueRef = useRef(onStep0Continue);
 
   // Generate team ID
   const generateTeamId = () => `team-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  // Map French persona names to English for ROUTINE_LIBRARY lookup
+  // Map French Role profile names to English for ROUTINE_LIBRARY lookup
   const PERSONA_FR_TO_EN: Record<string, string> = {
     'Approvisionneur': 'Supply Planner',
     'Acheteur': 'Buyer',
@@ -88,12 +157,36 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     'Autre / Mixte': 'Other / Mixed',
   };
 
-  // Get suggested routines for persona
+  // Get suggested routines for Role profile
   const getSuggestedRoutinesForPersona = (persona: string): string[] => {
-    const englishPersona = PERSONA_FR_TO_EN[persona] || persona;
-    return ROUTINE_LIBRARY
-      .filter(r => r.personas.includes(englishPersona as any))
-      .map(r => r.id);
+    const routineIds: string[] = [];
+    
+    // 1. Check library routines (for predefined Role profiles)
+    const englishPersona = PERSONA_FR_TO_EN[persona];
+    if (englishPersona) {
+      const libraryRoutineIds = ROUTINE_LIBRARY
+        .filter(r => r.personas.includes(englishPersona as any))
+        .map(r => r.id);
+      routineIds.push(...libraryRoutineIds);
+    }
+    
+    // 2. Check user-created routines (for custom Role profiles or if they contain this Role profile)
+    const userRoutines = getRoutines().filter(r => r.createdBy === getCurrentUserId());
+    for (const routine of userRoutines) {
+      // Check if routine has Role profiles and if this Role profile is in the list
+      if (routine.personas && routine.personas.length > 0) {
+        // Check if Role profile matches (case-insensitive comparison)
+        const matches = routine.personas.some(p => 
+          p.toLowerCase() === persona.toLowerCase() || 
+          p.toLowerCase() === englishPersona?.toLowerCase()
+        );
+        if (matches && !routineIds.includes(routine.id)) {
+          routineIds.push(routine.id);
+        }
+      }
+    }
+    
+    return routineIds;
   };
 
   // Handle mode selection
@@ -106,14 +199,14 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     }
   };
 
-  // Get personas that already have teams
+  // Get Role profiles that already have teams
   const getPersonasWithTeams = (): string[] => {
     return teams
       .filter(team => team.persona)
       .map(team => team.persona!);
   };
 
-  // Handle persona selection
+  // Handle Role profile selection
   const handlePersonaToggle = (persona: string) => {
     const personasWithTeams = getPersonasWithTeams();
     const hasExistingTeam = personasWithTeams.includes(persona);
@@ -129,25 +222,25 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
         onTeamsUpdate(updatedTeams);
       }
     } else {
-      // Select: only allow if persona doesn't already have a team
+      // Select: only allow if Role profile doesn't already have a team
       if (!hasExistingTeam) {
         setSelectedPersonas(prev => [...prev, persona]);
       }
     }
   };
 
-  // Create teams from selected personas
+  // Create teams from selected Role profiles
   const handleCreateFromPersonas = () => {
     if (selectedPersonas.length === 0) return;
 
     const personasWithTeams = getPersonasWithTeams();
-    // Only create teams for personas that don't already have teams
+    // Only create teams for Role profiles that don't already have teams
     const personasToCreate = selectedPersonas.filter(persona => !personasWithTeams.includes(persona));
 
     if (personasToCreate.length === 0) return;
 
     const newTeams: SimpleTeamConfig[] = personasToCreate.map(persona => {
-      // Automatically assign suggested routines based on persona
+      // Automatically assign suggested routines based on Role profile
       const suggestedRoutineIds = getSuggestedRoutinesForPersona(persona);
       
       return {
@@ -163,7 +256,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     });
 
     onTeamsUpdate([...teams, ...newTeams]);
-    // Keep personas with existing teams selected, remove only newly created ones
+    // Keep Role profiles with existing teams selected, remove only newly created ones
     setSelectedPersonas(prev => prev.filter(persona => personasWithTeams.includes(persona)));
     setCreationMode(null);
     // Don't return to mode-selection, let the continue handler proceed to next step
@@ -192,7 +285,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     // Don't reset creationMode - allow user to create more teams
   };
 
-  // Handle persona toggle for manual team
+  // Handle Role profile toggle for manual team
   const handleManualPersonaToggle = (persona: string) => {
     setManualTeamPersonas(prev => 
       prev.includes(persona) 
@@ -201,7 +294,36 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     );
   };
 
-  // Pre-select personas that already have teams when entering persona-selection
+  // Handle Role profile creation
+  const handlePersonaCreated = (personaName: string) => {
+    // Refresh available Role profiles list
+    setAvailablePersonas(getAllAvailablePersonas());
+    // Add the newly created persona to the current selection
+    if (currentSubstep === 'manual-creation') {
+      setManualTeamPersonas(prev => [...prev, personaName]);
+    } else if (currentSubstep === 'persona-selection') {
+      setSelectedPersonas(prev => [...prev, personaName]);
+    }
+    setPersonasPopoverOpen(false);
+  };
+
+  // Refresh available Role profiles when popover opens
+  useEffect(() => {
+    if (personasPopoverOpen) {
+      setAvailablePersonas(getAllAvailablePersonas());
+    } else {
+      // Reset search when popover closes
+      setPersonaSearchQuery('');
+    }
+  }, [personasPopoverOpen]);
+
+  // Filter Role profiles based on search query
+  const filteredPersonas = availablePersonas.filter((persona) => {
+    if (!personaSearchQuery.trim()) return true;
+    return persona.toLowerCase().includes(personaSearchQuery.toLowerCase().trim());
+  });
+
+  // Pre-select Role profiles that already have teams when entering Role profile-selection
   useEffect(() => {
     if (currentSubstep === 'persona-selection') {
       const personasWithTeams = teams
@@ -358,9 +480,9 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                       Recommended
                     </Badge>
                   </div>
-                  <h3 className="text-lg font-bold mb-2">Create teams from personas</h3>
+                  <h3 className="text-lg font-bold mb-2">Create teams from Role profiles</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Select one or more personas to automatically create teams with suggested routines
+                    Select one or more Role profiles to automatically create teams with suggested routines
                   </p>
                 </button>
 
@@ -389,12 +511,12 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
               <div className="flex-1">
                 <p className="text-sm font-medium mb-1">
                   {currentSubstep === 'mode-selection' && 'Choose how to create teams'}
-                  {currentSubstep === 'persona-selection' && 'Select personas for your teams'}
+                  {currentSubstep === 'persona-selection' && 'Select Role profiles for your teams'}
                   {currentSubstep === 'manual-creation' && 'Create team manually'}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {currentSubstep === 'mode-selection' && 'Select how you\'d like to create your teams'}
-                  {currentSubstep === 'persona-selection' && 'Select one or more personas to automatically create teams'}
+                  {currentSubstep === 'persona-selection' && 'Select one or more Role profiles to automatically create teams'}
                   {currentSubstep === 'manual-creation' && 'Enter team details to create a custom team'}
                 </p>
               </div>
@@ -441,12 +563,44 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
           {/* Substep 0.2a: Persona Selection */}
           {currentSubstep === 'persona-selection' && (
             <div className="space-y-4">
+              {/* Header with Create button */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    {availablePersonas.length} Role profile{availablePersonas.length !== 1 ? 's' : ''} available
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreatePersonaModalOpen(true)}
+                  className="h-7 gap-1.5 text-xs"
+                >
+                  <Plus className="h-3 w-3" />
+                  Create new Role profile
+                </Button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {PERSONAS.map((persona) => {
+                {availablePersonas.map((persona) => {
                   const isSelected = selectedPersonas.includes(persona);
                   const hasExistingTeam = getPersonasWithTeams().includes(persona);
                   const isNewSelection = isSelected && !hasExistingTeam;
                   const isExistingSelection = isSelected && hasExistingTeam;
+                  
+                  // Get role profile info (for predefined roles) or use custom role name
+                  const roleInfo = getRoleProfileInfo(persona);
+                  let displayName = roleInfo ? roleInfo.english : persona;
+                  let description = roleInfo ? roleInfo.description : 'Custom role profile';
+                  
+                  // If it's a custom role profile, try to get its description
+                  if (!roleInfo) {
+                    const customPersonas = getCustomPersonas();
+                    const customPersona = customPersonas.find(cp => cp.name === persona);
+                    if (customPersona) {
+                      displayName = customPersona.name;
+                      description = customPersona.description || 'Custom role profile';
+                    }
+                  }
                   
                   return (
                     <button
@@ -454,7 +608,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                       onClick={() => handlePersonaToggle(persona)}
                       disabled={!isSelected && hasExistingTeam}
                       className={cn(
-                        'group relative flex items-center justify-between p-4 rounded-xl transition-all text-left border-2 hover:shadow-md',
+                        'group relative flex flex-col p-4 rounded-xl transition-all text-left border-2 hover:shadow-md',
                         isExistingSelection
                           ? 'border-[#31C7AD] bg-gradient-to-br from-[#31C7AD]/10 to-[#31C7AD]/5 shadow-lg shadow-[#31C7AD]/10'
                           : isNewSelection
@@ -464,7 +618,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                           : 'border-border bg-background hover:border-[#31C7AD]/50 hover:bg-gradient-to-br hover:from-[#31C7AD]/5 hover:to-transparent'
                       )}
                     >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex items-start gap-3 w-full">
                         <div
                           className={cn(
                             'p-2.5 rounded-lg transition-all shrink-0',
@@ -482,14 +636,14 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                             )}
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0 flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className={cn(
-                              'text-sm font-medium truncate',
+                              'text-sm font-semibold',
                               isExistingSelection && 'text-[#31C7AD]',
                               isNewSelection && 'text-[#2063F0]'
                             )}>
-                              {persona}
+                              {displayName}
                             </span>
                             {hasExistingTeam && (
                               <Badge className="text-xs h-4 px-1.5 bg-[#31C7AD]/20 text-[#31C7AD] border-[#31C7AD]/30 shrink-0">
@@ -497,18 +651,26 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                               </Badge>
                             )}
                           </div>
+                          <p className={cn(
+                            'text-xs leading-snug',
+                            (isSelected || hasExistingTeam) 
+                              ? 'text-muted-foreground' 
+                              : 'text-muted-foreground/80 group-hover:text-muted-foreground'
+                          )}>
+                            {description}
+                          </p>
                         </div>
+                        {isSelected && (
+                          <div className={cn(
+                            "flex items-center justify-center w-5 h-5 rounded-full shrink-0 mt-0.5",
+                            isExistingSelection ? "bg-[#31C7AD]" : "bg-[#2063F0]"
+                          )}>
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
                       </div>
-                      {isSelected && (
-                        <div className={cn(
-                          "flex items-center justify-center w-5 h-5 rounded-full shrink-0",
-                          isExistingSelection ? "bg-[#31C7AD]" : "bg-[#2063F0]"
-                        )}>
-                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      )}
                     </button>
                   );
                 })}
@@ -600,7 +762,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-2 block">
-                      Personas (optional)
+                      Role profiles (optional)
                       <span className="text-xs text-muted-foreground ml-2 font-normal">
                         Help us suggest relevant routines
                       </span>
@@ -610,15 +772,33 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                         <Button
                           variant="outline"
                           role="combobox"
-                          className="w-full justify-between"
+                          className="w-full justify-between min-h-[42px] h-auto py-2"
                         >
                           {manualTeamPersonas.length === 0 ? (
-                            <span className="text-muted-foreground">Select personas...</span>
+                            <span className="text-muted-foreground">Select Role profiles...</span>
                           ) : (
-                            <span className="flex items-center gap-2 flex-wrap">
+                            <span className="flex items-center gap-1.5 flex-wrap flex-1 text-left">
                               {manualTeamPersonas.map((persona) => (
-                                <Badge key={persona} variant="secondary" className="text-xs">
-                                  {persona}
+                                <Badge
+                                  key={persona}
+                                  variant="secondary"
+                                  className="text-xs flex items-center gap-1 pr-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleManualPersonaToggle(persona);
+                                  }}
+                                >
+                                  <span>{persona}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleManualPersonaToggle(persona);
+                                    }}
+                                    className="ml-0.5 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                                    aria-label={`Remove ${persona}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
                                 </Badge>
                               ))}
                             </span>
@@ -627,49 +807,87 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
+                        <div className="p-2 border-b border-border">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search Role profiles..."
+                              value={personaSearchQuery}
+                              onChange={(e) => setPersonaSearchQuery(e.target.value)}
+                              className="pl-8 h-9"
+                              autoFocus
+                            />
+                            {personaSearchQuery && (
+                              <button
+                                onClick={() => setPersonaSearchQuery('')}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                aria-label="Clear search"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                         <ScrollArea className="h-64">
                           <div className="p-2">
-                            {PERSONAS.map((persona) => {
-                              const isSelected = manualTeamPersonas.includes(persona);
-                              return (
-                                <div
-                                  key={persona}
-                                  className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-                                  onClick={() => handleManualPersonaToggle(persona)}
-                                >
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={() => handleManualPersonaToggle(persona)}
-                                  />
-                                  <label className="text-sm font-medium leading-none cursor-pointer flex-1">
-                                    {persona}
-                                  </label>
+                            {filteredPersonas.length === 0 ? (
+                              <div className="py-6 text-center text-sm text-muted-foreground">
+                                <p className="mb-2">No Role profiles found</p>
+                                {personaSearchQuery && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPersonasPopoverOpen(false);
+                                      setCreatePersonaModalOpen(true);
+                                    }}
+                                    className="text-[#2063F0] hover:text-[#1a54d8]"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Create "{personaSearchQuery}"
+                                  </Button>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {filteredPersonas.map((persona) => {
+                                  const isSelected = manualTeamPersonas.includes(persona);
+                                  return (
+                                    <div
+                                      key={persona}
+                                      className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                                      onClick={() => handleManualPersonaToggle(persona)}
+                                    >
+                                      <Checkbox
+                                        checked={isSelected}
+                                        onCheckedChange={() => handleManualPersonaToggle(persona)}
+                                      />
+                                      <label className="text-sm font-medium leading-none cursor-pointer flex-1">
+                                        {persona}
+                                      </label>
+                                    </div>
+                                  );
+                                })}
+                                {/* Create New Role Profile Button */}
+                                <div className="border-t border-border mt-2 pt-2">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setPersonasPopoverOpen(false);
+                                      setCreatePersonaModalOpen(true);
+                                    }}
+                                    className="w-full justify-start gap-2 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                    Create new Role profile
+                                  </Button>
                                 </div>
-                              );
-                            })}
+                              </>
+                            )}
                           </div>
                         </ScrollArea>
                       </PopoverContent>
                     </Popover>
-                    {manualTeamPersonas.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {manualTeamPersonas.map((persona) => (
-                          <Badge
-                            key={persona}
-                            variant="secondary"
-                            className="text-xs flex items-center gap-1"
-                          >
-                            {persona}
-                            <button
-                              onClick={() => handleManualPersonaToggle(persona)}
-                              className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 pt-2">
                     <Button
@@ -707,7 +925,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                         <p className="text-sm text-muted-foreground mt-1">{team.description}</p>
                       )}
                       {team.persona && (
-                        <span className="text-xs text-muted-foreground">From persona: {team.persona}</span>
+                        <span className="text-xs text-muted-foreground">From Role profile: {team.persona}</span>
                       )}
                     </div>
                   </div>
@@ -717,6 +935,13 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Create Persona Modal */}
+      <CreatePersonaModal
+        open={createPersonaModalOpen}
+        onOpenChange={setCreatePersonaModalOpen}
+        onPersonaCreated={handlePersonaCreated}
+      />
     </div>
   );
 };

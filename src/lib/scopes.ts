@@ -297,4 +297,3 @@ export const getUsersAssignedToScope = (scopeId: string): Array<{ user: User; as
   
   return assignedUsers;
 };
-

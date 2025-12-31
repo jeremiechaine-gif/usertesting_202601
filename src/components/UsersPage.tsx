@@ -668,8 +668,8 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                 <div
                                   key={user.id}
                                   className={cn(
-                                    'group rounded-lg p-4 transition-all bg-background border border-border hover:border-[#31C7AD]/40 hover:shadow-md',
-                                    user.id === currentUser?.id && 'ring-2 ring-[#31C7AD] ring-offset-1'
+                                    'group rounded-lg p-4 transition-all bg-muted/40 hover:bg-muted/60 hover:shadow-sm',
+                                    user.id === currentUser?.id && 'ring-2 ring-[#31C7AD] ring-offset-1 bg-[#31C7AD]/10 hover:bg-[#31C7AD]/15'
                                   )}
                                 >
                                   <div className="flex items-center justify-between gap-4">

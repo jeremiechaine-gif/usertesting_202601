@@ -20,13 +20,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { createRoutine, updateRoutine, type Routine } from '@/lib/routines';
+import { createRoutine, updateRoutine, type Routine, type PelicoViewPage } from '@/lib/routines';
 import { validateRoutine } from '@/lib/validation/routineValidation';
 import { getScopes, type Scope } from '@/lib/scopes';
 import { getCurrentUserId, getCurrentUser } from '@/lib/users';
 import { getTeams, createTeam, getTeamByName, type Team } from '@/lib/teams';
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles, Zap, User, X, Eye, Plus, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { getAllAvailablePersonas, getCustomPersonas } from '@/lib/personas';
+import { CreatePersonaModal } from './SimpleOnboardingWizard/CreatePersonaModal';
+import type { Objective } from '@/lib/onboarding/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface RoutineModalProps {
   open: boolean;
@@ -38,6 +43,8 @@ interface RoutineModalProps {
   currentSorting?: SortingState;
   currentGroupBy?: string | null;
   currentPageSize?: number;
+  // Navigation function for viewing routine
+  onNavigate?: (page: string) => void;
 }
 
 export const RoutineModal: React.FC<RoutineModalProps> = ({
@@ -49,6 +56,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   currentSorting = [],
   currentGroupBy = null,
   currentPageSize = 100,
+  onNavigate,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -59,12 +67,93 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
   const [newTeamName, setNewTeamName] = useState('');
   const [showNewTeamInput, setShowNewTeamInput] = useState(false);
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+  const [selectedObjectives, setSelectedObjectives] = useState<Objective[]>([]);
+  const [personasPopoverOpen, setPersonasPopoverOpen] = useState(false);
+  const [createPersonaModalOpen, setCreatePersonaModalOpen] = useState(false);
+  const [availablePersonas, setAvailablePersonas] = useState<string[]>([]);
+  const [personaSearchQuery, setPersonaSearchQuery] = useState('');
   const currentUser = getCurrentUser();
   const isManager = currentUser?.role === 'manager';
+
+  // Available objectives
+  const OBJECTIVES: Objective[] = ['Anticipate', 'Monitor', 'Correct', 'Prioritize', 'Report'];
+
+  // Map French Role profile names to English
+  const PERSONA_FR_TO_EN: Record<string, string> = {
+    'Approvisionneur': 'Supply Planner',
+    'Acheteur': 'Buyer',
+    'Manager Appro': 'Procurement Manager',
+    'Ordonnanceur Assemblage': 'Assembly Scheduler',
+    'Ordonnanceur': 'Scheduler',
+    'Master Planner': 'Master Planner',
+    'Support Logistique': 'Logistics Support',
+    'Recette': 'Quality Control',
+    'Responsable Supply Chain': 'Supply Chain Manager',
+    'Directeur Supply Chain': 'Supply Chain Director',
+    'Responsable Ordo & Support log': 'Scheduling & Logistics Manager',
+    'Autre / Mixte': 'Other / Mixed',
+  };
+
+  // Role profile definitions with translations and descriptions
+  interface RoleProfileInfo {
+    french: string;
+    english: string;
+    description: string;
+  }
+
+  const ROLE_PROFILES: RoleProfileInfo[] = [
+    { french: 'Approvisionneur', english: 'Supply Planner', description: 'Manages supplier orders and inventory levels to ensure production continuity' },
+    { french: 'Acheteur', english: 'Buyer', description: 'Handles purchasing negotiations and supplier relationships' },
+    { french: 'Manager Appro', english: 'Procurement Manager', description: 'Oversees procurement strategy and team performance' },
+    { french: 'Ordonnanceur Assemblage', english: 'Assembly Scheduler', description: 'Plans and schedules assembly operations and production sequences' },
+    { french: 'Ordonnanceur', english: 'Scheduler', description: 'Coordinates production schedules and resource allocation' },
+    { french: 'Master Planner', english: 'Master Planner', description: 'Develops strategic production plans and manages customer commitments' },
+    { french: 'Support Logistique', english: 'Logistics Support', description: 'Manages customer deliveries and shipping coordination' },
+    { french: 'Recette', english: 'Quality Control', description: 'Ensures product quality and compliance with standards' },
+    { french: 'Responsable Supply Chain', english: 'Supply Chain Manager', description: 'Leads supply chain operations and strategic planning' },
+    { french: 'Directeur Supply Chain', english: 'Supply Chain Director', description: 'Defines supply chain strategy and executive oversight' },
+    { french: 'Responsable Ordo & Support log', english: 'Scheduling & Logistics Manager', description: 'Manages both production scheduling and logistics operations' },
+    { french: 'Autre / Mixte', english: 'Other / Mixed', description: 'Combines multiple roles or custom responsibilities' },
+  ];
+
+  const getRoleProfileInfo = (frenchName: string): RoleProfileInfo | undefined => {
+    return ROLE_PROFILES.find(rp => rp.french === frenchName);
+  };
+
+  // Get PelicoView display name
+  const getPelicoViewDisplayName = (view?: PelicoViewPage): string => {
+    const viewMap: Record<PelicoViewPage, string> = {
+      'supply': 'Supply',
+      'production': 'Production Control',
+      'customer': 'Customer Support',
+      'escalation': 'Escalation Room',
+      'value-engineering': 'Value Engineering',
+      'event-explorer': 'Event Explorer',
+      'simulation': 'Simulation',
+    };
+    return view ? viewMap[view] : 'Not set';
+  };
+
+  // Map PelicoViewPage to navigation page
+  const getPelicoViewPage = (view?: PelicoViewPage): string | null => {
+    if (!view) return null;
+    const pageMap: Record<PelicoViewPage, string> = {
+      'supply': 'supply',
+      'production': 'production',
+      'customer': 'customer',
+      'escalation': 'escalation',
+      'value-engineering': 'value-engineering',
+      'event-explorer': 'events-explorer',
+      'simulation': 'simulation',
+    };
+    return pageMap[view] || null;
+  };
 
   useEffect(() => {
     setScopes(getScopes());
     setTeams(getTeams());
+    setAvailablePersonas(getAllAvailablePersonas());
   }, []);
 
   useEffect(() => {
@@ -75,6 +164,17 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setLinkedScopeId(routine.linkedScopeId || null);
       // Support both new teamIds and legacy teamId
       setSelectedTeamIds(routine.teamIds || (routine.teamId ? [routine.teamId] : []));
+      // Map Persona[] (English) to French names for display
+      if (routine.personas && routine.personas.length > 0) {
+        const frenchPersonas = routine.personas.map(engPersona => {
+          const entry = Object.entries(PERSONA_FR_TO_EN).find(([_, en]) => en === engPersona);
+          return entry ? entry[0] : engPersona; // Fallback to English if not found
+        });
+        setSelectedPersonas(frenchPersonas);
+      } else {
+        setSelectedPersonas([]);
+      }
+      setSelectedObjectives(routine.objectives || []);
     } else {
       setName('');
       setDescription('');
@@ -83,8 +183,29 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setSelectedTeamIds([]);
       setNewTeamName('');
       setShowNewTeamInput(false);
+      setSelectedPersonas([]);
+      setSelectedObjectives([]);
     }
   }, [routine, open]);
+
+  // Handle persona creation
+  const handlePersonaCreated = (personaName: string) => {
+    setAvailablePersonas(getAllAvailablePersonas());
+    if (!selectedPersonas.includes(personaName)) {
+      setSelectedPersonas([...selectedPersonas, personaName]);
+    }
+  };
+
+  // Filter personas based on search query
+  const filteredPersonas = availablePersonas.filter(persona => {
+    if (!personaSearchQuery.trim()) return true;
+    const roleInfo = getRoleProfileInfo(persona);
+    const displayName = roleInfo ? roleInfo.english : persona;
+    const searchLower = personaSearchQuery.toLowerCase();
+    return persona.toLowerCase().includes(searchLower) || 
+           displayName.toLowerCase().includes(searchLower) ||
+           (roleInfo && roleInfo.description.toLowerCase().includes(searchLower));
+  });
 
   const handleSave = () => {
     // Validate routine data
@@ -120,6 +241,12 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
     }
 
     const currentUserId = getCurrentUserId();
+    
+    // Convert French persona names to English Persona[] for storage
+    const englishPersonas = selectedPersonas.map(frPersona => {
+      return PERSONA_FR_TO_EN[frPersona] || frPersona; // Fallback if not in map (custom persona)
+    }) as any[];
+
     const routineData: Omit<Routine, 'id' | 'createdAt' | 'updatedAt'> = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -131,6 +258,8 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       linkedScopeId: scopeMode === 'scope-fixed' ? linkedScopeId : null,
       createdBy: routine?.createdBy || currentUserId,
       teamIds: finalTeamIds.length > 0 ? finalTeamIds : [],
+      personas: englishPersonas.length > 0 ? englishPersonas : undefined,
+      objectives: selectedObjectives.length > 0 ? selectedObjectives : undefined,
     };
 
     if (routine) {
@@ -194,6 +323,228 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                 rows={3}
                 className="border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20 resize-none"
               />
+            </div>
+
+            {/* Suggestion for Role Profiles */}
+            <div className="space-y-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold">
+                  Suggestion for Role Profiles <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Select one or more Role profiles for which this routine is recommended.
+                </p>
+              </div>
+              <Popover open={personasPopoverOpen} onOpenChange={setPersonasPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between h-10 border-border/60"
+                  >
+                    <span className="text-sm">
+                      {selectedPersonas.length > 0 
+                        ? `${selectedPersonas.length} Role profile${selectedPersonas.length > 1 ? 's' : ''} selected`
+                        : 'Select Role profiles...'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="p-2 border-b border-border/60">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search Role profiles..."
+                        value={personaSearchQuery}
+                        onChange={(e) => setPersonaSearchQuery(e.target.value)}
+                        className="h-9 pr-8"
+                      />
+                      {personaSearchQuery && (
+                        <button
+                          onClick={() => setPersonaSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[300px]">
+                    <div className="p-2 space-y-1">
+                      {filteredPersonas.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No Role profiles found</p>
+                      ) : (
+                        filteredPersonas.map((persona) => {
+                          const isSelected = selectedPersonas.includes(persona);
+                          const roleInfo = getRoleProfileInfo(persona);
+                          let displayName = roleInfo ? roleInfo.english : persona;
+                          let description = roleInfo ? roleInfo.description : 'Custom role profile';
+
+                          if (!roleInfo) {
+                            const customPersonas = getCustomPersonas();
+                            const customPersona = customPersonas.find(cp => cp.name === persona);
+                            if (customPersona) {
+                              displayName = customPersona.name;
+                              description = customPersona.description || 'Custom role profile';
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={persona}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedPersonas(selectedPersonas.filter(p => p !== persona));
+                                } else {
+                                  setSelectedPersonas([...selectedPersonas, persona]);
+                                }
+                              }}
+                              className={cn(
+                                'w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors',
+                                isSelected && 'bg-muted'
+                              )}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium">{displayName}</div>
+                                  <div className="text-xs text-muted-foreground line-clamp-1">{description}</div>
+                                </div>
+                                {isSelected && (
+                                  <CheckCircle2 className="h-4 w-4 text-[#31C7AD] shrink-0 mt-0.5" />
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <div className="p-2 border-t border-border/60">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-9 border-border/60 hover:border-[#31C7AD] hover:bg-[#31C7AD]/5 hover:text-[#31C7AD] transition-all"
+                      onClick={() => {
+                        setPersonasPopoverOpen(false);
+                        setCreatePersonaModalOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create new Role profile
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {selectedPersonas.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedPersonas.map((persona) => {
+                    const roleInfo = getRoleProfileInfo(persona);
+                    const displayName = roleInfo ? roleInfo.english : persona;
+                    return (
+                      <Badge
+                        key={persona}
+                        variant="secondary"
+                        className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20 flex items-center gap-1.5"
+                      >
+                        <User className="h-3 w-3" />
+                        {displayName}
+                        <button
+                          onClick={() => setSelectedPersonas(selectedPersonas.filter(p => p !== persona))}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Objectives */}
+            <div className="space-y-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold">
+                  Objectives <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Select one or more business objectives this routine helps achieve.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border/60 p-4 space-y-2 bg-muted/10">
+                {OBJECTIVES.map((objective) => {
+                  const isSelected = selectedObjectives.includes(objective);
+                  return (
+                    <div key={objective} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`objective-${objective}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedObjectives([...selectedObjectives, objective]);
+                          } else {
+                            setSelectedObjectives(selectedObjectives.filter(obj => obj !== objective));
+                          }
+                        }}
+                        className="data-[state=checked]:bg-[#2063F0] data-[state=checked]:border-[#2063F0]"
+                      />
+                      <Label
+                        htmlFor={`objective-${objective}`}
+                        className="text-sm font-medium cursor-pointer flex-1"
+                      >
+                        {objective}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedObjectives.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedObjectives.map((objective) => (
+                    <Badge
+                      key={objective}
+                      variant="secondary"
+                      className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20 flex items-center gap-1.5"
+                    >
+                      {objective}
+                      <button
+                        onClick={() => setSelectedObjectives(selectedObjectives.filter(obj => obj !== objective))}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pelico View */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Pelico View</Label>
+              <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                    {getPelicoViewDisplayName(routine?.pelicoView)}
+                  </Badge>
+                </div>
+                {routine?.pelicoView && onNavigate && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-2"
+                    onClick={() => {
+                      const page = getPelicoViewPage(routine.pelicoView);
+                      if (page) {
+                        onNavigate(page);
+                        onOpenChange(false);
+                      }
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Routine
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Scope Mode - Hidden */}
@@ -383,6 +734,13 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      {/* Create Persona Modal */}
+      <CreatePersonaModal
+        open={createPersonaModalOpen}
+        onOpenChange={setCreatePersonaModalOpen}
+        onPersonaCreated={handlePersonaCreated}
+      />
     </Dialog>
   );
 };

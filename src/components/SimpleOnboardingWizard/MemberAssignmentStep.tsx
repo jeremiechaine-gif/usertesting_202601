@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CreateUserModal } from './CreateUserModal';
 
 interface MemberAssignmentStepProps {
   teams: SimpleTeamConfig[];
@@ -40,21 +41,76 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   const [openMemberPopover, setOpenMemberPopover] = useState<string | null>(null);
   const [memberFilter, setMemberFilter] = useState<Record<string, 'all' | 'not-assigned'>>({});
   const [selectedMembersInPopover, setSelectedMembersInPopover] = useState<Record<string, Set<string>>>({});
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
+  const [createUserModalTeamId, setCreateUserModalTeamId] = useState<string | undefined>(undefined);
 
   // Load available users
   useEffect(() => {
-    const teamNames = teams.map(t => t.name);
-    const allUsers = createMockUsersForTeams(teamNames);
-    const adminId = getCurrentUserId();
-    const filteredUsers = allUsers.filter(u => u.id !== adminId);
+    const loadUsers = () => {
+      const teamNames = teams.map(t => t.name);
+      const mockUsers = createMockUsersForTeams(teamNames);
+      const allUsers = getUsers();
+      const adminId = getCurrentUserId();
+      
+      // Combine mock users and real users, filter out admin
+      const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
+      
+      // Remove duplicates by email (keep first occurrence)
+      const uniqueUsers = combinedUsers.filter((user, index, self) =>
+        index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
+      );
+      
+      setAvailableUsers(uniqueUsers);
+    };
     
-    // Remove duplicates by name (keep first occurrence)
-    const uniqueUsers = filteredUsers.filter((user, index, self) =>
-      index === self.findIndex(u => u.name.toLowerCase() === user.name.toLowerCase())
+    loadUsers();
+  }, [teams]);
+
+  // Refresh users when modal closes (in case a new user was created)
+  useEffect(() => {
+    if (!createUserModalOpen) {
+      const loadUsers = () => {
+        const teamNames = teams.map(t => t.name);
+        const mockUsers = createMockUsersForTeams(teamNames);
+        const allUsers = getUsers();
+        const adminId = getCurrentUserId();
+        
+        const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
+        const uniqueUsers = combinedUsers.filter((user, index, self) =>
+          index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
+        );
+        
+        setAvailableUsers(uniqueUsers);
+      };
+      
+      loadUsers();
+    }
+  }, [createUserModalOpen, teams]);
+
+  const handleUserCreated = (userId: string) => {
+    // Refresh users list
+    const teamNames = teams.map(t => t.name);
+    const mockUsers = createMockUsersForTeams(teamNames);
+    const allUsers = getUsers();
+    const adminId = getCurrentUserId();
+    
+    const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
+    const uniqueUsers = combinedUsers.filter((user, index, self) =>
+      index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
     );
     
     setAvailableUsers(uniqueUsers);
-  }, [teams]);
+    
+    // If a team ID was specified, automatically add the new user to that team
+    if (createUserModalTeamId) {
+      handleMemberToggle(createUserModalTeamId, userId);
+    }
+    
+    // Close the member popover if it was open
+    if (openMemberPopover === createUserModalTeamId) {
+      setOpenMemberPopover(null);
+    }
+  };
 
   const handleMemberToggle = (teamId: string, userId: string) => {
     const updatedTeams = teams.map(team => {
@@ -367,12 +423,28 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               <ScrollArea className="h-full">
                                 <div className="p-2">
                                 {availableMembers.length === 0 ? (
-                                  <div className="text-center py-8 text-sm text-muted-foreground">
-                                    {memberSearchQuery[team.id] 
-                                      ? 'No members found' 
-                                      : (memberFilter[team.id] === 'not-assigned' 
-                                        ? 'All members are assigned to teams' 
-                                        : 'All members assigned to this team')}
+                                  <div className="text-center py-8 text-sm text-muted-foreground space-y-3">
+                                    <p>
+                                      {memberSearchQuery[team.id] 
+                                        ? 'No members found' 
+                                        : (memberFilter[team.id] === 'not-assigned' 
+                                          ? 'All members are assigned to teams' 
+                                          : 'All members assigned to this team')}
+                                    </p>
+                                    {memberSearchQuery[team.id] && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setCreateUserModalTeamId(team.id);
+                                          setCreateUserModalOpen(true);
+                                        }}
+                                        className="text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
+                                      >
+                                        <Plus className="h-3 w-3 mr-1" />
+                                        Create "{memberSearchQuery[team.id]}"
+                                      </Button>
+                                    )}
                                   </div>
                                 ) : (
                                   <div className="space-y-1">
@@ -431,6 +503,20 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                 )}
                                 </div>
                               </ScrollArea>
+                            </div>
+                            {/* Create New User Button */}
+                            <div className="border-t border-border p-2 flex-shrink-0">
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  setCreateUserModalTeamId(team.id);
+                                  setCreateUserModalOpen(true);
+                                }}
+                                className="w-full justify-start gap-2 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Create new user
+                              </Button>
                             </div>
                           </PopoverContent>
                         </Popover>
@@ -503,6 +589,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
           </div>
         </div>
       </ScrollArea>
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        open={createUserModalOpen}
+        onOpenChange={setCreateUserModalOpen}
+        onUserCreated={handleUserCreated}
+        defaultTeamId={createUserModalTeamId}
+      />
     </div>
   );
 };

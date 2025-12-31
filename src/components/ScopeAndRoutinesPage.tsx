@@ -30,6 +30,7 @@ import {
 } from '@/lib/routines';
 import { getCurrentUserId, getCurrentUser, getUser, getUsers, updateUser, type User } from '@/lib/users';
 import { getTeam, getTeams, type Team } from '@/lib/teams';
+import { updateRoutine } from '@/lib/routines';
 import { useScope } from '@/contexts/ScopeContext';
 import { useRoutine } from '@/contexts/RoutineContext';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
@@ -49,7 +50,8 @@ import {
   Zap,
   Eye,
   Users,
-  ArrowRight
+  ArrowRight,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -69,6 +71,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CreateRoutineFullPageWizard } from './CreateRoutineFullPageWizard';
 
 export const ScopeAndRoutinesPage: React.FC<{ 
   onNavigate?: (page: string) => void;
@@ -82,6 +86,7 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
   const [viewSelectionModalOpen, setViewSelectionModalOpen] = useState(false);
+  const [createRoutineWizardOpen, setCreateRoutineWizardOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -93,11 +98,18 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [scopeToReassign, setScopeToReassign] = useState<Scope | null>(null);
   const [selectedSourceUser, setSelectedSourceUser] = useState<string | null>(null);
   const [selectedTargetUser, setSelectedTargetUser] = useState<string | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [routineSharePopoverOpen, setRoutineSharePopoverOpen] = useState<string | null>(null);
 
   useEffect(() => {
     loadScopes();
     loadRoutines();
+    loadTeams();
   }, [viewMode, refreshKey]); // Reload when routines change
+
+  const loadTeams = () => {
+    setTeams(getTeams());
+  };
 
   const loadScopes = () => {
     setScopes(getScopes());
@@ -252,7 +264,12 @@ export const ScopeAndRoutinesPage: React.FC<{
 
   const handleCreateRoutine = () => {
     setEditingRoutine(null);
-    setViewSelectionModalOpen(true);
+    setCreateRoutineWizardOpen(true);
+  };
+
+  const handleRoutineCreated = (routineId: string) => {
+    loadRoutines();
+    refreshRoutines();
   };
 
   const handleSelectView = (view: string) => {
@@ -283,6 +300,22 @@ export const ScopeAndRoutinesPage: React.FC<{
       setShareItemName(routine.name);
       setShareDialogOpen(true);
     }
+  };
+
+  const handleToggleRoutineShare = (routineId: string, teamId: string) => {
+    const routine = routines.find(r => r.id === routineId);
+    if (!routine) return;
+
+    const currentTeamIds = routine.teamIds || [];
+    const isShared = currentTeamIds.includes(teamId);
+    
+    const newTeamIds = isShared
+      ? currentTeamIds.filter(id => id !== teamId)
+      : [...currentTeamIds, teamId];
+
+    updateRoutine(routineId, { teamIds: newTeamIds });
+    loadRoutines();
+    refreshRoutines();
   };
 
   const handleDuplicateRoutine = (routine: Routine) => {
@@ -365,7 +398,318 @@ export const ScopeAndRoutinesPage: React.FC<{
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6">
+          <div className="flex flex-col gap-6">
+            {/* Routines Section */}
+            <div className="flex flex-col min-w-0">
+              {/* Header Section */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
+                    <Zap className="h-5 w-5 text-[#2063F0]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Routines</h2>
+                    <p className="text-xs text-muted-foreground">Standard ways of working</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  A <em>generic</em> view (filters + display configuration) that standardizes a way of working, and can be shared and used by a team.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleCreateRoutine}
+                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Routine
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onNavigate?.('routines-library')}
+                    className="gap-2 h-9"
+                  >
+                    <Eye className="h-4 w-4" />
+                    See all generic routines
+                  </Button>
+                </div>
+              </div>
+
+              {routines.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
+                  <div className="p-4 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-4">
+                    <Zap className="h-8 w-8 text-[#2063F0]" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No routines yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm text-center">
+                    Use the button above to create your first routine and save view configurations
+                  </p>
+                </div>
+              ) : (
+                (() => {
+                  const routinesGrouped = getRoutinesGroupedByObjectives(routines);
+                  const sortedObjectives = Object.keys(routinesGrouped).sort((a, b) => {
+                    const orderA = OBJECTIVE_ORDER[a] || 999;
+                    const orderB = OBJECTIVE_ORDER[b] || 999;
+                    return orderA - orderB;
+                  });
+                  
+                  return (
+                    <div className="space-y-6">
+                      {sortedObjectives.map((objective) => {
+                        const objectiveRoutines = routinesGrouped[objective];
+                        return (
+                          <div key={objective} className="space-y-3">
+                            {/* Objective Section Title */}
+                            <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
+                              {objective}
+                            </h4>
+                            {/* Routines for this objective */}
+                            <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                              {objectiveRoutines.map((routine) => {
+                                const creator = getUser(routine.createdBy);
+                                const currentUserId = getCurrentUserId();
+                                const isOwner = routine.createdBy === currentUserId;
+                                const canEdit = isOwner; // Only owner can edit
+                                
+                                // Map pelicoView to display name
+                                const getPelicoViewDisplayName = (view?: string): string => {
+                                  const viewMap: Record<string, string> = {
+                                    'supply': 'PO Book',
+                                    'production': 'WO Book',
+                                    'customer': 'CO Book',
+                                    'escalation': 'Escalation Room',
+                                    'value-engineering': 'Value Engineering',
+                                    'event-explorer': 'Events Explorer',
+                                    'simulation': 'Planning',
+                                  };
+                                  return view ? (viewMap[view] || view) : '';
+                                };
+
+                                // Check if routine is suggested (exists in library with personas)
+                                const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id || r.label === routine.name);
+                                const isSuggested = libraryRoutine && libraryRoutine.personas && libraryRoutine.personas.length > 0;
+                                
+                                const routineTeamIds = routine.teamIds || [];
+                                const isShared = routineTeamIds.length > 0;
+                                const sharedTeams = teams.filter(team => routineTeamIds.includes(team.id));
+                                
+                                return (
+                                  <div
+                                    key={routine.id}
+                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-sm font-medium text-foreground">
+                                          {routine.name}
+                                        </span>
+                                        {isSuggested && (
+                                          <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                            <Sparkles className="h-2.5 w-2.5" />
+                                            Suggested
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {routine.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
+                                          {routine.description}
+                                        </p>
+                                      )}
+                                      <div className="flex flex-wrap gap-1 items-center mb-2">
+                                        {routine.pelicoView && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
+                                          >
+                                            {getPelicoViewDisplayName(routine.pelicoView)}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Sharing Section */}
+                                      {isOwner && (
+                                        <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-border/30">
+                                          {isShared ? (
+                                            <>
+                                              <span className="text-xs text-muted-foreground">Shared with:</span>
+                                              {sharedTeams.map((team) => (
+                                                <Badge
+                                                  key={team.id}
+                                                  variant="outline"
+                                                  className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1 group/badge"
+                                                >
+                                                  <Users className="h-3 w-3" />
+                                                  {team.name}
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleToggleRoutineShare(routine.id, team.id);
+                                                    }}
+                                                    className="ml-1 opacity-0 group-hover/badge:opacity-100 transition-opacity hover:text-destructive"
+                                                    title="Remove sharing"
+                                                  >
+                                                    <X className="h-3 w-3" />
+                                                  </button>
+                                                </Badge>
+                                              ))}
+                                              <Popover
+                                                open={routineSharePopoverOpen === routine.id}
+                                                onOpenChange={(open) => setRoutineSharePopoverOpen(open ? routine.id : null)}
+                                              >
+                                                <PopoverTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-4 px-1.5 text-xs gap-1"
+                                                  >
+                                                    <Plus className="h-3 w-3" />
+                                                    Add
+                                                  </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-64 p-2" align="start">
+                                                  <div className="space-y-1">
+                                                    {teams.filter(team => !routineTeamIds.includes(team.id)).map((team) => (
+                                                      <button
+                                                        key={team.id}
+                                                        onClick={() => {
+                                                          handleToggleRoutineShare(routine.id, team.id);
+                                                          setRoutineSharePopoverOpen(null);
+                                                        }}
+                                                        className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted text-sm transition-colors flex items-center gap-2"
+                                                      >
+                                                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        <span>{team.name}</span>
+                                                      </button>
+                                                    ))}
+                                                    {teams.filter(team => !routineTeamIds.includes(team.id)).length === 0 && (
+                                                      <p className="text-xs text-muted-foreground px-2 py-1.5">
+                                                        All teams already have access
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                </PopoverContent>
+                                              </Popover>
+                                            </>
+                                          ) : (
+                                            <Popover
+                                              open={routineSharePopoverOpen === routine.id}
+                                              onOpenChange={(open) => setRoutineSharePopoverOpen(open ? routine.id : null)}
+                                            >
+                                              <PopoverTrigger asChild>
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  className="h-5 px-2 text-xs gap-1"
+                                                >
+                                                  <Share2 className="h-3 w-3" />
+                                                  Share
+                                                </Button>
+                                              </PopoverTrigger>
+                                              <PopoverContent className="w-64 p-2" align="start">
+                                                <div className="space-y-1">
+                                                  {teams.map((team) => (
+                                                    <button
+                                                      key={team.id}
+                                                      onClick={() => {
+                                                        handleToggleRoutineShare(routine.id, team.id);
+                                                        setRoutineSharePopoverOpen(null);
+                                                      }}
+                                                      className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted text-sm transition-colors flex items-center gap-2"
+                                                    >
+                                                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                                                      <span>{team.name}</span>
+                                                    </button>
+                                                  ))}
+                                                  {teams.length === 0 && (
+                                                    <p className="text-xs text-muted-foreground px-2 py-1.5">
+                                                      No teams available
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              </PopoverContent>
+                                            </Popover>
+                                          )}
+                                        </div>
+                                      )}
+                                      {!isOwner && isShared && (
+                                        <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-border/30">
+                                          <span className="text-xs text-muted-foreground">Shared with:</span>
+                                          {sharedTeams.map((team) => (
+                                            <Badge
+                                              key={team.id}
+                                              variant="outline"
+                                              className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1"
+                                            >
+                                              <Users className="h-3 w-3" />
+                                              {team.name}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
+                                          >
+                                            <Share2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            View
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
+                                            <Share2 className="h-4 w-4 mr-2" />
+                                            Share link
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleDuplicateRoutine(routine)}>
+                                            <Copy className="h-4 w-4 mr-2" />
+                                            Duplicate
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                      
+                                      {canEdit && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
+                                            onClick={() => handleEditRoutine(routine)}
+                                          >
+                                            <Edit className="h-3.5 w-3.5" />
+                                          </Button>
+                                          <button
+                                            onClick={() => handleDeleteRoutine(routine.id)}
+                                            className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                            title="Remove routine"
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Separator */}
+            <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
+
             {/* Scopes Section */}
             <div className="flex flex-col min-w-0">
               {/* Header Section */}
@@ -397,16 +741,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                     <Settings className="h-8 w-8 text-[#31C7AD]" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No scopes yet</h3>
-                  <p className="text-sm text-muted-foreground mb-5 max-w-sm text-center">
-                    Create your first scope to filter data across the application
+                  <p className="text-sm text-muted-foreground max-w-sm text-center">
+                    Use the button above to create your first scope and filter data across the application
                   </p>
-                  <Button
-                    onClick={handleCreateScope}
-                    className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Scope
-                  </Button>
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -537,205 +874,6 @@ export const ScopeAndRoutinesPage: React.FC<{
                 </div>
               )}
             </div>
-
-            {/* Separator */}
-            <Separator orientation="vertical" className="hidden lg:block h-auto" />
-
-            {/* Routines Section */}
-            <div className="flex flex-col min-w-0">
-              {/* Header Section */}
-              <div className="mb-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
-                    <Zap className="h-5 w-5 text-[#2063F0]" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Routines</h2>
-                    <p className="text-xs text-muted-foreground">Standard ways of working</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  A <em>generic</em> view (filters + display configuration) that standardizes a way of working, and can be shared and used by a team.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleCreateRoutine}
-                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Routine
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => onNavigate?.('routines-library')}
-                    className="gap-2 h-9"
-                  >
-                    <Eye className="h-4 w-4" />
-                    See all generic routines
-                  </Button>
-                </div>
-              </div>
-
-              {routines.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 rounded-xl border-2 border-dashed border-border/60 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
-                  <div className="p-4 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-4">
-                    <Zap className="h-8 w-8 text-[#2063F0]" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">No routines yet</h3>
-                  <p className="text-sm text-muted-foreground mb-5 max-w-sm text-center">
-                    Create your first routine to save view configurations
-                  </p>
-                  <Button
-                    onClick={handleCreateRoutine}
-                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Routine
-                  </Button>
-                </div>
-              ) : (
-                (() => {
-                  const routinesGrouped = getRoutinesGroupedByObjectives(routines);
-                  const sortedObjectives = Object.keys(routinesGrouped).sort((a, b) => {
-                    const orderA = OBJECTIVE_ORDER[a] || 999;
-                    const orderB = OBJECTIVE_ORDER[b] || 999;
-                    return orderA - orderB;
-                  });
-                  
-                  return (
-                    <div className="space-y-6">
-                      {sortedObjectives.map((objective) => {
-                        const objectiveRoutines = routinesGrouped[objective];
-                        return (
-                          <div key={objective} className="space-y-3">
-                            {/* Objective Section Title */}
-                            <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
-                              {objective}
-                            </h4>
-                            {/* Routines for this objective */}
-                            <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                              {objectiveRoutines.map((routine) => {
-                                const creator = getUser(routine.createdBy);
-                                const currentUserId = getCurrentUserId();
-                                const isOwner = routine.createdBy === currentUserId;
-                                const canEdit = isOwner; // Only owner can edit
-                                
-                                // Map pelicoView to display name
-                                const getPelicoViewDisplayName = (view?: string): string => {
-                                  const viewMap: Record<string, string> = {
-                                    'supply': 'PO Book',
-                                    'production': 'WO Book',
-                                    'customer': 'CO Book',
-                                    'escalation': 'Escalation Room',
-                                    'value-engineering': 'Value Engineering',
-                                    'event-explorer': 'Events Explorer',
-                                    'simulation': 'Planning',
-                                  };
-                                  return view ? (viewMap[view] || view) : '';
-                                };
-
-                                // Check if routine is suggested (exists in library with personas)
-                                const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id || r.label === routine.name);
-                                const isSuggested = libraryRoutine && libraryRoutine.personas && libraryRoutine.personas.length > 0;
-                                
-                                return (
-                                  <div
-                                    key={routine.id}
-                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
-                                  >
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm font-medium text-foreground">
-                                          {routine.name}
-                                        </span>
-                                        {isSuggested && (
-                                          <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
-                                            <Sparkles className="h-2.5 w-2.5" />
-                                            Suggested
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      {routine.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
-                                          {routine.description}
-                                        </p>
-                                      )}
-                                      <div className="flex flex-wrap gap-1 items-center">
-                                        {routine.pelicoView && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                                          >
-                                            {getPelicoViewDisplayName(routine.pelicoView)}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      {creator && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          Created by <span className="font-medium">{creator.name}</span>
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                                          >
-                                            <Share2 className="h-4 w-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            View
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
-                                            <Share2 className="h-4 w-4 mr-2" />
-                                            Share
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleDuplicateRoutine(routine)}>
-                                            <Copy className="h-4 w-4 mr-2" />
-                                            Duplicate
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                      
-                                      {canEdit && (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                                            onClick={() => handleEditRoutine(routine)}
-                                          >
-                                            <Edit className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                            onClick={() => handleDeleteRoutine(routine.id)}
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -824,6 +962,7 @@ export const ScopeAndRoutinesPage: React.FC<{
           currentSorting={[]}
           currentGroupBy={null}
           currentPageSize={100}
+          onNavigate={onNavigate}
         />
       )}
 
@@ -974,6 +1113,14 @@ export const ScopeAndRoutinesPage: React.FC<{
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Routine Full Page Wizard */}
+      {createRoutineWizardOpen && (
+        <CreateRoutineFullPageWizard
+          onClose={() => setCreateRoutineWizardOpen(false)}
+          onRoutineCreated={handleRoutineCreated}
+        />
+      )}
     </div>
   );
 };
