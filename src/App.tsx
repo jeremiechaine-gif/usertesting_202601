@@ -1,28 +1,38 @@
-import { useState, useEffect } from 'react';
-import { PurchaseOrderBookPage } from './components/PurchaseOrderBookPage';
-import { ScopeAndRoutinesPage } from './components/ScopeAndRoutinesPage';
-import { HomePage } from './components/HomePage';
-import { UsersPage } from './components/UsersPage';
-import { RoutineLibraryPage } from './components/RoutineLibraryPage';
-import { EscalationRoomPage } from './components/EscalationRoomPage';
-import { ProductionControlPage } from './components/ProductionControlPage';
-import { ServiceOrderBookPage } from './components/ServiceOrderBookPage';
-import { WorkOrderBookPage } from './components/WorkOrderBookPage';
-import { CustomerSupportPage } from './components/CustomerSupportPage';
-import { MissingPartsPage } from './components/MissingPartsPage';
-import { LineOfBalancePage } from './components/LineOfBalancePage';
-import { PlanningPage } from './components/PlanningPage';
-import { EventsExplorerPage } from './components/EventsExplorerPage';
-import { SimulationBasketPage } from './components/SimulationBasketPage';
-import { TeamRoutinesPage } from './components/TeamRoutinesPage';
-import { LoginPage } from './components/LoginPage';
-import { SimpleOnboardingWizard } from './components/SimpleOnboardingWizard/SimpleOnboardingWizard';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/toast';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
 import { createUser, getUsers, getCurrentUserId } from './lib/users';
 import { getRoutines, createRoutine, updateRoutine } from './lib/routines';
+import { safeGetItem, safeSetItem, safeRemoveItem } from './lib/utils/storage';
 import './index.css';
+
+// Lazy load pages to reduce initial bundle size
+const PurchaseOrderBookPage = lazy(() => import('./components/PurchaseOrderBookPage').then(m => ({ default: m.PurchaseOrderBookPage })));
+const ScopeAndRoutinesPage = lazy(() => import('./components/ScopeAndRoutinesPage').then(m => ({ default: m.ScopeAndRoutinesPage })));
+const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
+const UsersPage = lazy(() => import('./components/UsersPage').then(m => ({ default: m.UsersPage })));
+const RoutineLibraryPage = lazy(() => import('./components/RoutineLibraryPage').then(m => ({ default: m.RoutineLibraryPage })));
+const EscalationRoomPage = lazy(() => import('./components/EscalationRoomPage').then(m => ({ default: m.EscalationRoomPage })));
+const ProductionControlPage = lazy(() => import('./components/ProductionControlPage').then(m => ({ default: m.ProductionControlPage })));
+const ServiceOrderBookPage = lazy(() => import('./components/ServiceOrderBookPage').then(m => ({ default: m.ServiceOrderBookPage })));
+const WorkOrderBookPage = lazy(() => import('./components/WorkOrderBookPage').then(m => ({ default: m.WorkOrderBookPage })));
+const CustomerSupportPage = lazy(() => import('./components/CustomerSupportPage').then(m => ({ default: m.CustomerSupportPage })));
+const MissingPartsPage = lazy(() => import('./components/MissingPartsPage').then(m => ({ default: m.MissingPartsPage })));
+const LineOfBalancePage = lazy(() => import('./components/LineOfBalancePage').then(m => ({ default: m.LineOfBalancePage })));
+const PlanningPage = lazy(() => import('./components/PlanningPage').then(m => ({ default: m.PlanningPage })));
+const EventsExplorerPage = lazy(() => import('./components/EventsExplorerPage').then(m => ({ default: m.EventsExplorerPage })));
+const SimulationBasketPage = lazy(() => import('./components/SimulationBasketPage').then(m => ({ default: m.SimulationBasketPage })));
+const TeamRoutinesPage = lazy(() => import('./components/TeamRoutinesPage').then(m => ({ default: m.TeamRoutinesPage })));
+const LoginPage = lazy(() => import('./components/LoginPage').then(m => ({ default: m.LoginPage })));
+const SimpleOnboardingWizard = lazy(() => import('./components/SimpleOnboardingWizard/SimpleOnboardingWizard').then(m => ({ default: m.SimpleOnboardingWizard })));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-muted-foreground">Loading...</div>
+  </div>
+);
 
 // Initialize teams and users if they don't exist
 const initializeTeamsAndUsers = () => {
@@ -196,19 +206,14 @@ function App() {
   
   // Check if user is already logged in (from localStorage)
   useEffect(() => {
-    const storedUserData = localStorage.getItem('pelico-user-data');
+    const storedUserData = safeGetItem<{ email: string; firstName: string; lastName: string }>('pelico-user-data');
     if (storedUserData) {
-      try {
-        const data = JSON.parse(storedUserData);
-        setUserData(data);
-        setIsLoggedIn(true);
-        // Check if onboarding should be shown
-        const onboardingCompleted = localStorage.getItem('pelico-onboarding-tasks-status');
-        if (!onboardingCompleted || !JSON.parse(onboardingCompleted)['set-up-workspace']) {
-          setShowOnboarding(true);
-        }
-      } catch {
-        // Invalid stored data, show login
+      setUserData(storedUserData);
+      setIsLoggedIn(true);
+      // Check if onboarding should be shown
+      const onboardingCompleted = safeGetItem<Record<string, boolean>>('pelico-onboarding-tasks-status');
+      if (!onboardingCompleted || !onboardingCompleted['set-up-workspace']) {
+        setShowOnboarding(true);
       }
     }
   }, []);
@@ -217,8 +222,8 @@ function App() {
     setUserData(loginUserData);
     setIsLoggedIn(true);
     setShowOnboarding(true);
-    // Store user data in localStorage
-    localStorage.setItem('pelico-user-data', JSON.stringify(loginUserData));
+    // Store user data in localStorage using safe utility
+    safeSetItem('pelico-user-data', loginUserData);
   };
 
   const handleOnboardingComplete = () => {
@@ -226,10 +231,10 @@ function App() {
   };
 
   const handleLogout = () => {
-    // Clear user data and onboarding state
-    localStorage.removeItem('pelico-user-data');
-    localStorage.removeItem('pelico-onboarding-tasks-status');
-    localStorage.removeItem('pelico-simple-onboarding-state');
+    // Clear user data and onboarding state using safe utilities
+    safeRemoveItem('pelico-user-data');
+    safeRemoveItem('pelico-onboarding-tasks-status');
+    safeRemoveItem('pelico-simple-onboarding-state');
     // Reset state
     setIsLoggedIn(false);
     setUserData(null);
@@ -240,7 +245,9 @@ function App() {
   if (!isLoggedIn) {
     return (
       <ToastProvider>
-        <LoginPage onLogin={handleLogin} />
+        <Suspense fallback={<PageLoader />}>
+          <LoginPage onLogin={handleLogin} />
+        </Suspense>
       </ToastProvider>
     );
   }
@@ -249,16 +256,18 @@ function App() {
   if (showOnboarding) {
     return (
       <ToastProvider>
-        <SimpleOnboardingWizard
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) {
-              setShowOnboarding(false);
-            }
-          }}
-          onComplete={handleOnboardingComplete}
-          userData={userData}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <SimpleOnboardingWizard
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                setShowOnboarding(false);
+              }
+            }}
+            onComplete={handleOnboardingComplete}
+            userData={userData}
+          />
+        </Suspense>
       </ToastProvider>
     );
   }
@@ -305,12 +314,14 @@ function App() {
     }
   };
 
-  // Wrap pages in ErrorBoundary for graceful error handling
+  // Wrap pages in ErrorBoundary and Suspense for graceful error handling and lazy loading
   const renderPage = () => {
     if (currentPage === 'home') {
       return (
         <ErrorBoundary>
-          <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -318,7 +329,9 @@ function App() {
     if (currentPage === 'scope-routines') {
       return (
         <ErrorBoundary>
-          <ScopeAndRoutinesPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <ScopeAndRoutinesPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -326,7 +339,9 @@ function App() {
     if (currentPage === 'users') {
       return (
         <ErrorBoundary>
-          <UsersPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <UsersPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -334,7 +349,9 @@ function App() {
     if (currentPage === 'team-routines' && teamRoutinesTeamId) {
       return (
         <ErrorBoundary>
-          <TeamRoutinesPage teamId={teamRoutinesTeamId} onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <TeamRoutinesPage teamId={teamRoutinesTeamId} onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -342,7 +359,9 @@ function App() {
     if (currentPage === 'my-routines' || currentPage === 'shared-routines') {
       return (
         <ErrorBoundary>
-          <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <ScopeAndRoutinesPage onNavigate={handleNavigate} viewMode={currentPage} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -350,7 +369,9 @@ function App() {
     if (currentPage === 'routines-library') {
       return (
         <ErrorBoundary>
-          <RoutineLibraryPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <RoutineLibraryPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -358,7 +379,9 @@ function App() {
     if (currentPage === 'escalation') {
       return (
         <ErrorBoundary>
-          <EscalationRoomPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <EscalationRoomPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -366,7 +389,9 @@ function App() {
     if (currentPage === 'production') {
       return (
         <ErrorBoundary>
-          <ProductionControlPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <ProductionControlPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -374,7 +399,9 @@ function App() {
     if (currentPage === 'so-book') {
       return (
         <ErrorBoundary>
-          <ServiceOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <ServiceOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -382,7 +409,9 @@ function App() {
     if (currentPage === 'wo-book') {
       return (
         <ErrorBoundary>
-          <WorkOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <WorkOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -390,7 +419,9 @@ function App() {
     if (currentPage === 'customer') {
       return (
         <ErrorBoundary>
-          <CustomerSupportPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <CustomerSupportPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -398,7 +429,9 @@ function App() {
     if (currentPage === 'missing-parts') {
       return (
         <ErrorBoundary>
-          <MissingPartsPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <MissingPartsPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -406,7 +439,9 @@ function App() {
     if (currentPage === 'line-of-balance') {
       return (
         <ErrorBoundary>
-          <LineOfBalancePage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <LineOfBalancePage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -414,7 +449,9 @@ function App() {
     if (currentPage === 'planning') {
       return (
         <ErrorBoundary>
-          <PlanningPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <PlanningPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -422,7 +459,9 @@ function App() {
     if (currentPage === 'events-explorer') {
       return (
         <ErrorBoundary>
-          <EventsExplorerPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <EventsExplorerPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -430,7 +469,9 @@ function App() {
     if (currentPage === 'simulation') {
       return (
         <ErrorBoundary>
-          <SimulationBasketPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <SimulationBasketPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
@@ -438,14 +479,18 @@ function App() {
     if (currentPage === 'supply') {
       return (
         <ErrorBoundary>
-          <PurchaseOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          <Suspense fallback={<PageLoader />}>
+            <PurchaseOrderBookPage onNavigate={handleNavigate} onLogout={handleLogout} />
+          </Suspense>
         </ErrorBoundary>
       );
     }
 
     return (
       <ErrorBoundary>
-        <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
+        <Suspense fallback={<PageLoader />}>
+          <HomePage onNavigate={handleNavigate} onLogout={handleLogout} />
+        </Suspense>
       </ErrorBoundary>
     );
   };

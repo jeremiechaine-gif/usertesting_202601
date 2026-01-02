@@ -56,13 +56,6 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
 
   useEffect(() => {
     const scopes = getAvailableScopes();
-    const allScopes = getScopes();
-    console.log('[ScopeAssignmentStep] useEffect - Loading scopes:', {
-      availableScopes: scopes.length,
-      allScopes: allScopes.length,
-      refreshKey,
-      scopeModalOpen,
-    });
     setAvailableScopes(scopes);
     
     // Initialize userDefaultScopes from users' defaultScopeId
@@ -131,20 +124,12 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
   const getUserScopes = (userId: string): Scope[] => {
     const user = getUsers().find(u => u.id === userId);
     if (!user || !user.assignedScopeIds) {
-      console.log('[ScopeAssignmentStep] getUserScopes - No user or no assignedScopeIds:', userId);
       return [];
     }
     // Use getScopes() to get ALL scopes (templates + instances), not just availableScopes
     // This ensures we display all scopes assigned to the user, including customized instances
     const allScopes = getScopes();
     const scopes = allScopes.filter(s => user.assignedScopeIds!.includes(s.id));
-    console.log('[ScopeAssignmentStep] getUserScopes:', {
-      userId,
-      userName: user.name,
-      assignedScopeIds: user.assignedScopeIds,
-      allScopesCount: allScopes.length,
-      foundScopes: scopes.map(s => ({ id: s.id, name: s.name, isInstance: isInstance(s) })),
-    });
     return scopes;
   };
 
@@ -290,14 +275,6 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                           const defaultScopeId = userDefaultScopes[member.id] || member.defaultScopeId;
                           const availableScopesForMember = getFilteredScopes(member.id);
                           const popoverKey = `${team.id}-${member.id}`;
-                          
-                          console.log('[ScopeAssignmentStep] Rendering member:', member.name, {
-                            memberId: member.id,
-                            assignedScopeIds: member.assignedScopeIds,
-                            memberScopesCount: memberScopes.length,
-                            memberScopes: memberScopes.map(s => ({ id: s.id, name: s.name })),
-                            availableScopesCount: availableScopes.length,
-                          });
                           
                           return (
                             <div
@@ -562,31 +539,20 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
           title={scopeToDuplicate ? "Modify Scope" : editingScope ? (isInstance(editingScope) ? "Customize Scope" : "Edit Scope") : "Create Scope Template"}
           saveButtonText={scopeToDuplicate ? "Add Scope" : editingScope ? (isInstance(editingScope) ? "Update Scope" : "Update Scope") : "Create Template"}
           onSave={() => {
-            console.log('[ScopeAssignmentStep] onSave called', {
-              currentMemberId,
-              editingScope: editingScope?.id,
-              scopeToDuplicate: scopeToDuplicate?.id,
-            });
-            
             // Reload scopes after creation/update
             const oldScopes = getAvailableScopes();
             const oldScopeIds = new Set(oldScopes.map(s => s.id));
-            console.log('[ScopeAssignmentStep] Old scopes:', oldScopes.length, 'IDs:', Array.from(oldScopeIds));
             
             // Wait a bit for the scope to be saved
             setTimeout(() => {
               const allScopes = getScopes(); // Get ALL scopes from localStorage
               const newScopes = getAvailableScopes(); // Get filtered scopes
-              console.log('[ScopeAssignmentStep] After save - All scopes:', allScopes.length, 'Available scopes:', newScopes.length);
-              console.log('[ScopeAssignmentStep] All scope IDs:', allScopes.map(s => ({ id: s.id, name: s.name, isGlobal: s.isGlobal, userId: s.userId })));
               
               // Find the newly created scope (either new or duplicated)
               const newScope = newScopes.find(s => !oldScopeIds.has(s.id));
-              console.log('[ScopeAssignmentStep] New scope found:', newScope ? { id: newScope.id, name: newScope.name } : 'NOT FOUND');
               
               // Also check in all scopes if not found in filtered
               const newScopeInAll = !newScope ? allScopes.find(s => !oldScopeIds.has(s.id)) : null;
-              console.log('[ScopeAssignmentStep] New scope in all scopes:', newScopeInAll ? { id: newScopeInAll.id, name: newScopeInAll.name } : 'NOT FOUND');
               
               // Use the scope from all scopes if available
               const scopeToAssign = newScope || newScopeInAll;
@@ -595,16 +561,13 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
               
               // If creating a new scope (not editing) and we have a current member, assign it automatically
               if (currentMemberId && !editingScope && !scopeToDuplicate && scopeToAssign) {
-                console.log('[ScopeAssignmentStep] Assigning new scope to member:', currentMemberId, 'Scope:', scopeToAssign.id);
                 // Directly assign the scope to the member without checking (to avoid timing issues)
                 const user = getUsers().find(u => u.id === currentMemberId);
-                console.log('[ScopeAssignmentStep] User found:', user ? { id: user.id, name: user.name, currentScopes: user.assignedScopeIds } : 'NOT FOUND');
                 
                 if (user) {
                   const assignedScopeIds = user.assignedScopeIds || [];
                   if (!assignedScopeIds.includes(scopeToAssign.id)) {
                     assignedScopeIds.push(scopeToAssign.id);
-                    console.log('[ScopeAssignmentStep] Adding scope to user. New assignedScopeIds:', assignedScopeIds);
                     // If it's the first scope, set it as default
                     if (assignedScopeIds.length === 1) {
                       setUserDefaultScopes({ ...userDefaultScopes, [currentMemberId]: scopeToAssign.id });
@@ -612,22 +575,17 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                         assignedScopeIds: assignedScopeIds,
                         defaultScopeId: scopeToAssign.id 
                       });
-                      console.log('[ScopeAssignmentStep] Set as default scope');
                     } else {
                       updateUser(currentMemberId, { assignedScopeIds: assignedScopeIds });
                     }
                     // Force re-render
                     setRefreshKey(prev => prev + 1);
-                    console.log('[ScopeAssignmentStep] Refresh key updated');
-                  } else {
-                    console.log('[ScopeAssignmentStep] Scope already assigned to user');
                   }
                 }
               }
               
               // If duplicating a scope, assign the new copy to the current member
               if (currentMemberId && scopeToDuplicate && scopeToAssign) {
-                console.log('[ScopeAssignmentStep] Assigning duplicated scope to member:', currentMemberId, 'Scope:', scopeToAssign.id);
                 // Directly assign the duplicated scope to the member
                 const user = getUsers().find(u => u.id === currentMemberId);
                 if (user) {

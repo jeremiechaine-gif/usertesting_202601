@@ -240,15 +240,12 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     if (personasToCreate.length === 0) return;
 
     const newTeams: SimpleTeamConfig[] = personasToCreate.map(persona => {
-      // Automatically assign suggested routines based on Role profile
-      const suggestedRoutineIds = getSuggestedRoutinesForPersona(persona);
-      
       return {
         id: generateTeamId(),
         name: `${persona} Team`,
         description: `Team for ${persona}`,
         persona,
-        assignedRoutineIds: suggestedRoutineIds, // Automatically assign suggested routines
+        assignedRoutineIds: [], // No routines assigned by default - user must click to add
         memberIds: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

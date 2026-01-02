@@ -6,6 +6,7 @@
 import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
 import type { Persona } from '@/lib/onboarding/pelicoViews';
 import type { Objective } from '@/lib/onboarding/types';
+import { safeGetItem, safeSetItem } from './utils/storage';
 
 export type PelicoViewPage = 
   | 'escalation'      // Escalation Room
@@ -87,61 +88,57 @@ function isValidRoutine(routine: unknown): routine is Routine {
 }
 
 export const getRoutines = (): Routine[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
-    
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      console.warn('Invalid routines data format: expected array');
-      return [];
-    }
-    
-    // Validate and filter out invalid routines
-    const validRoutines = parsed.filter(isValidRoutine);
-    if (validRoutines.length !== parsed.length) {
-      console.warn(`Filtered out ${parsed.length - validRoutines.length} invalid routines`);
-    }
-    
-    // Migrate old routines with teamId to teamIds
-    let needsMigration = false;
-    const migratedRoutines = validRoutines.map((routine) => {
-      if (routine.teamId && !routine.teamIds) {
-        needsMigration = true;
-        return {
-          ...routine,
-          teamIds: [routine.teamId],
-          teamId: undefined, // Remove old field
-        };
-      }
-      // Ensure teamIds is always an array (even if empty)
-      if (!routine.teamIds && !routine.teamId) {
-        return {
-          ...routine,
-          teamIds: [],
-        };
-      }
-      return routine;
-    });
-    
-    if (needsMigration) {
-      saveRoutines(migratedRoutines);
-      return migratedRoutines;
-    }
-    
-    return migratedRoutines;
-  } catch {
+  const parsed = safeGetItem<Routine[]>(STORAGE_KEY);
+  if (!parsed) return [];
+  
+  if (!Array.isArray(parsed)) {
+    console.warn('Invalid routines data format: expected array');
     return [];
   }
+  
+  // Validate and filter out invalid routines
+  const validRoutines = parsed.filter(isValidRoutine);
+  if (validRoutines.length !== parsed.length) {
+    console.warn(`Filtered out ${parsed.length - validRoutines.length} invalid routines`);
+    // Save cleaned data if some routines were invalid
+    if (validRoutines.length > 0) {
+      safeSetItem(STORAGE_KEY, validRoutines);
+    }
+  }
+  
+  // Migrate old routines with teamId to teamIds
+  let needsMigration = false;
+  const migratedRoutines = validRoutines.map((routine) => {
+    if (routine.teamId && !routine.teamIds) {
+      needsMigration = true;
+      return {
+        ...routine,
+        teamIds: [routine.teamId],
+        teamId: undefined, // Remove old field
+      };
+    }
+    // Ensure teamIds is always an array (even if empty)
+    if (!routine.teamIds && !routine.teamId) {
+      return {
+        ...routine,
+        teamIds: [],
+      };
+    }
+    return routine;
+  });
+  
+  if (needsMigration) {
+    saveRoutines(migratedRoutines);
+    return migratedRoutines;
+  }
+  
+  return migratedRoutines;
 };
 
 export const saveRoutines = (routines: Routine[]): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(routines));
-  } catch (error) {
-    console.error('Failed to save routines:', error);
+  const success = safeSetItem(STORAGE_KEY, routines);
+  if (!success) {
+    console.error('Failed to save routines: localStorage operation failed');
   }
 };
 

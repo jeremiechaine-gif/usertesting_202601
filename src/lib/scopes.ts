@@ -5,6 +5,7 @@
 
 import { getUsers, type User } from './users';
 import { getTeams, type Team } from './teams';
+import { safeGetItem, safeSetItem, safeRemoveItem } from './utils/storage';
 
 export interface ScopeFilter {
   id: string;
@@ -44,42 +45,35 @@ function isValidScope(scope: unknown): scope is Scope {
 }
 
 export const getScopes = (): Scope[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
-    
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      console.warn('Invalid scopes data format: expected array');
-      return [];
-    }
-    
-    // Validate and filter out invalid scopes
-    const validScopes = parsed.filter(isValidScope);
-    if (validScopes.length !== parsed.length) {
-      console.warn(`Filtered out ${parsed.length - validScopes.length} invalid scopes`);
-    }
-    
-    return validScopes;
-  } catch (error) {
-    console.error('Error loading scopes from localStorage:', error);
-    // Try to clear corrupted data
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // Ignore cleanup errors
-    }
+  const parsed = safeGetItem<Scope[]>(STORAGE_KEY);
+  if (!parsed) return [];
+  
+  if (!Array.isArray(parsed)) {
+    console.warn('Invalid scopes data format: expected array');
+    // Clear corrupted data
+    safeRemoveItem(STORAGE_KEY);
     return [];
   }
+  
+  // Validate and filter out invalid scopes
+  const validScopes = parsed.filter(isValidScope);
+  if (validScopes.length !== parsed.length) {
+    console.warn(`Filtered out ${parsed.length - validScopes.length} invalid scopes`);
+    // Save cleaned data if some scopes were invalid
+    if (validScopes.length > 0) {
+      safeSetItem(STORAGE_KEY, validScopes);
+    } else {
+      safeRemoveItem(STORAGE_KEY);
+    }
+  }
+  
+  return validScopes;
 };
 
 export const saveScopes = (scopes: Scope[]): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(scopes));
-  } catch (error) {
-    console.error('Failed to save scopes:', error);
+  const success = safeSetItem(STORAGE_KEY, scopes);
+  if (!success) {
+    console.error('Failed to save scopes: localStorage operation failed');
   }
 };
 
@@ -149,24 +143,17 @@ export const setDefaultScope = (id: string): boolean => {
 const CURRENT_SCOPE_KEY = 'pelico-current-scope';
 
 export const getCurrentScopeId = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(CURRENT_SCOPE_KEY);
-  } catch {
-    return null;
-  }
+  return safeGetItem<string>(CURRENT_SCOPE_KEY);
 };
 
 export const setCurrentScopeId = (id: string | null): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    if (id) {
-      localStorage.setItem(CURRENT_SCOPE_KEY, id);
-    } else {
-      localStorage.removeItem(CURRENT_SCOPE_KEY);
+  if (id) {
+    const success = safeSetItem(CURRENT_SCOPE_KEY, id);
+    if (!success) {
+      console.error('Failed to save current scope: localStorage operation failed');
     }
-  } catch (error) {
-    console.error('Failed to save current scope:', error);
+  } else {
+    safeRemoveItem(CURRENT_SCOPE_KEY);
   }
 };
 

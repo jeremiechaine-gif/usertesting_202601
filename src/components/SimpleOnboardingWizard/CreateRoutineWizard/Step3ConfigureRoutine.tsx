@@ -3,11 +3,15 @@
  * Let users apply filters, sorting, and view-specific settings
  */
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Accordion } from '@/components/ui/accordion';
-import { Filter, ArrowUpDown, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Info, Plus, X } from 'lucide-react';
+import type { Objective } from '@/lib/onboarding/types';
 import type { PelicoViewDefinition } from '@/lib/onboarding/pelicoViews';
 import type { ColumnFiltersState, SortingState, ColumnSizingState, ColumnResizeMode } from '@tanstack/react-table';
 import {
@@ -21,14 +25,14 @@ import {
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { columns } from '@/lib/columns';
 import { mockData } from '@/lib/mockData';
-import { SortingSection } from '@/components/sorting-filters/SortingSection';
-import { FiltersSection } from '@/components/sorting-filters/FiltersSection';
 import { tableStateToDraftSorting, tableStateToDraftFilters, draftSortingToTableState, draftFiltersToTableState } from '@/components/sorting-filters/stateAdapters';
 import { getSortableColumns, getColumnIdFromFilterId, groupFilterDefinitions, filterSearchResults } from '@/components/sorting-filters/utils';
 import type { SortConfig, FilterConfig, FilterDefinition } from '@/components/SortingAndFiltersPopover';
 import { AddFilterView } from '@/components/SortingAndFiltersPopover';
 import { useScope } from '@/contexts/ScopeContext';
 import { ColumnHeader } from '@/components/ColumnHeader';
+import { SortingAndFiltersPopover } from '@/components/SortingAndFiltersPopover';
+import { ColumnsPopover } from '@/components/ColumnsPopover';
 import { cn } from '@/lib/utils';
 
 // Lazy load ColumnFilterModal
@@ -42,6 +46,18 @@ interface Step3ConfigureRoutineProps {
   onSortingChange: (sorting: SortingState) => void;
   onNext: () => void;
   onBack: () => void;
+  // Optional props for routine name/description
+  routineName?: string;
+  routineDescription?: string;
+  onRoutineNameChange?: (name: string) => void;
+  onRoutineDescriptionChange?: (description: string) => void;
+  // Optional props for objective
+  selectedObjective?: Objective | string;
+  customObjective?: string;
+  showCustomObjectiveInput?: boolean;
+  onObjectiveChange?: (objective: Objective | string) => void;
+  onCustomObjectiveChange?: (objective: string) => void;
+  onShowCustomObjectiveInputChange?: (show: boolean) => void;
 }
 
 export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
@@ -52,6 +68,16 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
   onSortingChange,
   onNext,
   onBack,
+  routineName = '',
+  routineDescription = '',
+  onRoutineNameChange,
+  onRoutineDescriptionChange,
+  selectedObjective = '',
+  customObjective = '',
+  showCustomObjectiveInput = false,
+  onObjectiveChange,
+  onCustomObjectiveChange,
+  onShowCustomObjectiveInputChange,
 }) => {
   // Scope context for scope filters
   const { getScopeFilters, currentScope } = useScope();
@@ -93,6 +119,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
     new Set(filterDefinitions.filter(f => f.isFavorite).map(f => f.id))
   );
   const [dismissedTip, setDismissedTip] = useState(false);
+  const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null);
   
   // Handle column filters change from table (e.g., column header)
   const handleColumnFiltersChange = useCallback((updater: ColumnFiltersState | ((prev: ColumnFiltersState) => ColumnFiltersState)) => {
@@ -311,35 +338,104 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Configure Your Routine</h3>
-        <p className="text-sm text-muted-foreground">
-          Set up filters to define your scope and sorting to prioritize what matters most.
-        </p>
-      </div>
-
-      {/* Explanation */}
-      <div className="p-4 rounded-lg border border-[#2063F0]/20 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
-        <div className="flex items-start gap-3">
-          <Info className="h-4 w-4 text-[#2063F0] mt-0.5 shrink-0" />
+    <div className="space-y-4 sm:space-y-6 min-w-0 max-w-full">
+      {/* Routine Name and Description */}
+      {(onRoutineNameChange || onRoutineDescriptionChange) && (
+        <div className="space-y-4 p-4 sm:p-6 rounded-lg bg-muted/30">
+          {/* Routine Name with Pelico View Badge */}
           <div className="space-y-2">
-            <div>
-              <p className="text-sm font-medium mb-1">Filters define scope</p>
-              <p className="text-xs text-muted-foreground">
-                Filters narrow down the data you see. For example, show only orders from specific suppliers or parts with certain statuses.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Sorting defines priority</p>
-              <p className="text-xs text-muted-foreground">
-                Sorting determines the order of your data. The most important items appear first based on your sorting criteria.
-              </p>
+            <Label htmlFor="routine-name" className="text-sm font-semibold">
+              Routine Name <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+              <Input
+                id="routine-name"
+                placeholder="e.g., Critical supplier follow-ups"
+                value={routineName}
+                onChange={(e) => onRoutineNameChange?.(e.target.value)}
+                className="flex-1 min-w-0"
+              />
             </div>
           </div>
+
+          {/* Routine Description */}
+          <div className="space-y-2">
+            <Label htmlFor="routine-description" className="text-sm font-semibold">
+              Description <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
+            <Textarea
+              id="routine-description"
+              placeholder="e.g., Use this routine during daily standups to prioritize supplier actions"
+              value={routineDescription}
+              onChange={(e) => onRoutineDescriptionChange?.(e.target.value)}
+              rows={2}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Objective Dropdown */}
+          {(onObjectiveChange || onCustomObjectiveChange) && (
+            <div className="space-y-2">
+              <Label htmlFor="routine-objective" className="text-sm font-semibold">
+                Objective <span className="text-muted-foreground text-xs">(Optional)</span>
+              </Label>
+              {!showCustomObjectiveInput ? (
+                <Select
+                  value={selectedObjective}
+                  onValueChange={(value) => {
+                    if (value === '__custom__') {
+                      onShowCustomObjectiveInputChange?.(true);
+                      onObjectiveChange?.('');
+                    } else {
+                      onObjectiveChange?.(value);
+                    }
+                  }}
+                >
+                  <SelectTrigger id="routine-objective" className="w-full">
+                    <SelectValue placeholder="Select objective" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(['Anticipate', 'Monitor', 'Correct', 'Prioritize', 'Report'] as Objective[]).map((obj) => (
+                      <SelectItem key={obj} value={obj}>
+                        {obj}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__custom__" className="text-[#2063F0] font-medium">
+                      <Plus className="h-3 w-3 inline mr-1" />
+                      Create new
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Enter custom objective"
+                    value={customObjective}
+                    onChange={(e) => onCustomObjectiveChange?.(e.target.value)}
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customObjective.trim()) {
+                        e.preventDefault();
+                        onShowCustomObjectiveInputChange?.(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      onShowCustomObjectiveInputChange?.(false);
+                      onCustomObjectiveChange?.('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Add Filter View */}
       {showAddFilterView && (
@@ -370,22 +466,72 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
         </div>
       )}
 
+      {/* UX Guidance Banner */}
+      {!showAddFilterView && (
+        <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
+          <Info className="h-4 w-4 sm:h-5 sm:w-5 text-[#2063F0] mt-0.5 shrink-0" />
+          <div className="flex-1 space-y-2 min-w-0">
+            <p className="text-xs sm:text-sm font-semibold text-foreground">Configure your routine view</p>
+            <div className="space-y-1.5 text-xs text-muted-foreground">
+              <p className="flex items-start gap-2">
+                <span className="font-medium text-[#2063F0] shrink-0">•</span>
+                <span className="min-w-0">Use the <strong>Sorting & Filters</strong> sections below to add filters and sorting rules</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="font-medium text-[#2063F0] shrink-0">•</span>
+                <span className="min-w-0">Click on column headers in the preview table to sort or filter directly</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="font-medium text-[#2063F0] shrink-0">•</span>
+                <span className="min-w-0">The table preview updates in real-time as you configure your routine</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Preview */}
       {!showAddFilterView && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="p-4 bg-muted/30 border-b">
-            <h4 className="text-sm font-semibold">Preview</h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              Configure filters and sorting below, or interact directly with the table columns.
-            </p>
+        <div className="border rounded-lg overflow-hidden flex flex-col w-full max-w-full">
+          {/* Toolbar */}
+          <div className="p-3 sm:p-4 bg-muted/30 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+              <Badge 
+                variant="outline" 
+                className="text-xs shrink-0 bg-pink-500/10 text-pink-600 border-0 px-3 py-1.5 whitespace-nowrap"
+              >
+                {view.name}
+              </Badge>
+              <SortingAndFiltersPopover
+                sorting={sorting}
+                columnFilters={userFilters}
+                onSortingChange={handleSortingChange}
+                onColumnFiltersChange={handleColumnFiltersChange}
+                columns={columns}
+                filterDefinitions={filterDefinitions}
+                onOpenFilterModal={handleOpenFilterModal}
+                scopeFilters={[]}
+              />
+            </div>
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end sm:justify-start">
+              <ColumnsPopover 
+                table={table} 
+                columns={columns}
+                highlightedColumnId={highlightedColumnId}
+                onHighlightChange={setHighlightedColumnId}
+              />
+            </div>
           </div>
-          <div className="overflow-auto max-h-[400px]">
-            <div className="inline-block min-w-full align-middle">
+
+          {/* Table container */}
+          <div className="overflow-auto max-h-[400px] flex-1 min-h-0 w-full">
+            <div className="inline-block min-w-full align-middle w-full max-w-full">
               <table
-                className="min-w-full divide-y divide-border/60"
+                className="min-w-full divide-y divide-border/60 w-full"
                 style={{ 
-                  width: table.getCenterTotalSize() || '100%',
-                  tableLayout: 'fixed',
+                  width: '100%',
+                  maxWidth: '100%',
+                  tableLayout: 'auto',
                   borderCollapse: 'separate',
                   borderSpacing: 0,
                 }}
@@ -553,36 +699,6 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Configuration Sections */}
-      {!showAddFilterView && (
-        <div className="border rounded-lg overflow-hidden">
-          <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full">
-            {/* Sorting Section - Uses its own AccordionItem */}
-            <SortingSection
-              draftSorting={draftSorting}
-              sortableColumns={sortableColumns}
-              dismissedTip={dismissedTip}
-              onDismissTip={() => setDismissedTip(true)}
-              onAddSort={handleAddSort}
-              onUpdateSort={handleUpdateSort}
-              onRemoveSort={handleRemoveSort}
-              onReorderSort={handleReorderSort}
-            />
-
-            {/* Filters Section - Uses its own AccordionItem */}
-            <FiltersSection
-              draftFilters={draftFilters}
-              filterDefinitions={filterDefinitionsWithFavorites}
-              columns={columns}
-              onAddFilter={handleAddFilterClick}
-              onUpdateFilterValues={handleUpdateFilterValues}
-              onRemoveFilter={handleRemoveFilter}
-              onOpenFilterModal={handleOpenFilterModal}
-            />
-          </Accordion>
         </div>
       )}
 

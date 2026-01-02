@@ -38,7 +38,11 @@ export interface SimpleTeamConfig {
 }
 
 export type TeamCreationSubstep = 'welcome' | 'mode-selection' | 'persona-selection' | 'manual-creation';
-export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
+export type RoutineSelectionSubstep = 
+  | 'team-selection'           // Sélection finale (vue actuelle)
+  | 'recommended-routines'     // Sous-étape 4.1 : Routines recommandées
+  | 'routine-preview'           // Sous-étape 4.2 : Aperçu de routine
+  | 'routine-selection';        // Alias pour team-selection (backward compat)
 
 interface SimpleOnboardingState {
   teams: SimpleTeamConfig[];
@@ -74,8 +78,12 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   const [step0CanProceed, setStep0CanProceed] = useState(false);
   const step0ContinueHandlerRef = useRef<(() => boolean) | null>(null);
   // Routine creation substeps state
-  const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | 'save' | null>(null);
+  const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | null>(null);
   const [routineNameForValidation, setRoutineNameForValidation] = useState('');
+  // Refs for RoutineSelectionStep handlers
+  const continueFromRecommendedRef = useRef<(() => void) | null>(null);
+  const addRoutineFromPreviewRef = useRef<(() => void) | null>(null);
+  const backFromPreviewRef = useRef<(() => void) | null>(null);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -183,14 +191,21 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     saveState();
   };
 
-  // Handle clear all
+  // Handle clear all - Reset wizard to initial state (step 0)
   const handleClearAll = () => {
+    // Reset all state variables to initial values
     setTeams([]);
     setStep(0);
     setCurrentSubstep({
       step0: 'welcome',
       step3: 'team-selection',
     });
+    setStep0CanProceed(false);
+    setRoutineCreationStep(null);
+    setRoutineNameForValidation('');
+    step0ContinueHandlerRef.current = null;
+    
+    // Clear localStorage state
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -203,7 +218,14 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     }
     if (step === 1) return teams.every(team => team.memberIds.length > 0);
     if (step === 2) return true; // Scopes are optional
-    if (step === 3) return teams.every(team => team.assignedRoutineIds.length > 0);
+    if (step === 3) {
+      // For step 3, allow proceeding if we're in a substep (navigation within step 3)
+      // or if all teams have routines assigned (final validation)
+      if (currentSubstep.step3 === 'recommended-routines' || currentSubstep.step3 === 'routine-preview') {
+        return true; // Always allow navigation within substeps
+      }
+      return teams.every(team => team.assignedRoutineIds.length > 0);
+    }
     return false;
   };
 
@@ -397,15 +419,14 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                         Create routine
                       </div>
-                      {(['choose-view', 'configure-table', 'save'] as const).map((substep, substepIndex) => {
+                      {(['choose-view', 'configure-table'] as const).map((substep, substepIndex) => {
                         const substepLabels = {
                           'choose-view': 'Choose View',
                           'configure-table': 'Configure',
-                          'save': 'Save',
                         };
                         const isSubstepActive = routineCreationStep === substep;
                         const isSubstepCompleted = routineCreationStep && 
-                          ['choose-view', 'configure-table', 'save'].indexOf(routineCreationStep) > substepIndex;
+                          ['choose-view', 'configure-table'].indexOf(routineCreationStep) > substepIndex;
                         const canNavigateToSubstep = isSubstepCompleted || isSubstepActive;
 
                         return (
@@ -478,7 +499,9 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   {step === 0 && 'Welcome and create teams from Role profiles or manually'}
                   {step === 1 && 'Add members to each team'}
                   {step === 2 && 'Assign scopes to team members'}
-                  {step === 3 && 'Assign routines to each team'}
+                  {step === 3 && currentSubstep.step3 === 'recommended-routines' 
+                    ? 'Configuration des routines par équipe'
+                    : 'Assign routines to each team'}
                 </p>
               </div>
             </div>
@@ -543,6 +566,9 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 setRoutineCreationStep(null);
                 setRoutineNameForValidation('');
               }}
+              onContinueFromRecommendedRef={continueFromRecommendedRef}
+              onAddRoutineFromPreviewRef={addRoutineFromPreviewRef}
+              onBackFromPreviewRef={backFromPreviewRef}
             />
           )}
         </div>
@@ -555,7 +581,18 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={handleBack}
+                  onClick={() => {
+                    // Handle back for step 3 substeps
+                    if (step === 3 && currentSubstep.step3 === 'routine-preview' && backFromPreviewRef.current) {
+                      backFromPreviewRef.current();
+                    } else if (step === 3 && currentSubstep.step3 === 'recommended-routines') {
+                      // Go back to team-selection from recommended-routines
+                      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+                      saveState();
+                    } else {
+                      handleBack();
+                    }
+                  }}
                   disabled={step === 0 && currentSubstep.step0 === 'welcome'}
                   className="gap-2"
                 >
@@ -572,11 +609,63 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 </Button>
               </div>
               <Button
-                onClick={step === 3 ? handleComplete : handleNext}
-                disabled={!canProceed()}
+                onClick={() => {
+                  console.log('[SimpleOnboardingWizard] Button clicked, step:', step, 'substep:', currentSubstep.step3);
+                  // Handle continue for step 3 substeps
+                  if (step === 3 && currentSubstep.step3 === 'recommended-routines') {
+                    // Use ref handler if available, otherwise use direct navigation
+                    console.log('[SimpleOnboardingWizard] Continue from recommended clicked, ref:', continueFromRecommendedRef.current);
+                    if (continueFromRecommendedRef.current) {
+                      try {
+                        continueFromRecommendedRef.current();
+                      } catch (error) {
+                        console.error('[SimpleOnboardingWizard] Error calling ref handler:', error);
+                        // Fallback: directly change substep
+                        setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+                        saveState();
+                      }
+                    } else {
+                      // Fallback: directly change substep if ref not available
+                      console.log('[SimpleOnboardingWizard] Ref not available, using direct fallback');
+                      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+                      saveState();
+                    }
+                  } else if (step === 3 && currentSubstep.step3 === 'routine-preview') {
+                    // For preview, try ref first, fallback to direct navigation
+                    if (addRoutineFromPreviewRef.current) {
+                      addRoutineFromPreviewRef.current();
+                    } else {
+                      // Fallback: go back to recommended-routines
+                      setCurrentSubstep({ ...currentSubstep, step3: 'recommended-routines' });
+                      saveState();
+                    }
+                  } else if (step === 3) {
+                    handleComplete();
+                  } else {
+                    handleNext();
+                  }
+                }}
+                disabled={
+                  // Don't disable button for substeps navigation
+                  step === 3 && (currentSubstep.step3 === 'recommended-routines' || currentSubstep.step3 === 'routine-preview')
+                    ? false
+                    : !canProceed()
+                }
                 className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {step === 3 ? 'Complete Setup' : 'Continue'}
+                {step === 3 && currentSubstep.step3 === 'recommended-routines' 
+                  ? (() => {
+                      // Determine if there are more teams or if we're going to final selection
+                      const teamsWithPersona = teams.filter(t => t.persona);
+                      // We can't easily access currentTeamIndex here, so use a generic message
+                      // The actual logic is handled in RoutineSelectionStep
+                      return 'Continuer';
+                    })()
+                  : step === 3 && currentSubstep.step3 === 'routine-preview'
+                  ? 'Ajouter la routine'
+                  : step === 3 
+                  ? 'Complete Setup' 
+                  : 'Continue'}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -597,7 +686,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     onClick={() => {
                       if (routineCreationStep === 'configure-table') {
                         setRoutineCreationStep('choose-view');
-                      } else if (routineCreationStep === 'save') {
+                      } else if (routineCreationStep === 'configure-table') {
                         setRoutineCreationStep('configure-table');
                       }
                     }}
@@ -624,17 +713,6 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               </div>
               {routineCreationStep === 'configure-table' && (
                 <Button
-                  onClick={() => setRoutineCreationStep('save')}
-                  className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
-                >
-                  Continue
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Button>
-              )}
-              {routineCreationStep === 'save' && (
-                <Button
                   onClick={() => {
                     // Call handleSave from CreateRoutineView
                     const handleSave = (window as any).__createRoutineViewHandleSave;
@@ -645,7 +723,10 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   disabled={!routineNameForValidation.trim()}
                   className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Routine
+                  Create
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Button>
               )}
             </div>

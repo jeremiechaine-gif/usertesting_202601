@@ -25,9 +25,9 @@ import {
 } from '@/lib/onboarding/pelicoViews';
 import { Step1ChooseView } from './SimpleOnboardingWizard/CreateRoutineWizard/Step1ChooseView';
 import { Step3ConfigureRoutine } from './SimpleOnboardingWizard/CreateRoutineWizard/Step3ConfigureRoutine';
-import { Step4SaveRoutine } from './SimpleOnboardingWizard/CreateRoutineWizard/Step4SaveRoutine';
+import type { Objective } from '@/lib/onboarding/types';
 
-export type CreateRoutineStep = 'choose-view' | 'configure' | 'save';
+export type CreateRoutineStep = 'choose-view' | 'configure';
 
 interface CreateRoutineFullPageWizardProps {
   onClose: () => void;
@@ -50,6 +50,9 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
   const [routineName, setRoutineName] = useState('');
   const [routineDescription, setRoutineDescription] = useState('');
   const [selectedPersonas, setSelectedPersonas] = useState<Persona[]>([]);
+  const [selectedObjective, setSelectedObjective] = useState<Objective | string>('');
+  const [customObjective, setCustomObjective] = useState('');
+  const [showCustomObjectiveInput, setShowCustomObjectiveInput] = useState(false);
   
   const viewsByIntent = getViewsByIntent();
 
@@ -62,29 +65,50 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
     setRoutineName('');
     setRoutineDescription('');
     setSelectedPersonas([]);
+    setSelectedObjective('');
+    setCustomObjective('');
+    setShowCustomObjectiveInput(false);
   }, []);
+
+  // Suggest objective based on view intent
+  const suggestObjectiveFromView = (view: PelicoViewDefinition): Objective => {
+    const intentToObjective: Record<string, Objective> = {
+      'resolve-blockers': 'Correct',
+      'execute-operations': 'Monitor',
+      'anticipate-risks': 'Anticipate',
+      'manage-customer-commitments': 'Monitor',
+      'investigate-causes-impacts': 'Monitor',
+    };
+    return intentToObjective[view.intent] || 'Monitor';
+  };
 
   const handleViewSelect = (view: PelicoViewDefinition) => {
     setSelectedView(view);
     setCurrentStep('configure');
+    // Suggest objective when view is selected
+    const suggested = suggestObjectiveFromView(view);
+    setSelectedObjective(suggested);
   };
 
   const handleNextFromConfigure = () => {
-    setCurrentStep('save');
+    // No longer needed - Create button directly saves
   };
 
   const handleBackFromConfigure = () => {
     setCurrentStep('choose-view');
   };
 
-  const handleBackFromSave = () => {
-    setCurrentStep('configure');
-  };
 
   const handleSave = () => {
     if (!selectedView || !routineName.trim()) return;
 
     const currentUserId = getCurrentUserId();
+    const objectives: Objective[] = selectedObjective && !showCustomObjectiveInput 
+      ? [selectedObjective as Objective]
+      : customObjective.trim() 
+      ? [customObjective.trim() as Objective]
+      : [];
+    
     const routine = createRoutine({
       name: routineName.trim(),
       description: routineDescription.trim() || undefined,
@@ -95,35 +119,35 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
       createdBy: currentUserId,
       teamIds: teamId ? [teamId] : undefined,
       personas: selectedPersonas.length > 0 ? selectedPersonas : undefined,
+      objectives: objectives.length > 0 ? objectives : undefined,
     });
 
     onRoutineCreated(routine.id);
     onClose();
   };
 
-  const canProceedFromSave = routineName.trim().length > 0;
+  const canProceedFromConfigure = routineName.trim().length > 0;
 
   const substeps: { id: CreateRoutineStep; label: string }[] = [
     { id: 'choose-view', label: 'Choose View' },
     { id: 'configure', label: 'Configure' },
-    { id: 'save', label: 'Save' },
   ];
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex">
       {/* Sidebar */}
-      <div className="w-64 border-r border-border bg-muted/30 flex flex-col shrink-0">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+      <div className="hidden sm:flex w-48 lg:w-64 border-r border-border bg-muted/30 flex-col shrink-0">
+        <div className="p-4 sm:p-6 border-b border-border">
+          <h2 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">
             Create Routine
           </h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-4">
           <div className="space-y-2">
             {substeps.map((substep, index) => {
               const isActive = currentStep === substep.id;
-              const isCompleted = ['choose-view', 'configure', 'save'].indexOf(currentStep) > index;
+              const isCompleted = ['choose-view', 'configure'].indexOf(currentStep) > index;
               
               return (
                 <button
@@ -135,7 +159,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                     }
                   }}
                   className={cn(
-                    'w-full text-left px-3 py-2 rounded-md transition-colors flex items-center gap-2',
+                    'w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm',
                     isActive && 'bg-[#2063F0] text-white',
                     isCompleted && !isActive && 'bg-muted hover:bg-muted/80',
                     !isActive && !isCompleted && 'text-muted-foreground hover:bg-muted/50'
@@ -166,17 +190,17 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="relative shrink-0 border-b border-border">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden max-w-full">
+        {/* Header - fixed */}
+        <div className="relative shrink-0 border-b border-border bg-background z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
-          <div className="relative px-8 pt-6 pb-4">
+          <div className="relative px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-sm text-muted-foreground mb-1">
                   Routines / Create Routine / {substeps.find(s => s.id === currentStep)?.label}
                 </div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-xl sm:text-2xl font-bold">
                   Create Routine
                 </h1>
               </div>
@@ -192,10 +216,10 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
           </div>
         </div>
 
-        {/* Content area */}
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="px-8 pt-6 pb-6 max-w-4xl mx-auto">
+        {/* Content area - scrollable */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full w-full">
+            <div className="px-2 pt-2 pb-2 w-full box-border" style={{ maxWidth: '100%' }}>
               {currentStep === 'choose-view' && (
                 <Step1ChooseView
                   recommendedViews={[]} // No recommendations when creating from Scope and Routines
@@ -218,66 +242,56 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                   onSortingChange={setSorting}
                   onNext={handleNextFromConfigure}
                   onBack={handleBackFromConfigure}
-                />
-              )}
-
-              {currentStep === 'save' && selectedView && (
-                <Step4SaveRoutine
-                  view={selectedView}
                   routineName={routineName}
                   routineDescription={routineDescription}
-                  selectedPersonas={selectedPersonas}
-                  onNameChange={setRoutineName}
-                  onDescriptionChange={setRoutineDescription}
-                  onPersonasChange={setSelectedPersonas}
-                  onBack={handleBackFromSave}
+                  onRoutineNameChange={setRoutineName}
+                  onRoutineDescriptionChange={setRoutineDescription}
+                  selectedObjective={selectedObjective}
+                  customObjective={customObjective}
+                  showCustomObjectiveInput={showCustomObjectiveInput}
+                  onObjectiveChange={setSelectedObjective}
+                  onCustomObjectiveChange={setCustomObjective}
+                  onShowCustomObjectiveInputChange={setShowCustomObjectiveInput}
                 />
               )}
             </div>
           </ScrollArea>
+        </div>
 
-          {/* Footer with navigation */}
-          <div className="px-8 py-4 border-t border-border flex items-center justify-between shrink-0 max-w-4xl mx-auto w-full">
-            <div className="flex items-center gap-2">
-              {currentStep !== 'choose-view' && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (currentStep === 'configure') {
-                      setCurrentStep('choose-view');
-                    } else if (currentStep === 'save') {
-                      setCurrentStep('configure');
-                    }
-                  }}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
+        {/* Footer with navigation - fixed */}
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 max-w-full sm:max-w-2xl lg:max-w-4xl mx-auto w-full bg-background z-10">
+          <div className="flex items-center gap-2 order-2 sm:order-1">
+            {currentStep !== 'choose-view' && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (currentStep === 'configure') {
+                    setCurrentStep('choose-view');
+                  }
+                }}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
               </Button>
-              
-              {currentStep === 'configure' && (
-                <Button onClick={handleNextFromConfigure}>
-                  Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-              
-              {currentStep === 'save' && (
-                <Button
-                  onClick={handleSave}
-                  disabled={!canProceedFromSave}
-                  className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
-                >
-                  Create Routine
-                </Button>
-              )}
-            </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 order-1 sm:order-2 justify-end sm:justify-start">
+            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+              Cancel
+            </Button>
+            
+            {currentStep === 'configure' && (
+              <Button
+                onClick={handleSave}
+                disabled={!canProceedFromConfigure}
+                className="w-full sm:w-auto bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
+              >
+                Create
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
  * Choose routines for each team with the same design as "Manage Your Teams"
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -27,8 +27,15 @@ import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
 import { CreateRoutineView } from './CreateRoutineView';
 import { getRoutines } from '@/lib/routines';
+import { Substep4_1_RecommendedRoutines } from './RoutineSelectionStep/Substep4_1_RecommendedRoutines';
+import { Substep4_2_RoutinePreview } from './RoutineSelectionStep/Substep4_2_RoutinePreview';
+import type { ColumnFiltersState, SortingState } from '@tanstack/react-table';
 
-export type RoutineSelectionSubstep = 'team-selection' | 'routine-selection';
+export type RoutineSelectionSubstep = 
+  | 'team-selection'           // Sélection finale (vue actuelle)
+  | 'recommended-routines'     // Sous-étape 4.1 : Routines recommandées
+  | 'routine-preview'           // Sous-étape 4.2 : Aperçu de routine
+  | 'routine-selection';        // Alias pour team-selection (backward compat)
 export type CreateRoutineStep = 'choose-view' | 'configure-table' | 'save';
 
 interface RoutineSelectionStepProps {
@@ -43,6 +50,10 @@ interface RoutineSelectionStepProps {
   onRoutineCreationStepChange?: (step: CreateRoutineStep | null) => void;
   onRoutineNameChange?: (name: string) => void; // Expose routine name for footer validation
   onCancelRoutineCreation?: () => void; // Callback to cancel routine creation
+  // Expose handlers for footer actions
+  onContinueFromRecommendedRef?: React.MutableRefObject<(() => void) | null>;
+  onAddRoutineFromPreviewRef?: React.MutableRefObject<(() => void) | null>;
+  onBackFromPreviewRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 interface RoutineWithDetails {
@@ -66,12 +77,23 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   onRoutineCreationStepChange,
   onRoutineNameChange,
   onCancelRoutineCreation,
+  onContinueFromRecommendedRef,
+  onAddRoutineFromPreviewRef,
+  onBackFromPreviewRef,
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
   const [creatingRoutineForTeam, setCreatingRoutineForTeam] = useState<string | null>(null);
   const [tempSelectedRoutineIds, setTempSelectedRoutineIds] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh when routines are created
+  
+  // State for new substeps flow
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
+  const [previewingRoutineId, setPreviewingRoutineId] = useState<string | null>(null);
+  const [tempRoutineConfigs, setTempRoutineConfigs] = useState<Record<string, { filters: ColumnFiltersState; sorting: SortingState }>>({});
+  // Store current preview filters/sorting for footer button
+  const [currentPreviewFilters, setCurrentPreviewFilters] = useState<ColumnFiltersState>([]);
+  const [currentPreviewSorting, setCurrentPreviewSorting] = useState<SortingState>([]);
 
   // Get all available routines from library
   const availableRoutines: RoutineWithDetails[] = useMemo(() => {
@@ -105,7 +127,9 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       description: routine.description,
       personas: [], // User-created routines don't have personas
       pelicoViews: routine.pelicoView ? [pelicoViewPageToName[routine.pelicoView] || routine.pelicoView] : [],
-      objectives: [], // User-created routines don't have objectives
+      objectives: routine.objectives && routine.objectives.length > 0 
+        ? routine.objectives.map(obj => typeof obj === 'string' ? obj : String(obj))
+        : [], // Include objectives from routine if they exist
     }));
   }, [refreshKey]); // Refresh when refreshKey changes
 
@@ -259,7 +283,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     setRefreshKey(prev => prev + 1);
   };
 
-  // Add all suggested routines
+  // Add all suggested routines (only those not already added)
   const handleAddAllSuggestedRoutines = (teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team || !team.persona) return;
@@ -269,11 +293,15 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       if (t.id === teamId) {
         const routineIds = t.assignedRoutineIds || [];
         const routinesToAdd = suggestedRoutineIds.filter(id => !routineIds.includes(id));
-        return {
-          ...t,
-          assignedRoutineIds: [...routineIds, ...routinesToAdd],
-          updatedAt: new Date().toISOString(),
-        };
+        
+        // Only update if there are routines to add
+        if (routinesToAdd.length > 0) {
+          return {
+            ...t,
+            assignedRoutineIds: [...routineIds, ...routinesToAdd],
+            updatedAt: new Date().toISOString(),
+          };
+        }
       }
       return t;
     });
@@ -304,6 +332,200 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       }
     }
   }, [routineCreationStep, creatingRoutineForTeam, onSubstepChange]);
+
+  // Get teams with persona for guided flow
+  const teamsWithPersona = useMemo(() => teams.filter(t => t.persona), [teams]);
+  const hasMoreTeamsWithPersona = currentTeamIndex < teamsWithPersona.length - 1;
+
+  // Get current team for substeps (use teamsWithPersona if in recommended flow)
+  const currentTeamForSubstep = useMemo(() => {
+    if (currentSubstep === 'recommended-routines' || currentSubstep === 'routine-preview') {
+      return teamsWithPersona[currentTeamIndex] || null;
+    }
+    return null;
+  }, [currentSubstep, teamsWithPersona, currentTeamIndex]);
+
+  // Initialize: if we have teams with persona and we're starting, go to recommended routines for first team
+  // Always navigate to recommended-routines for teams with persona (even if they already have routines)
+  useEffect(() => {
+    // Only trigger if we're on team-selection and have teams with persona
+    if (teamsWithPersona.length > 0 && currentSubstep === 'team-selection' && currentTeamIndex === 0) {
+      const firstTeam = teamsWithPersona[0];
+      // Always navigate to recommended-routines for teams with persona
+      if (firstTeam && onSubstepChange) {
+        onSubstepChange('recommended-routines');
+      }
+    }
+  }, [teamsWithPersona, currentSubstep, currentTeamIndex, onSubstepChange]); // Run when teams change
+
+  // Handle preview routine
+  const handlePreviewRoutine = useCallback((routineId: string) => {
+    setPreviewingRoutineId(routineId);
+    if (onSubstepChange) {
+      onSubstepChange('routine-preview');
+    }
+  }, [onSubstepChange]);
+
+  // Handle add routine from preview (with modified filters/sorting)
+  const handleAddRoutineFromPreview = useCallback((filters: ColumnFiltersState, sorting: SortingState) => {
+    if (!previewingRoutineId || !currentTeamForSubstep) return;
+    
+    // Store the modified configuration temporarily (will be saved at end of onboarding)
+    setTempRoutineConfigs(prev => ({
+      ...prev,
+      [previewingRoutineId]: { filters, sorting },
+    }));
+
+    // Add routine to team
+    const updatedTeams = teams.map(t => {
+      if (t.id === currentTeamForSubstep.id) {
+        const routineIds = t.assignedRoutineIds || [];
+        if (!routineIds.includes(previewingRoutineId)) {
+          return {
+            ...t,
+            assignedRoutineIds: [...routineIds, previewingRoutineId],
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
+      return t;
+    });
+    onTeamsUpdate(updatedTeams);
+
+    // Return to recommended routines
+    setPreviewingRoutineId(null);
+    if (onSubstepChange) {
+      onSubstepChange('recommended-routines');
+    }
+  }, [previewingRoutineId, currentTeamForSubstep, teams, onTeamsUpdate, onSubstepChange]);
+
+  // Wrapper for footer button that uses current preview state
+  const handleAddRoutineFromPreviewWrapper = useCallback(() => {
+    handleAddRoutineFromPreview(currentPreviewFilters, currentPreviewSorting);
+  }, [handleAddRoutineFromPreview, currentPreviewFilters, currentPreviewSorting]);
+
+  // Handle continue from recommended routines - go to next team or final selection
+  const handleContinueFromRecommended = useCallback(() => {
+    if (hasMoreTeamsWithPersona) {
+      // Move to next team
+      setCurrentTeamIndex(prev => prev + 1);
+      if (onSubstepChange) {
+        onSubstepChange('recommended-routines');
+      }
+    } else {
+      // All teams processed, go to final selection view
+      if (onSubstepChange) {
+        onSubstepChange('team-selection');
+      }
+    }
+  }, [hasMoreTeamsWithPersona, onSubstepChange]);
+
+  // Handle back from preview
+  const handleBackFromPreview = useCallback(() => {
+    setPreviewingRoutineId(null);
+    if (onSubstepChange) {
+      onSubstepChange('recommended-routines');
+    }
+  }, [onSubstepChange]);
+
+  // Expose handlers to parent via refs
+  useEffect(() => {
+    if (onContinueFromRecommendedRef) {
+      onContinueFromRecommendedRef.current = handleContinueFromRecommended;
+    }
+  }, [handleContinueFromRecommended, onContinueFromRecommendedRef]);
+
+  useEffect(() => {
+    if (onAddRoutineFromPreviewRef) {
+      onAddRoutineFromPreviewRef.current = handleAddRoutineFromPreviewWrapper;
+    }
+  }, [handleAddRoutineFromPreviewWrapper, onAddRoutineFromPreviewRef]);
+
+  useEffect(() => {
+    if (onBackFromPreviewRef) {
+      onBackFromPreviewRef.current = handleBackFromPreview;
+    }
+  }, [handleBackFromPreview, onBackFromPreviewRef]);
+
+  // Handle next team or finish
+  const handleNextTeam = useCallback(() => {
+    if (hasMoreTeamsWithPersona) {
+      setCurrentTeamIndex(prev => prev + 1);
+      if (onSubstepChange) {
+        onSubstepChange('recommended-routines');
+      }
+    } else {
+      // All teams processed, go to final selection view
+      if (onSubstepChange) {
+        onSubstepChange('team-selection');
+      }
+    }
+  }, [hasMoreTeamsWithPersona, onSubstepChange]);
+
+  // Show recommended routines substep (4.1)
+  if (currentSubstep === 'recommended-routines' && currentTeamForSubstep) {
+    const suggestedRoutineIds = getSuggestedRoutinesForPersona(currentTeamForSubstep.persona || '');
+    const assignedRoutineIds = currentTeamForSubstep.assignedRoutineIds || [];
+    
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-8 pt-6 pb-6">
+            <Substep4_1_RecommendedRoutines
+              teamId={currentTeamForSubstep.id}
+              teamName={currentTeamForSubstep.name}
+              teamPersona={currentTeamForSubstep.persona}
+              suggestedRoutineIds={suggestedRoutineIds}
+              assignedRoutineIds={assignedRoutineIds}
+              onPreviewRoutine={handlePreviewRoutine}
+              onToggleRoutine={(routineId) => {
+                handleRoutineToggle(currentTeamForSubstep.id, routineId);
+              }}
+              onAddAllSuggested={() => {
+                handleAddAllSuggestedRoutines(currentTeamForSubstep.id);
+                // Don't auto-continue, let user see the updated state
+              }}
+              onCreateRoutine={() => {
+                handleCreateRoutineClick(currentTeamForSubstep.id);
+                if (onSubstepChange) {
+                  onSubstepChange('create-routine');
+                }
+              }}
+              teams={teams}
+              currentTeamIndex={currentTeamIndex}
+              teamsWithPersona={teamsWithPersona}
+              onTeamClick={(teamIndex) => {
+                setCurrentTeamIndex(teamIndex);
+                // Stay on recommended-routines substep, just switch team
+              }}
+              getTeamRoutineCount={(teamId) => {
+                const teamRoutinesGrouped = getTeamRoutinesGroupedByObjectives(teamId);
+                return Object.values(teamRoutinesGrouped).flat().length;
+              }}
+            />
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // Show routine preview substep (4.2)
+  if (currentSubstep === 'routine-preview' && previewingRoutineId && currentTeamForSubstep) {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <Substep4_2_RoutinePreview
+          routineId={previewingRoutineId}
+          teamId={currentTeamForSubstep.id}
+          onBack={handleBackFromPreview}
+          onAddRoutine={(filters, sorting) => {
+            setCurrentPreviewFilters(filters);
+            setCurrentPreviewSorting(sorting);
+            handleAddRoutineFromPreview(filters, sorting);
+          }}
+        />
+      </div>
+    );
+  }
 
   // Show CreateRoutineView if active
   if (creatingRoutineForTeam) {
@@ -461,6 +683,24 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
+                                  // Navigate to recommended routines substep for this team
+                                  const teamIndex = teamsWithPersona.findIndex(t => t.id === team.id);
+                                  if (teamIndex !== -1) {
+                                    setCurrentTeamIndex(teamIndex);
+                                    if (onSubstepChange) {
+                                      onSubstepChange('recommended-routines');
+                                    }
+                                  }
+                                }}
+                                className="h-7 gap-1.5 text-xs"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                View recommended
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
                                   setRoutineAddMode({ ...routineAddMode, [team.id]: 'personas' });
                                   handleAddAllSuggestedRoutines(team.id);
                                 }}
@@ -558,6 +798,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                     return (
                                       <div
                                         key={routine.id}
+                                        data-routine-id={routine.id}
                                         className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all"
                                       >
                                         <div className="flex-1 min-w-0">
