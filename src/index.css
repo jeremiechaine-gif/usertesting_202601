@@ -69,6 +69,20 @@
   }
 }
 
+/* Force width constraints for CreateRoutineFullPageWizard */
+[data-routine-wizard-content] {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+[data-routine-wizard-content] > * {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
 /* Utility classes */
 .text-link {
   @apply text-primary underline-offset-4 hover:underline;

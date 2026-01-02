@@ -4,9 +4,8 @@
  * Displays with sidebar showing CREATE ROUTINE substeps
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -55,6 +54,67 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
   const [showCustomObjectiveInput, setShowCustomObjectiveInput] = useState(false);
   
   const viewsByIntent = getViewsByIntent();
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Debug and fix width issues
+  useEffect(() => {
+    const checkWidth = () => {
+      if (contentRef.current) {
+        const rect = contentRef.current.getBoundingClientRect();
+        const parentRect = contentRef.current.parentElement?.getBoundingClientRect();
+        const grandParentRect = contentRef.current.parentElement?.parentElement?.getBoundingClientRect();
+        
+        console.log('Width check:', {
+          elementWidth: rect.width,
+          parentWidth: parentRect?.width,
+          grandParentWidth: grandParentRect?.width,
+          windowWidth: window.innerWidth,
+          scrollWidth: contentRef.current.scrollWidth,
+          clientWidth: contentRef.current.clientWidth,
+        });
+        
+        if (rect.width > (parentRect?.width || window.innerWidth)) {
+          console.warn('Width overflow detected:', {
+            elementWidth: rect.width,
+            parentWidth: parentRect?.width,
+            grandParentWidth: grandParentRect?.width,
+            windowWidth: window.innerWidth,
+            scrollWidth: contentRef.current.scrollWidth,
+            clientWidth: contentRef.current.clientWidth,
+          });
+          
+          // Find the widest child
+          const children = Array.from(contentRef.current.children);
+          children.forEach((child, index) => {
+            const childRect = (child as HTMLElement).getBoundingClientRect();
+            if (childRect.width > (parentRect?.width || window.innerWidth)) {
+              console.warn(`Child ${index} is too wide:`, {
+                tagName: child.tagName,
+                className: child.className,
+                width: childRect.width,
+                scrollWidth: (child as HTMLElement).scrollWidth,
+                clientWidth: (child as HTMLElement).clientWidth,
+              });
+            }
+          });
+          
+          // Force correct width
+          const maxAllowedWidth = Math.min(parentRect?.width || window.innerWidth, window.innerWidth);
+          contentRef.current.style.maxWidth = `${maxAllowedWidth}px`;
+          contentRef.current.style.width = '100%';
+          contentRef.current.style.boxSizing = 'border-box';
+        }
+      }
+    };
+    
+    checkWidth();
+    const interval = setInterval(checkWidth, 500);
+    window.addEventListener('resize', checkWidth);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', checkWidth);
+    };
+  }, [currentStep]);
 
   // Reset state when component mounts
   useEffect(() => {
@@ -134,7 +194,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex">
+    <div className="fixed inset-0 z-50 bg-background flex overflow-hidden" style={{ width: '100vw', maxWidth: '100vw', overflowX: 'hidden' }}>
       {/* Sidebar */}
       <div className="hidden sm:flex w-48 lg:w-64 border-r border-border bg-muted/30 flex-col shrink-0">
         <div className="p-4 sm:p-6 border-b border-border">
@@ -190,7 +250,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden max-w-full">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden max-w-full w-0">
         {/* Header - fixed */}
         <div className="relative shrink-0 border-b border-border bg-background z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
@@ -217,9 +277,35 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
         </div>
 
         {/* Content area - scrollable */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full w-full">
-            <div className="px-2 pt-2 pb-2 w-full box-border" style={{ maxWidth: '100%' }}>
+        <div 
+          className="flex-1 min-h-0 overflow-hidden" 
+          style={{ 
+            maxWidth: '100%', 
+            overflowX: 'hidden', 
+            width: '100%',
+            position: 'relative'
+          }}
+        >
+          <div 
+            className="h-full w-full overflow-y-auto overflow-x-hidden"
+            style={{ 
+              maxWidth: '100%', 
+              overflowX: 'hidden', 
+              width: '100%',
+              position: 'relative'
+            }}
+          >
+            <div 
+              ref={contentRef}
+              data-routine-wizard-content
+              className="px-2 pt-2 pb-2 w-full box-border" 
+              style={{ 
+                maxWidth: '100%', 
+                width: '100%', 
+                overflowX: 'hidden',
+                boxSizing: 'border-box'
+              }}
+            >
               {currentStep === 'choose-view' && (
                 <Step1ChooseView
                   recommendedViews={[]} // No recommendations when creating from Scope and Routines
@@ -255,11 +341,11 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                 />
               )}
             </div>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Footer with navigation - fixed */}
-        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 max-w-full sm:max-w-2xl lg:max-w-4xl mx-auto w-full bg-background z-10">
+        <div className="shrink-0 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 w-full bg-background z-10">
           <div className="flex items-center gap-2 order-2 sm:order-1">
             {currentStep !== 'choose-view' && (
               <Button

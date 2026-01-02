@@ -157,7 +157,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
     enableColumnResizing: true,
     defaultColumn: {
       minSize: 50,
-      maxSize: 800,
+      maxSize: 300,
       size: 150,
     },
     initialState: {
@@ -338,10 +338,21 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 min-w-0 max-w-full">
+    <div 
+      className="space-y-4 sm:space-y-6 min-w-0 max-w-full w-full overflow-x-hidden"
+      style={{ maxWidth: '100%', width: '100%', overflowX: 'hidden' }}
+      ref={(el) => {
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.width > window.innerWidth * 0.8) {
+            console.warn('Step3ConfigureRoutine width issue:', rect.width, 'parent:', el.parentElement?.getBoundingClientRect().width);
+          }
+        }
+      }}
+    >
       {/* Routine Name and Description */}
       {(onRoutineNameChange || onRoutineDescriptionChange) && (
-        <div className="space-y-4 p-4 sm:p-6 rounded-lg bg-muted/30">
+        <div className="space-y-4 p-4 sm:p-6 rounded-lg bg-muted/30 w-full max-w-full overflow-x-hidden">
           {/* Routine Name with Pelico View Badge */}
           <div className="space-y-2">
             <Label htmlFor="routine-name" className="text-sm font-semibold">
@@ -468,7 +479,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
 
       {/* UX Guidance Banner */}
       {!showAddFilterView && (
-        <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 bg-gradient-to-br from-[#2063F0]/5 to-transparent">
+        <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 bg-gradient-to-br from-[#2063F0]/5 to-transparent w-full max-w-full overflow-x-hidden">
           <Info className="h-4 w-4 sm:h-5 sm:w-5 text-[#2063F0] mt-0.5 shrink-0" />
           <div className="flex-1 space-y-2 min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-foreground">Configure your routine view</p>
@@ -492,10 +503,10 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
 
       {/* Table Preview */}
       {!showAddFilterView && (
-        <div className="border rounded-lg overflow-hidden flex flex-col w-full max-w-full">
+        <div className="border rounded-lg overflow-hidden flex flex-col w-full" style={{ maxWidth: '100%', overflowX: 'hidden', width: '100%' }}>
           {/* Toolbar */}
-          <div className="p-3 sm:p-4 bg-muted/30 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 shrink-0">
-            <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+          <div className="p-3 sm:p-4 bg-muted/30 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 shrink-0 w-full" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-0">
               <Badge 
                 variant="outline" 
                 className="text-xs shrink-0 bg-pink-500/10 text-pink-600 border-0 px-3 py-1.5 whitespace-nowrap"
@@ -513,7 +524,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                 scopeFilters={[]}
               />
             </div>
-            <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end sm:justify-start">
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end sm:justify-start min-w-0">
               <ColumnsPopover 
                 table={table} 
                 columns={columns}
@@ -524,18 +535,17 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
           </div>
 
           {/* Table container */}
-          <div className="overflow-auto max-h-[400px] flex-1 min-h-0 w-full">
-            <div className="inline-block min-w-full align-middle w-full max-w-full">
-              <table
-                className="min-w-full divide-y divide-border/60 w-full"
-                style={{ 
-                  width: '100%',
-                  maxWidth: '100%',
-                  tableLayout: 'auto',
-                  borderCollapse: 'separate',
-                  borderSpacing: 0,
-                }}
-              >
+          <div className="overflow-x-auto overflow-y-auto max-h-[400px] flex-1 min-h-0 w-full" style={{ maxWidth: '100%', width: '100%' }}>
+            <table
+              className="divide-y divide-border/60 w-full"
+              style={{ 
+                width: '100%',
+                maxWidth: '100%',
+                tableLayout: 'auto',
+                borderCollapse: 'separate',
+                borderSpacing: 0,
+              }}
+            >
                 {/* Header */}
                 <thead className="bg-muted/40 sticky top-0 z-10 shadow-sm border-b border-border/60">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -567,9 +577,9 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                               header.column.getCanResize() && !isGroupHeader && 'hover:border-r-[#31C7AD]/40'
                             )}
                             style={{
-                              width: `${header.getSize()}px`,
-                              minWidth: `${header.column.columnDef.minSize || 50}px`,
-                              maxWidth: header.column.columnDef.maxSize ? `${header.column.columnDef.maxSize}px` : undefined,
+                              width: 'auto',
+                              minWidth: `${Math.min(header.column.columnDef.minSize || 50, 150)}px`,
+                              maxWidth: `${Math.min(header.column.columnDef.maxSize || 300, 300)}px`,
                               position: 'relative',
                               wordWrap: 'break-word',
                               overflowWrap: 'break-word',
@@ -680,9 +690,12 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                           key={cell.id}
                           className="px-4 py-3 text-sm text-foreground border-r border-border/40"
                           style={{
-                            width: `${cell.column.getSize()}px`,
-                            minWidth: `${cell.column.columnDef.minSize || 50}px`,
-                            maxWidth: cell.column.columnDef.maxSize ? `${cell.column.columnDef.maxSize}px` : undefined,
+                            width: 'auto',
+                            minWidth: `${Math.min(cell.column.columnDef.minSize || 50, 150)}px`,
+                            maxWidth: `${Math.min(cell.column.columnDef.maxSize || 300, 300)}px`,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -692,7 +705,6 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                   ))}
                 </tbody>
               </table>
-            </div>
             {table.getRowModel().rows.length > 10 && (
               <div className="p-4 text-center text-xs text-muted-foreground border-t">
                 Showing first 10 of {table.getRowModel().rows.length} rows

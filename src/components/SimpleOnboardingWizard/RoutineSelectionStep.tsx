@@ -25,7 +25,7 @@ import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
-import { CreateRoutineView } from './CreateRoutineView';
+import { CreateRoutineFullPageWizard } from '../CreateRoutineFullPageWizard';
 import { getRoutines } from '@/lib/routines';
 import { Substep4_1_RecommendedRoutines } from './RoutineSelectionStep/Substep4_1_RecommendedRoutines';
 import { Substep4_2_RoutinePreview } from './RoutineSelectionStep/Substep4_2_RoutinePreview';
@@ -527,11 +527,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     );
   }
 
-  // Show CreateRoutineView if active
+  // Show CreateRoutineFullPageWizard if active
   if (creatingRoutineForTeam) {
     const team = teams.find(t => t.id === creatingRoutineForTeam);
     return (
-      <CreateRoutineView
+      <CreateRoutineFullPageWizard
         teamId={creatingRoutineForTeam}
         teamPersona={team?.persona}
         onClose={() => {
@@ -554,22 +554,6 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
           if (onSubstepChange) {
             onSubstepChange('team-selection');
           }
-        }}
-        currentStep={routineCreationStep || undefined}
-        onStepChange={(step) => {
-          if (onRoutineCreationStepChange) {
-            onRoutineCreationStepChange(step);
-          }
-        }}
-        routineName={routineNameForValidation}
-        onRoutineNameChange={(name) => {
-          setRoutineNameForValidation(name);
-          if (onRoutineNameChange) {
-            onRoutineNameChange(name);
-          }
-        }}
-        onSaveRequest={() => {
-          // This will be called from footer
         }}
       />
     );
@@ -609,7 +593,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
               const availableRoutinesForTeam = getFilteredRoutines(team.id);
               const currentMode = routineAddMode[team.id] || (team.persona ? 'personas' : 'manual');
               const suggestedRoutines = getSuggestedRoutinesForTeam(team.id);
-              const hasAllSuggestedRoutines = team.persona && suggestedRoutines.length === 0;
+              const hasAllSuggestedRoutines = !!(team.persona && suggestedRoutines.length === 0);
               
               // Sort objectives by predefined order
               const sortedObjectives = Object.keys(teamRoutinesGrouped).sort((a, b) => {
