@@ -6,7 +6,8 @@
 import React, { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Eye, Check, Plus, X, FilePlus } from 'lucide-react';
+import { RoutineChip } from '@/components/ui/routine-chip';
+import { FilePlus, Sparkles } from 'lucide-react';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
@@ -175,105 +176,23 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
                   </Badge>
                 </div>
 
-                {/* Routines Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Routines Grid - 3 columns on large screens */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {routines.map((routine) => {
                     const isAdded = isRoutineAdded(routine.id);
                     return (
-                      <div
+                      <RoutineChip
                         key={routine.id}
-                        className={cn(
-                          "group relative p-4 rounded-lg transition-all border-2",
-                          isAdded
-                            ? "bg-[#31C7AD]/5 border-[#31C7AD]/20 hover:border-[#31C7AD]/30"
-                            : "bg-muted/30 border-dashed border-border/60 hover:border-[#31C7AD]/40 hover:shadow-md"
-                        )}
-                      >
-                        {/* Badges */}
-                        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs h-5 px-2 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1"
-                          >
-                            <Sparkles className="h-2.5 w-2.5" />
-                            Suggested
-                          </Badge>
-                          {isAdded && (
-                            <div
-                              className="h-5 w-5 rounded-full bg-[#31C7AD] flex items-center justify-center cursor-pointer hover:bg-[#31C7AD]/80 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleRoutine(routine.id);
-                              }}
-                              title="Click to remove"
-                            >
-                              <Check className="h-3 w-3 text-white" strokeWidth={3} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Routine Info */}
-                        <div className="space-y-2 pr-24">
-                          <h5 className={cn(
-                            "font-semibold text-sm leading-tight",
-                            isAdded && "text-muted-foreground"
-                          )}>
-                            {routine.label}
-                          </h5>
-                          {routine.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {routine.description}
-                            </p>
-                          )}
-
-                          {/* Metadata */}
-                          <div className="flex flex-wrap gap-1.5 items-center pt-1">
-                            {/* Pelico View */}
-                            {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                              >
-                                {routine.pelicoViews[0]}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="mt-3 pt-3 border-t border-border flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onPreviewRoutine(routine.id)}
-                            className="flex-1 gap-2 text-xs"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Preview
-                          </Button>
-                          {!isAdded ? (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => onToggleRoutine(routine.id)}
-                              className="flex-1 gap-2 text-xs bg-[#31C7AD] hover:bg-[#31C7AD]/90"
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                              Add
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onToggleRoutine(routine.id)}
-                              className="flex-1 gap-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                        name={routine.label}
+                        description={routine.description}
+                        pelicoView={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
+                        selected={isAdded}
+                        isSuggested={true}
+                        onPreview={() => onPreviewRoutine(routine.id)}
+                        onToggle={() => onToggleRoutine(routine.id)}
+                        addLabel="Add"
+                        removeLabel="Remove"
+                      />
                     );
                   })}
                 </div>

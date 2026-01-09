@@ -12,8 +12,8 @@ import {
   type ColumnResizeMode,
   type ColumnSizingState,
 } from '@tanstack/react-table';
-import { mockData } from '../lib/mockData';
-import { columns } from '../lib/columns';
+import { mockData } from '../lib/escalationRoomMockData';
+import { columns } from '../lib/escalationRoomColumns';
 import { Sidebar } from './Sidebar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

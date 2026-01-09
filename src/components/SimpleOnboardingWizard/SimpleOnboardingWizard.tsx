@@ -556,7 +556,12 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onClearAll={handleClearAll}
               currentSubstep={currentSubstep.step3 || 'team-selection'}
               onSubstepChange={(substep) => {
-                setCurrentSubstep({ ...currentSubstep, step3: substep });
+                console.log('[SimpleOnboardingWizard] onSubstepChange called with:', substep);
+                setCurrentSubstep((prev) => {
+                  const newState = { ...prev, step3: substep };
+                  console.log('[SimpleOnboardingWizard] Setting substep to:', newState);
+                  return newState;
+                });
                 saveState();
               }}
               routineCreationStep={routineCreationStep}
@@ -617,7 +622,9 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     console.log('[SimpleOnboardingWizard] Continue from recommended clicked, ref:', continueFromRecommendedRef.current);
                     if (continueFromRecommendedRef.current) {
                       try {
+                        console.log('[SimpleOnboardingWizard] Calling ref handler...');
                         continueFromRecommendedRef.current();
+                        console.log('[SimpleOnboardingWizard] Ref handler called successfully');
                       } catch (error) {
                         console.error('[SimpleOnboardingWizard] Error calling ref handler:', error);
                         // Fallback: directly change substep

@@ -346,17 +346,28 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   }, [currentSubstep, teamsWithPersona, currentTeamIndex]);
 
   // Initialize: if we have teams with persona and we're starting, go to recommended routines for first team
-  // Always navigate to recommended-routines for teams with persona (even if they already have routines)
+  // Only do this when we're on team-selection AND we haven't processed all teams yet
   useEffect(() => {
-    // Only trigger if we're on team-selection and have teams with persona
-    if (teamsWithPersona.length > 0 && currentSubstep === 'team-selection' && currentTeamIndex === 0) {
+    // Only trigger if:
+    // 1. We're on team-selection
+    // 2. We have teams with persona
+    // 3. We're at index 0 (first team)
+    // 4. There are still teams to process (currentTeamIndex < teamsWithPersona.length - 1 means we haven't finished)
+    //    OR we haven't started yet (this is the initial load)
+    const allTeamsProcessed = currentTeamIndex >= teamsWithPersona.length - 1;
+    
+    if (teamsWithPersona.length > 0 && 
+        currentSubstep === 'team-selection' && 
+        currentTeamIndex === 0 &&
+        !allTeamsProcessed) {
       const firstTeam = teamsWithPersona[0];
       // Always navigate to recommended-routines for teams with persona
       if (firstTeam && onSubstepChange) {
+        console.log('[RoutineSelectionStep] Initializing recommended flow for first team');
         onSubstepChange('recommended-routines');
       }
     }
-  }, [teamsWithPersona, currentSubstep, currentTeamIndex, onSubstepChange]); // Run when teams change
+  }, [teamsWithPersona, currentSubstep, currentTeamIndex, onSubstepChange]);
 
   // Handle preview routine
   const handlePreviewRoutine = useCallback((routineId: string) => {
@@ -406,19 +417,31 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 
   // Handle continue from recommended routines - go to next team or final selection
   const handleContinueFromRecommended = useCallback(() => {
-    if (hasMoreTeamsWithPersona) {
+    console.log('[RoutineSelectionStep] handleContinueFromRecommended called', { currentTeamIndex, teamsCount: teams.length });
+    const teamsWithPersona = teams.filter(t => t.persona);
+    const hasMore = currentTeamIndex < teamsWithPersona.length - 1;
+    console.log('[RoutineSelectionStep] Teams with persona:', teamsWithPersona.length, 'Current index:', currentTeamIndex, 'Has more:', hasMore);
+    
+    if (hasMore) {
       // Move to next team
-      setCurrentTeamIndex(prev => prev + 1);
+      console.log('[RoutineSelectionStep] Moving to next team');
+      setCurrentTeamIndex(prev => {
+        const next = prev + 1;
+        console.log('[RoutineSelectionStep] Setting team index to:', next);
+        return next;
+      });
       if (onSubstepChange) {
+        console.log('[RoutineSelectionStep] Calling onSubstepChange with recommended-routines');
         onSubstepChange('recommended-routines');
       }
     } else {
       // All teams processed, go to final selection view
+      console.log('[RoutineSelectionStep] All teams processed, going to team-selection');
       if (onSubstepChange) {
         onSubstepChange('team-selection');
       }
     }
-  }, [hasMoreTeamsWithPersona, onSubstepChange]);
+  }, [currentTeamIndex, teams, onSubstepChange]);
 
   // Handle back from preview
   const handleBackFromPreview = useCallback(() => {
@@ -432,6 +455,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   useEffect(() => {
     if (onContinueFromRecommendedRef) {
       onContinueFromRecommendedRef.current = handleContinueFromRecommended;
+      console.log('[RoutineSelectionStep] Assigned handleContinueFromRecommended to ref');
     }
   }, [handleContinueFromRecommended, onContinueFromRecommendedRef]);
 

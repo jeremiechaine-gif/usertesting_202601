@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap } from 'lucide-react';
+import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { getUsers, getCurrentUserId, type User } from '@/lib/users';
@@ -20,6 +20,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateUserModal } from './CreateUserModal';
+import { ImportMembersModal } from './ImportMembersModal';
 
 interface MemberAssignmentStepProps {
   teams: SimpleTeamConfig[];
@@ -43,6 +44,8 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   const [selectedMembersInPopover, setSelectedMembersInPopover] = useState<Record<string, Set<string>>>({});
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [createUserModalTeamId, setCreateUserModalTeamId] = useState<string | undefined>(undefined);
+  const [importMembersModalOpen, setImportMembersModalOpen] = useState(false);
+  const [importMembersModalTeamId, setImportMembersModalTeamId] = useState<string | undefined>(undefined);
 
   // Load available users
   useEffect(() => {
@@ -108,6 +111,43 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
     
     // Close the member popover if it was open
     if (openMemberPopover === createUserModalTeamId) {
+      setOpenMemberPopover(null);
+    }
+  };
+
+  const handleMembersImported = (userIds: string[]) => {
+    // Refresh users list
+    const teamNames = teams.map(t => t.name);
+    const mockUsers = createMockUsersForTeams(teamNames);
+    const allUsers = getUsers();
+    const adminId = getCurrentUserId();
+    
+    const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
+    const uniqueUsers = combinedUsers.filter((user, index, self) =>
+      index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
+    );
+    
+    setAvailableUsers(uniqueUsers);
+    
+    // If a team ID was specified, automatically add all imported users to that team
+    if (importMembersModalTeamId) {
+      const updatedTeams = teams.map(team => {
+        if (team.id === importMembersModalTeamId) {
+          const newMemberIds = [...team.memberIds];
+          userIds.forEach(userId => {
+            if (!newMemberIds.includes(userId)) {
+              newMemberIds.push(userId);
+            }
+          });
+          return { ...team, memberIds: newMemberIds, updatedAt: new Date().toISOString() };
+        }
+        return team;
+      });
+      onTeamsUpdate(updatedTeams);
+    }
+    
+    // Close the member popover if it was open
+    if (openMemberPopover === importMembersModalTeamId) {
       setOpenMemberPopover(null);
     }
   };
@@ -330,7 +370,20 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                             Team Members ({teamMembers.length})
                           </span>
                         </div>
-                        <Popover 
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 gap-1.5 text-xs"
+                            onClick={() => {
+                              setImportMembersModalTeamId(team.id);
+                              setImportMembersModalOpen(true);
+                            }}
+                          >
+                            <Upload className="h-3 w-3" />
+                            Import member
+                          </Button>
+                          <Popover 
                           open={openMemberPopover === team.id}
                           onOpenChange={(open) => {
                             setOpenMemberPopover(open ? team.id : null);
@@ -520,6 +573,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                             </div>
                           </PopoverContent>
                         </Popover>
+                        </div>
                       </div>
                       
                       {/* Clear Button */}
@@ -596,6 +650,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
         onOpenChange={setCreateUserModalOpen}
         onUserCreated={handleUserCreated}
         defaultTeamId={createUserModalTeamId}
+      />
+
+      {/* Import Members Modal */}
+      <ImportMembersModal
+        open={importMembersModalOpen}
+        onOpenChange={setImportMembersModalOpen}
+        onMembersImported={handleMembersImported}
+        defaultTeamId={importMembersModalTeamId}
       />
     </div>
   );

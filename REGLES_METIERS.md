@@ -8,6 +8,8 @@
 5. [Onboarding et Scoring](#onboarding-et-scoring)
 6. [Validation et Contraintes](#validation-et-contraintes)
 7. [Persistance et État](#persistance-et-état)
+8. [Règles d'Affichage et UX](#règles-daffichage-et-ux)
+9. [Règles Spécifiques aux Composants](#règles-spécifiques-aux-composants)
 
 ---
 
@@ -367,6 +369,7 @@
 - Combine les filtres de scope et utilisateur pour le filtrage de la table
 - Détecte les changements non sauvegardés en comparant l'état actuel avec la routine sélectionnée
 - Gère la sauvegarde/mise à jour des routines avec l'état actuel de la table
+- **Structure détaillée de la table** : Voir section [9.5 PurchaseOrderBookPage - Structure de Table](#95-purchaseorderbookpage---structure-de-table)
 
 ### 9.2 SortingAndFiltersPopover
 - Gère un état draft séparé pour éviter les modifications accidentelles
@@ -377,6 +380,490 @@
 - Affiche uniquement les filtres utilisateur (pas les filtres de scope)
 - Le clic sur le header toggle le tri : none → asc → desc → none
 - Le menu contextuel permet d'accéder au filtre, au tri, et à la gestion des colonnes
+
+### 9.4 WorkOrderBookPage - Structure de Table
+
+#### Structure des Groupes et Colonnes
+
+La table Work Order Book (WO Book) est organisée en groupes de colonnes avec des en-têtes sémantiques.
+
+##### Groupe: **Sim. Outcome**
+> En-tête groupé le plus à gauche en violet
+
+| Libellé Colonne | Clé Colonne | Type de Valeur           |
+| --------------- | ----------- | ------------------------- |
+| Sim. Outcome    | simOutcome  | enum / status (icône)     |
+
+##### Groupe: **Work Order**
+
+| Libellé Colonne      | Clé Colonne      | Type de Valeur               |
+| -------------------- | --------------- | ---------------------------- |
+| Tickets on WO        | ticketsOnWO     | indicateur (icône / compteur) |
+| Work Order Number    | workOrderNumber | string (lien)                |
+| Subcontract Info     | subcontractInfo | enum / icône                 |
+
+##### Groupe: **Status**
+
+| Libellé Colonne        | Clé Colonne       | Type de Valeur           |
+| ---------------------- | ----------------- | ------------------------ |
+| % Material Coverage    | materialCoverage  | pourcentage              |
+| Quality Notes          | qualityNotes      | indicateur (icône)       |
+| WO status              | woStatus          | enum / status (icône)    |
+
+##### Groupe: **Part**
+
+| Libellé Colonne    | Clé Colonne    | Type de Valeur               |
+| ------------------ | -------------- | ---------------------------- |
+| Tickets on Part    | ticketsOnPart  | indicateur (icône / compteur) |
+| Part Number        | partNumber     | string (lien)                |
+| Part Name          | partName       | string                       |
+
+##### Groupe: **General Information**
+
+| Libellé Colonne  | Clé Colonne   | Type de Valeur        |
+| ---------------- | ------------- | ---------------------- |
+| Open Quantity    | openQuantity  | nombre                 |
+| Sim. Quantity    | simQuantity   | nombre (éditable)      |
+
+##### Groupe: **Timeline**
+
+| Libellé Colonne         | Clé Colonne         | Type de Valeur |
+| ----------------------- | ------------------- | -------------- |
+| Actual Start Date       | actualStartDate     | date           |
+| Planned Start Date      | plannedStartDate    | date           |
+| Sim. Start Date         | simStartDate        | date           |
+| Planned End Date        | plannedEndDate      | date           |
+| Sim. End Date           | simEndDate          | date           |
+| Planned Storage Date    | plannedStorageDate  | date           |
+
+#### Ordre des Colonnes (exact, gauche → droite)
+
+1. Sim. Outcome
+2. Tickets on WO
+3. Work Order Number
+4. Subcontract Info
+5. % Material Coverage
+6. Quality Notes
+7. WO status
+8. Tickets on Part
+9. Part Number
+10. Part Name
+11. Open Quantity
+12. Sim. Quantity
+13. Actual Start Date
+14. Planned Start Date
+15. Sim. Start Date
+16. Planned End Date
+17. Sim. End Date
+18. Planned Storage Date
+
+#### Observations sur la Structure
+
+- **En-têtes de groupe sémantiques** : Les en-têtes de groupe sont sémantiques, non fonctionnels (ex: *Status* mélange coverage + quality + state).
+- **Colonnes de simulation réparties** : Les colonnes de simulation sont réparties sur deux groupes :
+  - `Sim. Outcome` tout à gauche
+  - `Sim. Quantity / Sim. Dates` intégrées dans les groupes existants
+- **Utilisation intensive d'icônes** : Utilisation importante d'icônes au lieu de texte pour :
+  - Tickets
+  - Coverage
+  - Status
+- **Données opérationnelles** : Les dates et quantités sont traitées visuellement comme des données secondaires/opérationnelles, regroupées à la fin.
+
+#### Règles d'Affichage WO Book
+
+- Les groupes de colonnes utilisent des en-têtes avec teinte de couleur (violet pour "Sim. Outcome")
+- Les colonnes de type "indicateur" affichent des icônes avec éventuellement un compteur
+- Les colonnes de type "lien" sont cliquables et permettent la navigation
+- La colonne `simQuantity` est éditable directement dans la table
+- Les dates sont affichées dans un format standardisé
+
+### 9.5 PurchaseOrderBookPage - Structure de Table
+
+#### Structure des Groupes et Colonnes
+
+La table Purchase Order Book (PO Book) est organisée en groupes de colonnes avec des en-têtes sémantiques et des groupes visuellement mis en évidence.
+
+##### Groupe: **Sim. Outcome**
+> Groupe violet tout à gauche
+
+| Libellé Colonne | Clé Colonne | Type de Valeur           |
+| --------------- | ----------- | ------------------------ |
+| Sim. Outcome    | simOutcome  | enum / status (icône)    |
+
+##### Groupe: **Supply Event**
+
+| Libellé Colonne     | Clé Colonne            | Type de Valeur          |
+| ------------------- | ---------------------- | ----------------------- |
+| Escalation Level    | supplyEscalationLevel  | enum / level (icône)    |
+| Type                | supplyType             | enum (PO)               |
+| Event               | supplyEvent            | string (lien)           |
+
+##### Groupe: **Status**
+
+| Libellé Colonne    | Clé Colonne     | Type de Valeur                  |
+| ------------------ | --------------- | ------------------------------- |
+| OTD Status         | otdStatus       | enum / status (icône)           |
+| Delivery Status    | deliveryStatus  | enum / status (texte + icône)   |
+
+##### Groupe: **Subcontract**
+
+| Libellé Colonne | Clé Colonne  | Type de Valeur  |
+| --------------- | ------------ | --------------- |
+| Subcontract     | subcontract  | enum / flag     |
+
+##### Groupe: **Produced Part**
+
+| Libellé Colonne     | Clé Colonne          | Type de Valeur          |
+| ------------------- | -------------------- | ----------------------- |
+| Escalation Level    | partEscalationLevel  | enum / level (icône)    |
+| Part Number         | partNumber           | string (lien)           |
+| Part Name           | partName             | string                  |
+| Plant               | plant                | string                  |
+
+##### Groupe: **General Information**
+
+| Libellé Colonne    | Clé Colonne     | Type de Valeur |
+| ------------------ | -------------- | -------------- |
+| Open Quantity      | openQuantity   | nombre         |
+| Price              | price          | devise         |
+| Inventory Value    | inventoryValue | devise         |
+| Supplier           | supplier       | string         |
+
+##### Groupe: **Sug. action**
+> Groupe mis en évidence en vert
+
+| Libellé Colonne | Clé Colonne      | Type de Valeur           |
+| --------------- | --------------- | ------------------------ |
+| Sug. action     | suggestedAction | enum / action (icône)   |
+
+##### Groupe: **Inventory cash impact**
+> Groupe mis en évidence en vert
+
+| Libellé Colonne          | Clé Colonne          | Type de Valeur |
+| ------------------------- | -------------------- | -------------- |
+| Inventory cash impact    | inventoryCashImpact  | devise         |
+
+##### Groupe: **Timeline**
+
+| Libellé Colonne  | Clé Colonne   | Type de Valeur |
+| ---------------- | ------------- | -------------- |
+| OTD Date         | otdDate       | date           |
+| Delivery Date    | deliveryDate  | date           |
+
+##### Groupe: **Simulation**
+> Groupe violet tout à droite
+
+| Libellé Colonne       | Clé Colonne      | Type de Valeur        |
+| --------------------- | ---------------- | --------------------- |
+| Sim. Qty              | simQty           | nombre (éditable)     |
+| Sim. Delivery Date    | simDeliveryDate  | date (éditable)       |
+
+#### Ordre des Colonnes (exact, gauche → droite)
+
+1. Sim. Outcome
+2. Escalation Level (Supply Event)
+3. Type
+4. Event
+5. OTD Status
+6. Delivery Status
+7. Subcontract
+8. Escalation Level (Produced Part)
+9. Part Number
+10. Part Name
+11. Plant
+12. Open Quantity
+13. Price
+14. Inventory Value
+15. Supplier
+16. Sug. action
+17. Inventory cash impact
+18. OTD Date
+19. Delivery Date
+20. Sim. Qty
+21. Sim. Delivery Date
+
+#### Observations sur la Structure
+
+- **Deux colonnes Escalation Level** : Deux colonnes "Escalation Level" existent dans deux groupes différents :
+  - Une sous **Supply Event**
+  - Une sous **Produced Part**
+- **Données financières réparties** : Les données financières sont réparties :
+  - Price & Inventory Value sous *General Information*
+  - Cash impact isolé et visuellement mis en évidence
+- **Colonnes de simulation isolées** : Les colonnes de simulation sont complètement isolées tout à droite
+- **Groupe Status mixte** : Le groupe Status mélange les états de performance (OTD) et d'exécution (Delivery)
+- **Utilisation intensive d'icônes et couleurs** : Forte dépendance aux icônes + couleur, texte minimal
+
+#### Règles d'Affichage PO Book
+
+- Les groupes de colonnes utilisent des en-têtes avec teinte de couleur :
+  - Violet pour "Sim. Outcome" (gauche) et "Simulation" (droite)
+  - Vert pour "Sug. action" et "Inventory cash impact" (mise en évidence visuelle)
+- Les colonnes de type "indicateur" affichent des icônes avec éventuellement du texte
+- Les colonnes de type "lien" sont cliquables et permettent la navigation
+- Les colonnes `simQty` et `simDeliveryDate` sont éditables directement dans la table
+- Les valeurs monétaires (Price, Inventory Value, Inventory cash impact) sont formatées en devise
+- Les dates sont affichées dans un format standardisé
+- Les colonnes d'escalation utilisent des icônes pour indiquer le niveau
+
+### 9.6 EscalationRoomPage - Structure de Table
+
+#### Structure des Groupes et Colonnes
+
+La table Escalation Room est organisée en groupes de colonnes avec des colonnes utilitaires non groupées aux extrémités.
+
+##### Colonnes Non Groupées (gauche - utilitaires)
+> Ces colonnes apparaissent avant tout groupe nommé
+
+| Libellé Colonne        | Clé Colonne   | Type de Valeur       |
+| ----------------------- | ------------- | -------------------- |
+| Select                  | select        | checkbox             |
+| Bell / Notification     | notification  | indicateur (icône)  |
+| Star                    | favorite      | boolean (icône)      |
+
+##### Groupe: **Level**
+
+| Libellé Colonne | Clé Colonne      | Type de Valeur                   |
+| --------------- | ---------------- | -------------------------------- |
+| Level           | escalationLevel | enum / level (icône + nombre)    |
+
+##### Groupe: **Ticket Number**
+
+| Libellé Colonne  | Clé Colonne   | Type de Valeur    |
+| ---------------- | ------------ | ----------------- |
+| Ticket Number    | ticketNumber | string (lien)     |
+
+##### Groupe: **Status**
+
+| Libellé Colonne | Clé Colonne   | Type de Valeur                  |
+| --------------- | ------------ | ------------------------------- |
+| Status          | ticketStatus | enum / status (texte + icône)   |
+
+##### Groupe: **Parts**
+
+###### Sous-groupe: **Suppliers (Implicated)**
+
+| Libellé Colonne           | Clé Colonne          | Type de Valeur    |
+| ------------------------- | -------------------- | ----------------- |
+| Suppliers (Implicated)  | suppliersImplicated | string (liste)    |
+
+###### Sous-groupe: **Suppliers (Parts)**
+
+| Libellé Colonne      | Clé Colonne     | Type de Valeur    |
+| -------------------- | --------------- | ----------------- |
+| Suppliers (Parts)   | suppliersParts | string (liste)    |
+
+##### Groupe: **Objects**
+
+| Libellé Colonne | Clé Colonne | Type de Valeur            |
+| --------------- | ---------- | ------------------------- |
+| Objects         | objects    | string / lien + compteur  |
+
+##### Groupe: **Team**
+
+| Libellé Colonne | Clé Colonne | Type de Valeur |
+| --------------- | ---------- | -------------- |
+| Team            | team       | string         |
+
+##### Groupe: **Assignee**
+
+| Libellé Colonne | Clé Colonne | Type de Valeur |
+| --------------- | ---------- | -------------- |
+| Assignee       | assignee   | string         |
+
+##### Groupe: **Line stop date**
+
+| Libellé Colonne   | Clé Colonne   | Type de Valeur |
+| ----------------- | ------------- | -------------- |
+| Line stop date    | lineStopDate  | date           |
+
+##### Groupe: **New Delivery Date**
+
+| Libellé Colonne      | Clé Colonne      | Type de Valeur |
+| -------------------- | ---------------- | -------------- |
+| New Delivery Date    | newDeliveryDate  | date           |
+
+##### Groupe: **Last Update time**
+
+| Libellé Colonne     | Clé Colonne     | Type de Valeur |
+| ------------------- | -------------- | -------------- |
+| Last Update time    | lastUpdateTime | datetime       |
+
+##### Groupe: **Last comment**
+
+| Libellé Colonne | Clé Colonne  | Type de Valeur                      |
+| --------------- | ----------- | ----------------------------------- |
+| Last comment    | lastComment | string (mention utilisateur + aperçu) |
+
+##### Colonne Non Groupée (droite - utilitaire)
+
+| Libellé Colonne | Clé Colonne | Type de Valeur      |
+| --------------- | ---------- | ------------------- |
+| More actions    | rowActions | menu (ellipsis)     |
+
+#### Ordre des Colonnes (exact, gauche → droite)
+
+1. Select
+2. Notification
+3. Favorite
+4. Level
+5. Ticket Number
+6. Status
+7. Suppliers (Implicated)
+8. Suppliers (Parts)
+9. Objects
+10. Team
+11. Assignee
+12. Line stop date
+13. New Delivery Date
+14. Last Update time
+15. Last comment
+16. Row actions
+
+#### Observations sur la Structure
+
+- **Groupe Parts avec sous-groupes** : Le groupe "Parts" est un groupe parent avec deux sous-colonnes visibles
+- **Duplication intentionnelle des informations Suppliers** : Les informations sur les fournisseurs sont dupliquées intentionnellement :
+  - Qui est impliqué
+  - Qui fournit les pièces impactées
+- **Coloration des dates selon le statut** : Les dates ont une coloration de statut (vert / orange) mais restent dans la même colonne
+- **Renforcement de l'identité du ticket** : L'identité du ticket est renforcée à travers :
+  - Level
+  - Status
+  - Object count
+- **Mélange opérationnel et collaboratif** : La table mélange l'urgence opérationnelle (line stop) avec les signaux de collaboration (assignee, comments)
+
+#### Règles d'Affichage Escalation Room
+
+- Les colonnes utilitaires (Select, Notification, Favorite) sont positionnées à gauche avant les groupes nommés
+- La colonne "More actions" est positionnée à droite comme colonne utilitaire finale
+- Le groupe "Parts" contient deux sous-colonnes pour différencier les types de fournisseurs
+- Les dates utilisent une coloration de statut (vert pour OK, orange pour attention) tout en restant dans la même colonne
+- Les colonnes de type "lien" (Ticket Number, Objects) sont cliquables et permettent la navigation
+- La colonne "Last comment" affiche un aperçu avec mentions d'utilisateurs
+- Les indicateurs (Notification, Favorite) utilisent des icônes pour une identification rapide
+- La colonne "Level" combine icône et nombre pour indiquer le niveau d'escalation
+
+### 9.7 ServiceOrderBookPage - Structure de Table
+
+#### Structure des Groupes et Colonnes
+
+La table Service Order Book (SO Book) est organisée en groupes de colonnes avec une structure alignée sur WO Book et PO Book.
+
+##### Groupe: **Sim. Outcome**
+> Groupe violet tout à gauche
+
+| Libellé Colonne | Clé Colonne | Type de Valeur           |
+| --------------- | ----------- | ------------------------ |
+| Sim. Outcome    | simOutcome  | enum / status (icône)   |
+
+##### Groupe: **Service Order**
+
+| Libellé Colonne         | Clé Colonne         | Type de Valeur               |
+| ------------------------ | ------------------- | ---------------------------- |
+| Tickets on SO            | ticketsOnSO         | indicateur (icône / compteur) |
+| Service Order Number     | serviceOrderNumber  | string (lien)                |
+| Subcontract Info         | subcontractInfo     | enum / icône                 |
+
+##### Groupe: **Status**
+
+| Libellé Colonne       | Clé Colonne        | Type de Valeur           |
+| ---------------------- | ------------------ | ------------------------ |
+| SO Status             | soStatus           | enum / status (icône)    |
+| Material Coverage     | materialCoverage   | pourcentage / icône      |
+| Engineering Status    | engineeringStatus  | enum / status (icône)    |
+
+##### Groupe: **Part**
+
+| Libellé Colonne    | Clé Colonne    | Type de Valeur               |
+| ------------------ | -------------- | ---------------------------- |
+| Tickets on Part    | ticketsOnPart  | indicateur (icône / compteur) |
+| Part Number        | partNumber     | string (lien)                |
+| Part Name          | partName       | string                       |
+
+##### Groupe: **Quantities**
+
+| Libellé Colonne      | Clé Colonne       | Type de Valeur        |
+| -------------------- | ----------------- | ---------------------- |
+| Required Quantity    | requiredQuantity  | nombre                 |
+| Open Quantity        | openQuantity      | nombre                 |
+| Sim. Quantity        | simQuantity       | nombre (éditable)      |
+
+##### Groupe: **Timeline – Start**
+
+| Libellé Colonne       | Clé Colonne       | Type de Valeur |
+| --------------------- | ----------------- | -------------- |
+| Planned Start Date    | plannedStartDate  | date           |
+| Sim. Start Date       | simStartDate      | date           |
+
+##### Groupe: **Timeline – End**
+
+| Libellé Colonne     | Clé Colonne     | Type de Valeur |
+| ------------------- | --------------- | -------------- |
+| Planned End Date    | plannedEndDate  | date           |
+| Sim. End Date       | simEndDate      | date           |
+
+##### Groupe: **Execution**
+
+| Libellé Colonne      | Clé Colonne      | Type de Valeur |
+| -------------------- | ---------------- | -------------- |
+| Actual Start Date    | actualStartDate  | date           |
+| Actual End Date      | actualEndDate    | date           |
+
+#### Ordre des Colonnes (exact, gauche → droite)
+
+1. Sim. Outcome
+2. Tickets on SO
+3. Service Order Number
+4. Subcontract Info
+5. SO Status
+6. Material Coverage
+7. Engineering Status
+8. Tickets on Part
+9. Part Number
+10. Part Name
+11. Required Quantity
+12. Open Quantity
+13. Sim. Quantity
+14. Planned Start Date
+15. Sim. Start Date
+16. Planned End Date
+17. Sim. End Date
+18. Actual Start Date
+19. Actual End Date
+
+#### Observations sur la Structure
+
+- **Colonnes de simulation réparties** : Les colonnes de simulation sont réparties :
+  - Outcome tout à gauche
+  - Quantity intégrée dans *Quantities*
+  - Dates intégrées dans *Timeline*
+- **Status multi-dimensionnel** : Le statut est multi-dimensionnel :
+  - Exécution de la commande
+  - Disponibilité matérielle
+  - Disponibilité ingénierie
+- **Timeline visuellement divisée** : La timeline est visuellement divisée entre :
+  - Planifié vs Simulé
+  - Début vs Fin
+- **Cohérence avec WO Book** : Le contexte Part reflète étroitement la structure de **WO Book** (forte cohérence inter-livres)
+
+#### Cohérence Structurelle (visuelle, non opinionnée)
+
+- SO Book s'aligne structurellement avec :
+  - **WO Book** (orientation exécution)
+  - **PO Book** (conscient de la simulation)
+- La logique d'escalation est intentionnellement **absente** ici (vue d'exécution, pas vue d'exception)
+
+#### Règles d'Affichage SO Book
+
+- Les groupes de colonnes utilisent des en-têtes avec teinte de couleur (violet pour "Sim. Outcome")
+- Les colonnes de type "indicateur" affichent des icônes avec éventuellement un compteur
+- Les colonnes de type "lien" sont cliquables et permettent la navigation
+- La colonne `simQuantity` est éditable directement dans la table
+- Les dates sont affichées dans un format standardisé
+- Le groupe "Status" combine plusieurs dimensions de statut (exécution, matériel, ingénierie)
+- Le groupe "Timeline" est divisé en deux sous-groupes (Start et End) pour une meilleure lisibilité
+- Les quantités sont regroupées dans un groupe dédié avec distinction entre Required, Open et Simulated
 
 ---
 
