@@ -125,7 +125,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                       <Target className="h-4 w-4 text-[#2063F0]" />
                       <span className="text-sm font-semibold">{view.name}</span>
                     </div>
-                    <Badge variant="outline" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                    <Badge variant="secondary" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                       <Sparkles className="h-2.5 w-2.5 mr-1" />
                       Recommended
                     </Badge>
@@ -134,7 +134,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                     {view.shortDescription}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="secondary" className="text-xs">
                       {view.structure === 'table' && 'Table'}
                       {view.structure === 'timeline' && 'Timeline'}
                       {view.structure === 'time-phased-grid' && 'Time-phased'}
@@ -221,7 +221,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                             <span className="text-sm font-semibold">{view.name}</span>
                           </div>
                           {isRecommended && (
-                            <Badge variant="outline" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                            <Badge variant="secondary" className="text-xs bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                               <Sparkles className="h-2.5 w-2.5 mr-1" />
                               Recommended
                             </Badge>
@@ -231,7 +231,7 @@ export const Step1ChooseView: React.FC<Step1ChooseViewProps> = ({
                           {view.shortDescription}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="secondary" className="text-xs">
                             {view.structure === 'table' && 'Table'}
                             {view.structure === 'timeline' && 'Timeline'}
                             {view.structure === 'time-phased-grid' && 'Time-phased'}

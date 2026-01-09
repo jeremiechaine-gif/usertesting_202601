@@ -186,7 +186,7 @@ export const RoutineLibraryPage: React.FC<{
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Main Header */}
-        <div className="relative border-b bg-background">
+        <div className="relative bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
           <div className="relative px-6 py-5">
             <div className="flex items-center justify-between">
@@ -219,7 +219,7 @@ export const RoutineLibraryPage: React.FC<{
                   <Zap className="h-5 w-5 text-[#2063F0]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                     Generic Routines Library
                   </h1>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -362,7 +362,7 @@ export const RoutineLibraryPage: React.FC<{
                           {routine.personas.map((persona) => (
                             <Badge
                               key={persona}
-                              variant="outline"
+                              variant="secondary"
                               className={cn("text-xs h-5 px-2", getPersonaColor(persona))}
                             >
                               {persona}
@@ -383,7 +383,7 @@ export const RoutineLibraryPage: React.FC<{
                           {routine.objectives.map((objective) => (
                             <Badge
                               key={objective}
-                              variant="outline"
+                              variant="secondary"
                               className={cn("text-xs h-5 px-2", getObjectiveColor(objective))}
                             >
                               {objective}
@@ -410,7 +410,7 @@ export const RoutineLibraryPage: React.FC<{
                           <div className="min-w-0">
                             <div className="text-xs text-muted-foreground">Frequency</div>
                             <Badge
-                              variant="outline"
+                              variant="secondary"
                               className={cn("text-xs h-4 px-1.5 mt-0.5", getFrequencyColor(routine.frequency))}
                             >
                               {routine.frequency}
@@ -431,7 +431,7 @@ export const RoutineLibraryPage: React.FC<{
                           {routine.impactZones.map((zone) => (
                             <Badge
                               key={zone}
-                              variant="outline"
+                              variant="secondary"
                               className="text-xs h-5 px-2 bg-muted/50 text-muted-foreground border-border"
                             >
                               {zone}
@@ -452,7 +452,7 @@ export const RoutineLibraryPage: React.FC<{
                           {routine.pelicoViews.map((view) => (
                             <Badge
                               key={view}
-                              variant="outline"
+                              variant="secondary"
                               className="text-xs h-5 px-2 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
                             >
                               {view}
@@ -518,7 +518,7 @@ export const RoutineLibraryPage: React.FC<{
                             return (
                               <Badge
                                 key={colId}
-                                variant="outline"
+                                variant="secondary"
                                 className="text-xs h-5 px-2 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30"
                               >
                                 {columnLabel}

@@ -157,16 +157,16 @@ export const CreatePersonaModal: React.FC<CreatePersonaModalProps> = ({
 
         <DialogFooter>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
             Annuler
           </Button>
           <Button
+            variant="default"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
           >
             {isSubmitting ? 'Création...' : 'Créer le Role profile'}
           </Button>

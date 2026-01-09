@@ -466,16 +466,16 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
 
         <DialogFooter>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             disabled={isProcessing || isImporting}
           >
             Cancel
           </Button>
           <Button
+            variant="default"
             onClick={handleImport}
             disabled={!canImport}
-            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
           >
             {isImporting ? (
               <>

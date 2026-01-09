@@ -380,7 +380,7 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
             <div className="shrink-0 px-4 sm:px-6 py-3 border-b border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-2 flex-1 sm:flex-initial">
                 <Badge 
-                  variant="outline" 
+                  variant="secondary" 
                   className="text-xs shrink-0 bg-pink-500/10 text-pink-600 border-0 px-3 py-1.5 whitespace-nowrap"
                 >
                   {selectedView.name}
@@ -471,7 +471,7 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       onClick={() => table.previousPage()}
                       disabled={!table.getCanPreviousPage()}
@@ -479,7 +479,7 @@ export const CreateRoutineView: React.FC<CreateRoutineViewProps> = ({
                       Previous
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       onClick={() => table.nextPage()}
                       disabled={!table.getCanNextPage()}

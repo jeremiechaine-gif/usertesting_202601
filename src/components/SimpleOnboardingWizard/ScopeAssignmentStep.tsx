@@ -224,7 +224,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                 </p>
                 <div className="mt-4">
                   <Button 
-                    className="bg-[#31C7AD] hover:bg-[#31C7AD]/90 text-white"
+                    variant="accent"
                     onClick={() => {
                       setEditingScope(null);
                       setScopeToDuplicate(null);
@@ -294,7 +294,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                   </div>
                                 </div>
                                 {memberScopes.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="secondary" className="text-xs">
                                     {memberScopes.length} scope{memberScopes.length !== 1 ? 's' : ''}
                                   </Badge>
                                 )}
@@ -315,7 +315,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                   >
                                     <PopoverTrigger asChild>
                                       <Button
-                                        variant="outline"
+                                        variant="secondary"
                                         size="sm"
                                         className="h-6 gap-1 text-xs"
                                       >
@@ -335,7 +335,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                           />
                                         </div>
                                         <Button
-                                          variant="outline"
+                                          variant="secondary"
                                           size="sm"
                                           onClick={() => {
                                             setCurrentMemberId(member.id);
@@ -413,18 +413,18 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                                 {scope.name}
                                               </span>
                                               {isCustomized && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
                                                   Customized
                                                 </Badge>
                                               )}
                                               {isDefault && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
                                                   <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
                                                   Default
                                                 </Badge>
                                               )}
                                               {scope.filters && scope.filters.length > 0 && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-muted text-muted-foreground border-border">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-muted text-muted-foreground border-border">
                                                   {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
                                                 </Badge>
                                               )}

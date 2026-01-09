@@ -303,7 +303,7 @@ export const AllRoutinesSelectionStep: React.FC<AllRoutinesSelectionStepProps> =
                             {routine.personas.map((persona) => (
                               <Badge
                                 key={persona}
-                                variant="outline"
+                                variant="secondary"
                                 className={cn("text-xs h-5 px-2", getPersonaColor(persona))}
                               >
                                 {persona}
@@ -324,7 +324,7 @@ export const AllRoutinesSelectionStep: React.FC<AllRoutinesSelectionStepProps> =
                             {routine.objectives.map((objective) => (
                               <Badge
                                 key={objective}
-                                variant="outline"
+                                variant="secondary"
                                 className={cn("text-xs h-5 px-2", getObjectiveColor(objective))}
                               >
                                 {objective}
@@ -345,7 +345,7 @@ export const AllRoutinesSelectionStep: React.FC<AllRoutinesSelectionStepProps> =
                             {routine.pelicoViews.map((view) => (
                               <Badge
                                 key={view}
-                                variant="outline"
+                                variant="secondary"
                                 className="text-xs h-5 px-2 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
                               >
                                 {view}
@@ -411,7 +411,7 @@ export const AllRoutinesSelectionStep: React.FC<AllRoutinesSelectionStepProps> =
                               return (
                                 <Badge
                                   key={colId}
-                                  variant="outline"
+                                  variant="secondary"
                                   className="text-xs h-5 px-2 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30"
                                 >
                                   {columnLabel}

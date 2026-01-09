@@ -372,7 +372,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             className="h-7 gap-1.5 text-xs"
                             onClick={() => {
@@ -394,7 +394,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                         >
                           <PopoverTrigger asChild>
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               className="h-7 gap-1.5 text-xs"
                             >
@@ -525,12 +525,12 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                                 {user.name}
                                               </div>
                                               {isNotAssigned && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
                                                   Not assigned
                                                 </Badge>
                                               )}
                                               {!isNotAssigned && userTeams.length > 0 && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
                                                   Assigned
                                                 </Badge>
                                               )}
@@ -540,7 +540,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                                 {userTeams.map((userTeam) => (
                                                   <Badge
                                                     key={userTeam.id}
-                                                    variant="outline"
+                                                    variant="secondary"
                                                     className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30"
                                                   >
                                                     {userTeam.name}

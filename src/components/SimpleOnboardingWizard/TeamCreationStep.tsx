@@ -439,7 +439,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
             <div className="max-w-4xl mx-auto py-6">
               {/* Welcome Message - Subtle and integrated */}
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
+                <h2 className="text-2xl page-title bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
                   Bienvenue, {getUserDisplayName()} !
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -568,7 +568,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   </p>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setCreatePersonaModalOpen(true)}
                   className="h-7 gap-1.5 text-xs"
@@ -685,7 +685,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                     <h3 className="text-lg font-semibold">
                       Created Teams ({teams.filter(t => !t.persona).length})
                     </h3>
-                    <Badge variant="outline" className="bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                    <Badge variant="secondary" className="bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       {teams.filter(t => !t.persona).length} team{teams.filter(t => !t.persona).length !== 1 ? 's' : ''}
                     </Badge>
@@ -767,7 +767,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                     <Popover open={personasPopoverOpen} onOpenChange={setPersonasPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           role="combobox"
                           className="w-full justify-between min-h-[42px] h-auto py-2"
                         >

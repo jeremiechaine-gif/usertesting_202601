@@ -93,7 +93,7 @@ export const ScopeFiltersSection: React.FC<ScopeFiltersSectionProps> = ({
                         {columnLabel}
                       </span>
                       <Badge 
-                        variant="outline" 
+                        variant="secondary" 
                         className="h-5 px-1.5 text-xs font-medium border-[#31C7AD]/40 text-[#31C7AD] bg-[#31C7AD]/5"
                       >
                         Scope

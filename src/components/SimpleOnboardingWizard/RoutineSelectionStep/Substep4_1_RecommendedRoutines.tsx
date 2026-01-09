@@ -134,7 +134,7 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
         <div className="flex items-center gap-3">
           {onCreateRoutine && (
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={onCreateRoutine}
               className="gap-2"
@@ -146,7 +146,7 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
           {suggestedRoutines.length > 0 && remainingCount > 0 && (
             <div className="ml-auto">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 onClick={onAddAllSuggested}
                 className="gap-2 border-[#31C7AD]/40 hover:bg-[#31C7AD]/10 hover:border-[#31C7AD] transition-all"
@@ -171,7 +171,7 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
                   <h4 className="text-sm font-semibold text-foreground/90">
                     {objective}
                   </h4>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="secondary" className="text-xs">
                     {routines.length} routine{routines.length !== 1 ? 's' : ''}
                   </Badge>
                 </div>

@@ -372,7 +372,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-xs text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/5 px-2 py-1 h-auto"
+                    className="w-full justify-start text-xs text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/5 px-2 py-1 h-auto rounded-md"
                     onClick={() => setShowAllMyRoutines(!showAllMyRoutines)}
                   >
                     {showAllMyRoutines ? 'Show less' : 'View all'}
@@ -421,7 +421,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-xs text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/5 px-2 py-1 h-auto"
+                    className="w-full justify-start text-xs text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/5 px-2 py-1 h-auto rounded-md"
                     onClick={() => setShowAllSharedRoutines(!showAllSharedRoutines)}
                   >
                     {showAllSharedRoutines ? 'Show less' : 'View all'}
@@ -488,7 +488,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
               key={item.id}
               variant={isActive ? 'secondary' : 'ghost'}
               className={cn(
-                'w-full justify-start gap-3 h-auto py-1.5 px-3 text-sm',
+                'w-full justify-start gap-3 h-auto py-1.5 px-3 text-sm rounded-md',
                 isActive && 'bg-[#31C7AD] text-white hover:bg-[#2ab89a]'
               )}
               onClick={() => onNavigate?.(item.id)}

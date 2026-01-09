@@ -85,7 +85,7 @@ export const SortingSection: React.FC<SortingSectionProps> = ({
           </div>
         ) : (
           <div className="space-y-2 min-w-0">
-            <Button variant="outline" size="sm" onClick={onAddSort} className="gap-2">
+            <Button variant="secondary" size="sm" onClick={onAddSort} className="gap-2">
               <Plus className="h-4 w-4" />
               Add sort
             </Button>

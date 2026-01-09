@@ -196,7 +196,7 @@ export const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
           <div className="relative px-6 pt-6 pb-4 border-b border-border/50">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 Create Routine
               </DialogTitle>
               <DialogDescription className="sr-only">
@@ -400,13 +400,13 @@ export const CreateRoutineModal: React.FC<CreateRoutineModalProps> = ({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-between shrink-0">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
+              variant="default"
               onClick={handleSave}
               disabled={!canSave}
-              className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50"
             >
               Create Routine
             </Button>

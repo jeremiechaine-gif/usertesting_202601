@@ -178,7 +178,7 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
           <div className="relative px-6 pt-6 pb-4 border-b border-border/50">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 Add routines
               </DialogTitle>
               <DialogDescription className="sr-only">
@@ -318,7 +318,7 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                               {routine.personas.map((persona) => (
                                 <Badge
                                   key={persona}
-                                  variant="outline"
+                                  variant="secondary"
                                   className={cn("text-xs h-5 px-2", getPersonaColor(persona))}
                                 >
                                   {persona}
@@ -339,7 +339,7 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                               {routine.objectives.map((objective) => (
                                 <Badge
                                   key={objective}
-                                  variant="outline"
+                                  variant="secondary"
                                   className={cn("text-xs h-5 px-2", getObjectiveColor(objective))}
                                 >
                                   {objective}
@@ -360,7 +360,7 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                               {routine.pelicoViews.map((view) => (
                                 <Badge
                                   key={view}
-                                  variant="outline"
+                                  variant="secondary"
                                   className="text-xs h-5 px-2 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                 >
                                   {view}
@@ -389,13 +389,13 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
             </div>
             <div className="flex items-center gap-3">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={handleClearSelection}
                 disabled={selectedCount === 0}
               >
@@ -406,8 +406,8 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                   onAddSelected();
                   onOpenChange(false);
                 }}
+                variant="default"
                 disabled={selectedCount === 0}
-                className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
               >
                 Add Selected ({selectedCount})
               </Button>

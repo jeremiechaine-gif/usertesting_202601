@@ -181,7 +181,7 @@ export const UserScopesRoutinesModal: React.FC<UserScopesRoutinesModalProps> = (
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 Scopes & Routines for {user.name}
               </DialogTitle>
             </div>
@@ -227,7 +227,7 @@ export const UserScopesRoutinesModal: React.FC<UserScopesRoutinesModalProps> = (
                         </SelectContent>
                       </Select>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => {
                           if (selectedScopeToAdd) {
@@ -323,7 +323,7 @@ export const UserScopesRoutinesModal: React.FC<UserScopesRoutinesModalProps> = (
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className="font-semibold text-sm">{scope.name}</span>
                               {fromTeam && (
-                                <Badge variant="outline" className="text-xs bg-background/50 border-border/60">
+                                <Badge variant="secondary" className="text-xs bg-background/50 border-border/60">
                                   From Team
                                 </Badge>
                               )}
@@ -400,7 +400,7 @@ export const UserScopesRoutinesModal: React.FC<UserScopesRoutinesModalProps> = (
                         </SelectContent>
                       </Select>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => {
                           if (selectedRoutineToAdd) {
@@ -496,7 +496,7 @@ export const UserScopesRoutinesModal: React.FC<UserScopesRoutinesModalProps> = (
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className="font-semibold text-sm">{routine.name}</span>
                               {fromTeam && (
-                                <Badge variant="outline" className="text-xs bg-background/50 border-border/60">
+                                <Badge variant="secondary" className="text-xs bg-background/50 border-border/60">
                                   From Team
                                 </Badge>
                               )}

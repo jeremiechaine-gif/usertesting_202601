@@ -260,7 +260,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                 <div className="text-sm text-muted-foreground mb-1">
                   Routines / Create Routine / {substeps.find(s => s.id === currentStep)?.label}
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold">
+                <h1 className="text-xl sm:text-2xl page-title">
                   Create Routine
                 </h1>
               </div>
@@ -349,7 +349,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
           <div className="flex items-center gap-2 order-2 sm:order-1">
             {currentStep !== 'choose-view' && (
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   if (currentStep === 'configure') {
                     setCurrentStep('choose-view');
@@ -364,7 +364,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
           </div>
           
           <div className="flex items-center gap-2 order-1 sm:order-2 justify-end sm:justify-start">
-            <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+            <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             

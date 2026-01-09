@@ -227,10 +227,10 @@ export const EventsExplorerPage: React.FC<{ onNavigate?: (page: string) => void;
       )}
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <div className="relative border-b bg-background shadow-sm">
+        <div className="relative bg-background shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-3">
-            <div className="flex items-center justify-between mb-3">
+          <div className="relative px-6 py-5">
+            <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
@@ -275,7 +275,7 @@ export const EventsExplorerPage: React.FC<{ onNavigate?: (page: string) => void;
                       {routine.name}
                     </h1>
                     <Badge
-                      variant="outline"
+                      variant="secondary"
                       className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
                     >
                       {getPelicoViewDisplayName(routine.pelicoView)}

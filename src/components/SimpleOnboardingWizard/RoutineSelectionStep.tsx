@@ -688,7 +688,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                           {team.persona ? (
                             <>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   // Navigate to recommended routines substep for this team
@@ -706,7 +706,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 View recommended
                               </Button>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   setRoutineAddMode({ ...routineAddMode, [team.id]: 'personas' });
@@ -719,7 +719,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 Add suggested
                               </Button>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   setRoutineAddMode({ ...routineAddMode, [team.id]: 'manual' });
@@ -734,7 +734,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 Add manually
                               </Button>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   handleCreateRoutineClick(team.id);
@@ -751,7 +751,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                           ) : (
                             <>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   // Initialize temp selection with routines not already assigned
@@ -766,7 +766,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 Add manually
                               </Button>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => {
                                   handleCreateRoutineClick(team.id);
@@ -815,7 +815,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                               {routine.name}
                                             </span>
                                             {isSuggested && (
-                                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                              <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
                                                 <Sparkles className="h-2.5 w-2.5" />
                                                 Suggested
                                               </Badge>
@@ -832,7 +832,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                                 {routine.pelicoViews.map((view) => (
                                                   <Badge
                                                     key={view}
-                                                    variant="outline"
+                                                    variant="secondary"
                                                     className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                                   >
                                                     {view}
@@ -868,7 +868,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
           {/* Add Team Button */}
           <div className="flex justify-center pb-4">
             <Button
-              variant="outline"
+              variant="secondary"
               size="lg"
               onClick={() => {
                 // TODO: Implement add team functionality

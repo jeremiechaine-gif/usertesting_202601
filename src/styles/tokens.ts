@@ -46,6 +46,47 @@ export const tokens = {
       hover: '#1565c0',
       active: '#0d47a1',
     },
+    // Primary Button Colors (Pelico Design System)
+    primaryButton: {
+      primary: {
+        bg: '#a8f5c8',       // Primary mint green background (lighter)
+        text: '#1a1a1a',     // Dark grey text (near black)
+      },
+      accent: {
+        bg: '#9dd7f5',       // Accent light blue background (lighter shade)
+        text: '#1a1a1a',     // Dark grey text (near black)
+      },
+      secondary: {
+        bg: '#FFFFFF',       // Secondary white background
+        text: '#1a1a1a',     // Dark grey text (near black)
+        border: '#e0e0e0',   // Light grey border
+        hoverBg: '#00332e',  // Dark green hover background (same as primary)
+        hoverText: '#FFFFFF', // White text on hover (same as primary)
+        hoverBorder: '#00332e', // Dark green border on hover (same as primary)
+      },
+      hover: {
+        bg: '#00332e',       // Dark green hover background (for primary & accent)
+        text: '#FFFFFF',      // White text on hover
+      },
+      destructive: {
+        bg: '#ffb3ba',       // Light red/pink background
+        text: '#1a1a1a',     // Dark grey text (near black)
+        hoverBg: '#d32f2f',  // Dark red hover background
+      },
+      focus: {
+        border: '#0070f3',    // Blue focus border
+        width: '3px',
+      },
+      disabled: {
+        bg: '#E0E0E0',       // Light gray background
+        text: '#999999',     // Muted text
+      },
+    },
+    // Leaf Pattern Border Radius
+    leafRadius: {
+      square: '0px',         // Square corners (top-left, bottom-right)
+      rounded: '8px',        // Rounded corners (top-right, bottom-left)
+    },
     // Status
     status: {
       success: '#4caf50',
@@ -72,7 +113,8 @@ export const tokens = {
   },
   typography: {
     fontFamily: {
-      sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif'],
+      title: ['Anuphan', 'Arial', 'sans-serif'],
+      sans: ['Nunito', 'Arial', 'sans-serif'],
       mono: ['Menlo', 'Monaco', 'Consolas', 'monospace'],
     },
     fontSize: {
@@ -94,6 +136,15 @@ export const tokens = {
       tight: '1.25',
       normal: '1.5',
       relaxed: '1.75',
+    },
+    // Page title specific tokens (from design spec)
+    pageTitle: {
+      fontFamily: ['Anuphan', 'Arial', 'sans-serif'],
+      fontSize: '48px',
+      fontWeight: '500',
+      lineHeight: '53px',
+      color: 'rgb(15, 42, 47)',
+      fontStyle: 'normal',
     },
   },
   spacing: {
@@ -168,6 +219,34 @@ export const cssVars = {
   '--color-table-row-hover': tokens.colors.table.rowHover,
   '--color-table-row-selected': tokens.colors.table.rowSelected,
   '--color-table-border': tokens.colors.table.border,
+  '--color-primary-button-primary-bg': tokens.colors.primaryButton.primary.bg,
+  '--color-primary-button-primary-text': tokens.colors.primaryButton.primary.text,
+  '--color-primary-button-accent-bg': tokens.colors.primaryButton.accent.bg,
+  '--color-primary-button-accent-text': tokens.colors.primaryButton.accent.text,
+  '--color-primary-button-secondary-bg': tokens.colors.primaryButton.secondary.bg,
+  '--color-primary-button-secondary-text': tokens.colors.primaryButton.secondary.text,
+  '--color-primary-button-secondary-border': tokens.colors.primaryButton.secondary.border,
+  '--color-primary-button-secondary-hover-bg': tokens.colors.primaryButton.secondary.hoverBg,
+  '--color-primary-button-secondary-hover-text': tokens.colors.primaryButton.secondary.hoverText,
+  '--color-primary-button-secondary-hover-border': tokens.colors.primaryButton.secondary.hoverBorder,
+  '--color-primary-button-hover-bg': tokens.colors.primaryButton.hover.bg,
+  '--color-primary-button-hover-text': tokens.colors.primaryButton.hover.text,
+  '--color-primary-button-destructive-bg': tokens.colors.primaryButton.destructive.bg,
+  '--color-primary-button-destructive-text': tokens.colors.primaryButton.destructive.text,
+  '--color-primary-button-destructive-hover-bg': tokens.colors.primaryButton.destructive.hoverBg,
+  '--color-primary-button-focus-border': tokens.colors.primaryButton.focus.border,
+  '--color-primary-button-focus-width': tokens.colors.primaryButton.focus.width,
+  '--color-primary-button-disabled-bg': tokens.colors.primaryButton.disabled.bg,
+  '--color-primary-button-disabled-text': tokens.colors.primaryButton.disabled.text,
+  '--radius-leaf-square': tokens.leafRadius.square,
+  '--radius-leaf-rounded': tokens.leafRadius.rounded,
+  // Typography
+  '--font-family-title': tokens.typography.fontFamily.title.join(', '),
+  '--font-family-sans': tokens.typography.fontFamily.sans.join(', '),
+  '--page-title-font-size': tokens.typography.pageTitle.fontSize,
+  '--page-title-font-weight': tokens.typography.pageTitle.fontWeight,
+  '--page-title-line-height': tokens.typography.pageTitle.lineHeight,
+  '--page-title-color': tokens.typography.pageTitle.color,
 } as const;
 
 

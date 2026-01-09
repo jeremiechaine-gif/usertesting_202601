@@ -52,7 +52,7 @@ export const GroupByDropdown: React.FC<GroupByDropdownProps> = ({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button 
-          variant="outline" 
+          variant="secondary" 
           size="sm"
           className="gap-2 h-auto px-3 py-1.5"
         >

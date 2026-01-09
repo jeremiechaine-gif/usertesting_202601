@@ -38,7 +38,7 @@ export const Step2ExplainView: React.FC<Step2ExplainViewProps> = ({
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-medium text-muted-foreground">View Structure</span>
         </div>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="secondary" className="text-xs">
           {view.structure === 'table' && 'Table'}
           {view.structure === 'timeline' && 'Timeline'}
           {view.structure === 'time-phased-grid' && 'Time-phased Grid'}

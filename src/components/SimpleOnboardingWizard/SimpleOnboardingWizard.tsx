@@ -494,7 +494,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
           <div className="px-8 py-4 border-b border-border bg-background shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">{stepLabels[step]}</h2>
+                <h2 className="text-2xl page-title">{stepLabels[step]}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   {step === 0 && 'Welcome and create teams from Role profiles or manually'}
                   {step === 1 && 'Add members to each team'}
@@ -614,6 +614,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 </Button>
               </div>
               <Button
+                variant="default"
                 onClick={() => {
                   console.log('[SimpleOnboardingWizard] Button clicked, step:', step, 'substep:', currentSubstep.step3);
                   // Handle continue for step 3 substeps
@@ -658,7 +659,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     ? false
                     : !canProceed()
                 }
-                className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="gap-2"
               >
                 {step === 3 && currentSubstep.step3 === 'recommended-routines' 
                   ? (() => {
@@ -720,6 +721,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               </div>
               {routineCreationStep === 'configure-table' && (
                 <Button
+                  variant="default"
                   onClick={() => {
                     // Call handleSave from CreateRoutineView
                     const handleSave = (window as any).__createRoutineViewHandleSave;
@@ -728,7 +730,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     }
                   }}
                   disabled={!routineNameForValidation.trim()}
-                  className="gap-2 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="gap-2"
                 >
                   Create
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

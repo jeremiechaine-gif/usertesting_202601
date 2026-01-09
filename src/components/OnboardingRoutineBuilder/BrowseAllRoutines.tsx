@@ -259,7 +259,7 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
               </SelectContent>
             </Select>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
             >
@@ -434,7 +434,7 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">No routines found</p>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       onClick={clearFilters}
                       className="mt-4"
@@ -466,19 +466,19 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
                               {routine.description}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {routine.frequency}
                               </Badge>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {routine.horizon}
                               </Badge>
                               {routine.pelicoViews.slice(0, 2).map((view) => (
-                                <Badge key={view} variant="outline" className="text-xs">
+                                <Badge key={view} variant="secondary" className="text-xs">
                                   {view}
                                 </Badge>
                               ))}
                               {routine.pelicoViews.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="secondary" className="text-xs">
                                   +{routine.pelicoViews.length - 2}
                                 </Badge>
                               )}

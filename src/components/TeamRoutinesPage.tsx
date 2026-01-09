@@ -288,7 +288,7 @@ export const TeamRoutinesPage: React.FC<{
                 <span className="text-foreground font-semibold">Routines</span>
               </div>
               
-              <h2 className="text-2xl font-bold">{team.name} - Routines</h2>
+              <h2 className="text-2xl page-title">{team.name} - Routines</h2>
               {team.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {team.description}
@@ -310,7 +310,7 @@ export const TeamRoutinesPage: React.FC<{
                     <span className="text-sm font-medium">Routines ({teamRoutinesCount})</span>
                   </div>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onClick={() => {
                       setTempSelectedRoutineIds([]);
@@ -365,7 +365,7 @@ export const TeamRoutinesPage: React.FC<{
                                           {routine.pelicoViews.map((view) => (
                                             <Badge
                                               key={view}
-                                              variant="outline"
+                                              variant="secondary"
                                               className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                             >
                                               {view}

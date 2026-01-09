@@ -361,7 +361,7 @@ export const ScopeAndRoutinesPage: React.FC<{
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Main Header with Gradient */}
-        <div className="relative border-b bg-background">
+        <div className="relative bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
           <div className="relative px-6 py-5">
             {/* Top Header Row */}
@@ -391,7 +391,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                     className="w-5 h-5 shrink-0 brightness-0 invert"
                   />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                   {viewMode === 'my-routines' ? 'My Routines' : 
                    viewMode === 'shared-routines' ? 'Shared Routines' : 
                    'Scope & Routines'}
@@ -427,8 +427,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
+                    variant="accent"
                     onClick={handleCreateRoutine}
-                    className="gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+                    className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     Create Routine
@@ -436,7 +437,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                   <Button
                     variant="secondary"
                     onClick={() => onNavigate?.('routines-library')}
-                    className="gap-2 h-9"
+                    className="gap-2"
                   >
                     <Eye className="h-4 w-4" />
                     See all generic routines
@@ -515,7 +516,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                                           {routine.name}
                                         </span>
                                         {isSuggested && (
-                                          <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                          <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
                                             <Sparkles className="h-2.5 w-2.5" />
                                             Suggested
                                           </Badge>
@@ -529,7 +530,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                                       <div className="flex flex-wrap gap-1 items-center mb-2">
                                         {routine.pelicoView && (
                                           <Badge
-                                            variant="outline"
+                                            variant="secondary"
                                             className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                           >
                                             {getPelicoViewDisplayName(routine.pelicoView)}
@@ -546,7 +547,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                                               {sharedTeams.map((team) => (
                                                 <Badge
                                                   key={team.id}
-                                                  variant="outline"
+                                                  variant="secondary"
                                                   className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1 group/badge"
                                                 >
                                                   <Users className="h-3 w-3" />
@@ -608,7 +609,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                                             >
                                               <PopoverTrigger asChild>
                                                 <Button
-                                                  variant="outline"
+                                                  variant="secondary"
                                                   size="sm"
                                                   className="h-5 px-2 text-xs gap-1"
                                                 >
@@ -648,7 +649,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                                           {sharedTeams.map((team) => (
                                             <Badge
                                               key={team.id}
-                                              variant="outline"
+                                              variant="secondary"
                                               className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1"
                                             >
                                               <Users className="h-3 w-3" />
@@ -738,8 +739,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                   Your <em>personal</em> data perimeter (e.g., plants, cells, codes) applied by default to see what is relevant to you.
                 </p>
                 <Button
+                  variant="accent"
                   onClick={handleCreateScope}
-                  className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                  className="gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Create Scope
@@ -771,18 +773,18 @@ export const ScopeAndRoutinesPage: React.FC<{
                               {scope.name}
                             </span>
                             {scope.isDefault && (
-                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
+                              <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
                                 <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
                                 Default
                               </Badge>
                             )}
                             {currentScopeId === scope.id && (
-                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                              <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                                 Active
                               </Badge>
                             )}
                             {scope.isGlobal && (
-                              <Badge variant="outline" className="text-xs h-4 px-1.5 bg-muted/50 border-border/60">
+                              <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-muted/50 border-border/60">
                                 Global
                               </Badge>
                             )}
@@ -794,7 +796,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                           )}
                           <div className="flex flex-wrap gap-1 items-center mb-2">
                             <Badge
-                              variant="outline"
+                              variant="secondary"
                               className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                             >
                               {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
@@ -808,7 +810,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                               {assignedUsers.map(({ user, assignmentType, teamName }) => (
                                 <Badge
                                   key={user.id}
-                                  variant="outline"
+                                  variant="secondary"
                                   className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1"
                                   title={assignmentType === 'via-team' ? `Via team: ${teamName}` : 'Direct assignment'}
                                 >
@@ -896,7 +898,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                   Create a new routine
                 </DialogTitle>
               </div>
@@ -928,7 +930,7 @@ export const ScopeAndRoutinesPage: React.FC<{
 
           <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setViewSelectionModalOpen(false)}
               className="border-border/60 hover:bg-muted"
             >
@@ -984,7 +986,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                 <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                   <Share2 className="h-5 w-5 text-white" />
                 </div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                   Share {shareType === 'scope' ? 'Scope' : 'Routine'}
                 </DialogTitle>
               </div>
@@ -1004,7 +1006,7 @@ export const ScopeAndRoutinesPage: React.FC<{
                 className="flex-1 font-mono text-sm h-10 border-border/60 bg-muted/30"
               />
               <Button
-                variant="outline"
+                variant="secondary"
                 size="icon"
                 onClick={copyToClipboard}
                 className="shrink-0 h-10 w-10 border-border/60 hover:bg-[#31C7AD]/10 hover:border-[#31C7AD] hover:text-[#31C7AD]"
@@ -1016,7 +1018,7 @@ export const ScopeAndRoutinesPage: React.FC<{
 
           <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setShareDialogOpen(false)}
               className="border-border/60 hover:bg-muted"
             >
@@ -1041,7 +1043,7 @@ export const ScopeAndRoutinesPage: React.FC<{
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Users className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 Reassign Scope
               </DialogTitle>
             </div>
@@ -1100,7 +1102,7 @@ export const ScopeAndRoutinesPage: React.FC<{
 
           <DialogFooter>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setReassignScopeDialogOpen(false);
                 setScopeToReassign(null);

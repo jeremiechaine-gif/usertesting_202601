@@ -200,7 +200,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                   </div>
                                 </div>
                                 {memberScopes.length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="secondary" className="text-xs">
                                     {memberScopes.length} scope{memberScopes.length !== 1 ? 's' : ''}
                                   </Badge>
                                 )}
@@ -221,7 +221,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                   >
                                     <PopoverTrigger asChild>
                                       <Button
-                                        variant="outline"
+                                        variant="secondary"
                                         size="sm"
                                         className="h-6 gap-1 text-xs"
                                       >
@@ -241,7 +241,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                           />
                                         </div>
                                         <Button
-                                          variant="outline"
+                                          variant="secondary"
                                           size="sm"
                                           onClick={() => {
                                             setCurrentMemberId(member.id);
@@ -333,7 +333,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                                 {scope.name}
                                               </span>
                                               {isDefault && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
                                                   <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
                                                   Default
                                                 </Badge>
@@ -410,7 +410,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                 <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                 <p className="text-sm text-muted-foreground mb-3">No scopes available</p>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setScopeModalOpen(true)}
                   className="h-9"

@@ -175,7 +175,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-transparent" />
           <div className="relative px-6 pt-6 pb-4">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold">
+              <DialogTitle className="text-2xl page-title">
                 Create Routine
               </DialogTitle>
               <DialogDescription className="sr-only">
@@ -281,7 +281,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
             <div className="flex items-center gap-2">
               {currentStep !== 'choose-view' && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => {
                     if (currentStep === 'explain-view') {
                       setCurrentStep('choose-view');
@@ -299,7 +299,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="secondary" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               
@@ -328,9 +328,9 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
               
               {currentStep === 'save' && (
                 <Button
+                  variant="default"
                   onClick={handleSave}
                   disabled={!canProceedFromSave}
-                  className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
                 >
                   Create Routine
                 </Button>

@@ -88,6 +88,32 @@
   @apply text-primary underline-offset-4 hover:underline;
 }
 
+/* Page title styling with Anuphan font - exact specifications */
+.page-title {
+  @apply font-title tracking-tight;
+  font-weight: 500;
+  font-size: 48px;
+  line-height: 53px;
+  color: rgb(15, 42, 47);
+  font-style: normal;
+}
+
+/* Override for responsive sizes when used with Tailwind classes */
+.text-2xl.page-title {
+  font-size: 1.5rem; /* 24px - keep responsive */
+  line-height: 1.75rem; /* proportional */
+}
+
+.text-3xl.page-title {
+  font-size: 1.875rem; /* 30px - keep responsive */
+  line-height: 2.125rem; /* proportional */
+}
+
+.text-xl.page-title {
+  font-size: 1.25rem; /* 20px - keep responsive */
+  line-height: 1.5rem; /* proportional */
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;

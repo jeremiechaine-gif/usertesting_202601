@@ -307,7 +307,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {routine ? 'Edit Routine' : 'Create New Routine'}
               </DialogTitle>
             </div>
@@ -363,7 +363,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               <Popover open={personasPopoverOpen} onOpenChange={setPersonasPopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     className="w-full justify-between h-10 border-border/60"
                   >
                     <span className="text-sm">
@@ -445,7 +445,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                   </ScrollArea>
                   <div className="p-2 border-t border-border/60">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="w-full h-9 border-border/60 hover:border-[#31C7AD] hover:bg-[#31C7AD]/5 hover:text-[#31C7AD] transition-all"
                       onClick={() => {
@@ -552,13 +552,13 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                 // Edit mode OR Create mode from Pelico View page: Read-only display
                 <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                    <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
                       {getPelicoViewDisplayName(routine?.pelicoView || currentPelicoView)}
                     </Badge>
                   </div>
                   {(routine?.pelicoView || currentPelicoView) && onNavigate && routine && (
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       className="h-8 gap-2"
                       onClick={() => {
@@ -702,7 +702,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                           autoFocus
                         />
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           onClick={() => {
                             setShowNewTeamInput(false);
@@ -715,7 +715,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                       </div>
                     ) : (
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => setShowNewTeamInput(true)}
                         className="h-9 border-border/60 hover:border-[#31C7AD] hover:bg-[#31C7AD]/5 hover:text-[#31C7AD] transition-all"
@@ -745,19 +745,19 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               <Label className="text-sm font-semibold">Current Configuration</Label>
               <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                  <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
                     <Zap className="h-3 w-3 mr-1" />
                     {currentFilters.length} filters
                   </Badge>
-                  <Badge variant="outline" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                  <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
                     {currentSorting.length} sorts
                   </Badge>
                   {currentGroupBy && (
-                    <Badge variant="outline" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                    <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
                       Group by: {currentGroupBy}
                     </Badge>
                   )}
-                  <Badge variant="outline" className="bg-background/50 border-border/60">
+                  <Badge variant="secondary" className="bg-background/50 border-border/60">
                     Page size: {currentPageSize}
                   </Badge>
                 </div>
@@ -771,7 +771,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
         <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             className="h-9 border-border/60 hover:bg-muted"
           >

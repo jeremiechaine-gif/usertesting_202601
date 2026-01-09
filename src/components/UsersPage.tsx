@@ -283,7 +283,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Main Header with Gradient */}
-        <div className="relative border-b bg-background">
+        <div className="relative bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
           <div className="relative px-6 py-5">
             <div className="flex items-center justify-between">
@@ -310,7 +310,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                     className="w-5 h-5 shrink-0 brightness-0 invert"
                   />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Teams & members</h1>
+                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Teams & members</h1>
               </div>
             </div>
           </div>
@@ -335,8 +335,9 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                 </div>
                 {isManager && sortedTeams.length > 0 && (
                   <Button
+                    variant="default"
                     onClick={handleCreateTeam}
-                    className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                    className="gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     Create Team
@@ -355,8 +356,9 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                   </p>
                   {isManager && (
                     <Button
+                      variant="default"
                       onClick={handleCreateTeam}
-                      className="gap-2 h-9 bg-gradient-to-r from-[#31C7AD] to-[#2063F0] hover:from-[#2ab89a] hover:to-[#1a54d8] text-white shadow-md"
+                      className="gap-2"
                     >
                       <Plus className="h-4 w-4" />
                       Create Team
@@ -405,11 +407,11 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                   </p>
                                 )}
                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                  <Badge variant="outline" className="text-xs border-none">
+                                  <Badge variant="secondary" className="text-xs border-none">
                                     {teamUsers.length} {teamUsers.length === 1 ? 'member' : 'members'}
                                   </Badge>
                                   <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     size="sm"
                                     className="h-6 px-2 text-xs gap-1.5 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] border"
                                     onClick={() => {
@@ -468,7 +470,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                               >
                                 <PopoverTrigger asChild>
                                   <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     size="sm"
                                     className="gap-2"
                                   >
@@ -564,12 +566,12 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                                         {user.name}
                                                       </div>
                                                       {isNotAssigned && (
-                                                        <Badge variant="outline" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
+                                                        <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
                                                           Not assigned
                                                         </Badge>
                                                       )}
                                                       {!isNotAssigned && userTeams.length > 0 && (
-                                                        <Badge variant="outline" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                                        <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
                                                           Assigned
                                                         </Badge>
                                                       )}
@@ -584,7 +586,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                                         {userTeams.map((userTeam) => (
                                                           <Badge
                                                             key={userTeam.id}
-                                                            variant="outline"
+                                                            variant="secondary"
                                                             className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30"
                                                           >
                                                             {userTeam.name}
@@ -604,7 +606,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                 </PopoverContent>
                               </Popover>
                               <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => handleCreateUser(team.id)}
                                 className="gap-2"
@@ -694,7 +696,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                             )}
                                           </div>
                                           {user.id === currentUser?.id && (
-                                            <Badge variant="outline" className="text-xs shrink-0 bg-[#31C7AD]/10 border-[#31C7AD] text-[#31C7AD] h-5 px-1.5">
+                                            <Badge variant="secondary" className="text-xs shrink-0 bg-[#31C7AD]/10 border-[#31C7AD] text-[#31C7AD] h-5 px-1.5">
                                               You
                                             </Badge>
                                           )}
@@ -976,7 +978,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
             </ScrollArea>
             <DialogFooter>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   setScopesModalOpen(false);
                   setSelectedUserForScopes(null);
@@ -1058,7 +1060,7 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {user ? 'Edit User' : 'Create New User'}
               </DialogTitle>
             </div>
@@ -1131,7 +1133,7 @@ const UserModal: React.FC<UserModalProps> = ({ open, onOpenChange, user, teams, 
 
         <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             className="border-border/60 hover:bg-muted"
           >
@@ -1197,7 +1199,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ open, onOpenChange, team, onSave 
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {team ? 'Edit Team' : 'Create New Team'}
               </DialogTitle>
             </div>
@@ -1237,7 +1239,7 @@ const TeamModal: React.FC<TeamModalProps> = ({ open, onOpenChange, team, onSave 
 
         <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             className="border-border/60 hover:bg-muted"
           >

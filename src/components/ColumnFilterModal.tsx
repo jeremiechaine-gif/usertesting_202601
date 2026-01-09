@@ -201,7 +201,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
               <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-md">
                 <Filter className="h-5 w-5 text-white" />
               </div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                 {columnLabel}
               </DialogTitle>
             </div>
@@ -351,7 +351,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
         {/* Footer */}
         <DialogFooter className="px-8 py-5 border-t border-border/50 shrink-0 bg-muted/20 gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={handleCancel}
             className="border-border/60 hover:bg-muted"
           >

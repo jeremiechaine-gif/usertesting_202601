@@ -167,7 +167,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
 
         <DialogFooter>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >

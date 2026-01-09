@@ -173,7 +173,7 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
                       {PERSONAS_FR[persona] || persona}
                     </Label>
                     {isRecommended && (
-                      <Badge variant="outline" className="text-xs h-5 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
+                      <Badge variant="secondary" className="text-xs h-5 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                         Recommended
                       </Badge>
                     )}

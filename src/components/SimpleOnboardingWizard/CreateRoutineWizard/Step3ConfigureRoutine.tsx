@@ -508,7 +508,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
           <div className="p-3 sm:p-4 bg-muted/30 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-2 shrink-0 w-full" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
             <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-0">
               <Badge 
-                variant="outline" 
+                variant="secondary" 
                 className="text-xs shrink-0 bg-pink-500/10 text-pink-600 border-0 px-3 py-1.5 whitespace-nowrap"
               >
                 {view.name}

@@ -385,7 +385,7 @@ export const SortingAndFiltersPopover: React.FC<SortingAndFiltersPopoverProps> =
   }, [selectedRoutineId, columnFilters, routineFilters]);
 
   const defaultTrigger = (
-    <Button variant="outline" size="sm" className="gap-2 h-auto px-3 py-1.5 relative">
+    <Button variant="secondary" size="sm" className="gap-2 h-auto px-3 py-1.5 relative">
       <Filter className="w-4 h-4" />
       {totalActiveCount > 0 ? (
         <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
@@ -625,7 +625,7 @@ const MainView: React.FC<MainViewProps> = ({
       <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/20 shrink-0 gap-3">
         <div className="flex items-center gap-2 flex-1">
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={onClose}
             className="h-9 border-border/60 hover:bg-muted"

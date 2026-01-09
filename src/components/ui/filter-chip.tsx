@@ -116,7 +116,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
             })}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleSaveValues}>
+            <Button variant="secondary" size="sm" onClick={handleSaveValues}>
               Save
             </Button>
             <Button

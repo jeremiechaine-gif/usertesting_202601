@@ -86,8 +86,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     setFilterSearch('');
     setConfiguringFilterId(null);
     setConfiguringFilterDef(null);
-    // Reset info section visibility
-    setShowScopeInfo(true);
+    // Reset info section visibility - hide by default to avoid showing tooltip in modal
+    setShowScopeInfo(false);
   }, [scope, open]);
 
   const handleSave = () => {
@@ -340,14 +340,15 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                 <Target className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 flex items-center gap-2">
-                <DialogTitle className="text-2xl font-bold">
+                <DialogTitle className="text-2xl page-title">
                   {modalTitle}
                 </DialogTitle>
                 <TooltipProvider>
-                  <Tooltip>
+                  <Tooltip defaultOpen={false}>
                     <TooltipTrigger asChild>
                       <button
                         type="button"
+                        tabIndex={-1}
                         className="inline-flex items-center justify-center rounded-full hover:bg-muted/50 p-1 transition-colors shrink-0"
                         aria-label="Information about scope"
                       >
@@ -483,7 +484,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                       </p>
                     </div>
                     <Button
-                      variant="outline"
+                      variant="accent"
                       size="sm"
                       onClick={() => setCurrentLayer(2)}
                       className="shrink-0"
@@ -499,18 +500,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                         <Target className="h-6 w-6 text-[#31C7AD]" />
                       </div>
                       <p className="text-sm font-medium mb-1">No filters yet</p>
-                      <p className="text-xs text-muted-foreground mb-3">
+                      <p className="text-xs text-muted-foreground">
                         Start by adding filters to define your data perimeter
                       </p>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setCurrentLayer(2)}
-                        className="bg-[#31C7AD] hover:bg-[#2ab89a]"
-                      >
-                        <X className="mr-2 h-4 w-4 rotate-45" />
-                        Add Your First Filter
-                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -834,10 +826,10 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
         {/* Footer - Layer 1: Save scope, Layer 3: Apply/Cancel filter */}
         {currentLayer === 1 && (
           <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/20">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-[#2063F0] hover:bg-[#1a54d8]">
+            <Button variant="default" onClick={handleSave}>
               {saveButtonText || (scope ? 'Update' : 'Create') + ' Scope'}
             </Button>
           </DialogFooter>
@@ -894,15 +886,14 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
           return (
             <DialogFooter className="px-6 py-4 border-t shrink-0 bg-muted/20 gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={handleBack}
-                className="border-border/60 hover:bg-muted"
               >
                 Cancel
               </Button>
               <Button 
+                variant="default"
                 onClick={handleApplyFilter}
-                className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
               >
                 Apply
               </Button>

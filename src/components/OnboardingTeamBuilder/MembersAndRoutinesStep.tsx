@@ -241,7 +241,7 @@ export const MembersAndRoutinesStep: React.FC<MembersAndRoutinesStepProps> = ({
                         >
                           <PopoverTrigger asChild>
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               className="h-7 gap-1.5 text-xs"
                             >
@@ -338,7 +338,7 @@ export const MembersAndRoutinesStep: React.FC<MembersAndRoutinesStepProps> = ({
                                                 {user.name}
                                               </div>
                                               {isNotAssigned && (
-                                                <Badge variant="outline" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
+                                                <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
                                                   Not assigned
                                                 </Badge>
                                               )}
@@ -348,7 +348,7 @@ export const MembersAndRoutinesStep: React.FC<MembersAndRoutinesStepProps> = ({
                                                 {userTeams.map((userTeam) => (
                                                   <Badge
                                                     key={userTeam.name}
-                                                    variant="outline"
+                                                    variant="secondary"
                                                     className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30"
                                                   >
                                                     {userTeam.name}

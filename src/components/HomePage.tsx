@@ -289,7 +289,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
       
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         {/* Main Header with Gradient */}
-        <div className="relative border-b bg-background">
+        <div className="relative bg-background">
           <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
           <div className="relative px-6 py-5">
             {/* Top Header Row */}
@@ -319,7 +319,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                     className="w-5 h-5 shrink-0 brightness-0 invert"
                   />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Home</h1>
+                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Home</h1>
                 <div className="h-6 w-px bg-border/60" />
                 <PlanDropdown
                   selectedPlan={selectedPlan}
@@ -342,7 +342,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         <div className="flex-1 overflow-auto px-6 py-6">
           {/* Welcome Section */}
           <div className="mb-8">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
+            <h2 className="text-3xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
               Hello {userName},
             </h2>
             <p className="text-muted-foreground text-base">Here's what we have for you today</p>
@@ -444,6 +444,108 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+
+          {/* Button Components Showcase */}
+          <div className="mt-6">
+            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
+                  <Sparkles className="h-5 w-5 text-[#2063F0]" />
+                </div>
+                <h3 className="text-xl font-bold">Button Components</h3>
+              </div>
+              <div className="space-y-6">
+                {/* Variants Section */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Variants (Priority Order)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="default" (1st Priority)</p>
+                      <Button variant="default">Default Button</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="accent" (2nd Priority)</p>
+                      <Button variant="accent">Accent Button</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="secondary" (3rd Priority)</p>
+                      <Button variant="secondary">Secondary Button</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="destructive"</p>
+                      <Button variant="destructive">Destructive Button</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="ghost"</p>
+                      <Button variant="ghost">Ghost Button</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">variant="link"</p>
+                      <Button variant="link">Link Button</Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sizes Section */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Sizes</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">size="default"</p>
+                      <Button variant="default" size="default">Default Size</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">size="sm"</p>
+                      <Button variant="default" size="sm">Small Size</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">size="lg"</p>
+                      <Button variant="default" size="lg">Large Size</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">size="icon"</p>
+                      <Button variant="default" size="icon">
+                        <Bell className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Variant + Size Combinations */}
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Common Combinations</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">default + sm</p>
+                      <Button variant="default" size="sm">Small Default</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">accent + sm</p>
+                      <Button variant="accent" size="sm">Small Accent</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">secondary + sm</p>
+                      <Button variant="secondary" size="sm">Small Secondary</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">ghost + sm</p>
+                      <Button variant="ghost" size="sm">Small Ghost</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">destructive + sm</p>
+                      <Button variant="destructive" size="sm">Small Destructive</Button>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground">default + icon</p>
+                      <Button variant="default" size="icon">
+                        <Bell className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -558,7 +660,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={handleResetCancel}
             >
               Cancel

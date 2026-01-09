@@ -95,14 +95,14 @@ export const RoutineReviewStep: React.FC<RoutineReviewStepProps> = ({
                     {routine.pelicoViews.slice(0, 2).map((view) => (
                       <Badge
                         key={view}
-                        variant="outline"
+                        variant="secondary"
                         className="text-xs h-5 px-2 bg-background/50"
                       >
                         {view}
                       </Badge>
                     ))}
                     {routine.pelicoViews.length > 2 && (
-                      <Badge variant="outline" className="text-xs h-5 px-2 bg-[#2063F0]/5 text-[#2063F0] border-[#2063F0]/20">
+                      <Badge variant="secondary" className="text-xs h-5 px-2 bg-[#2063F0]/5 text-[#2063F0] border-[#2063F0]/20">
                         +{routine.pelicoViews.length - 2} more
                       </Badge>
                     )}

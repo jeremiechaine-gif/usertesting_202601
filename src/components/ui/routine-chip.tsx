@@ -125,7 +125,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
         {/* Pelico View Badge - Always shown if present */}
         {pelicoViewName && (
           <Badge
-            variant="outline"
+            variant="secondary"
             className="text-xs h-5 px-2 bg-pink-500/10 text-pink-600 border-pink-500/30 shrink-0"
           >
             {pelicoViewName}
@@ -151,7 +151,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
         {/* Custom Badge */}
         {isCustom && (
           <Badge
-            variant="outline"
+            variant="secondary"
             className="text-xs h-5 px-2 bg-blue-500/10 text-blue-600 border-blue-500/30 shrink-0"
           >
             Custom
@@ -218,7 +218,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
                 </Button>
               ) : (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={handleToggleClick}
                   className="flex-1 gap-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-4" // 16px horizontal padding

@@ -98,7 +98,7 @@ export const Substep4_2_RoutinePreview: React.FC<Substep4_2_RoutinePreviewProps>
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <p className="text-sm text-muted-foreground">Routine introuvable</p>
-        <Button variant="outline" onClick={onBack} className="mt-4">
+        <Button variant="secondary" onClick={onBack} className="mt-4">
           Retour
         </Button>
       </div>
@@ -177,16 +177,16 @@ export const Substep4_2_RoutinePreview: React.FC<Substep4_2_RoutinePreviewProps>
 
         {/* Routine Metadata */}
         <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="secondary" className="text-xs">
             {routine.frequency}
           </Badge>
           {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-            <Badge variant="outline" className="text-xs bg-pink-500/10 text-pink-600 border-pink-500/30">
+            <Badge variant="secondary" className="text-xs bg-pink-500/10 text-pink-600 border-pink-500/30">
               {routine.pelicoViews[0]}
             </Badge>
           )}
           {routine.objectives && routine.objectives.length > 0 && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="secondary" className="text-xs">
               {routine.objectives[0]}
             </Badge>
           )}

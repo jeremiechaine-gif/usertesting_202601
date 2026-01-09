@@ -445,7 +445,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                               </Badge>
                             )}
                             {team.id && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 Existing
                               </Badge>
                             )}
@@ -578,7 +578,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                   {routine.name}
                                                 </div>
                                                 {isSuggested && (
-                                                  <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                                  <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
                                                     <Sparkles className="h-2.5 w-2.5" />
                                                     Suggested
                                                   </Badge>
@@ -595,7 +595,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                     {routine.personas.map((persona) => (
                                                       <Badge
                                                         key={persona}
-                                                        variant="outline"
+                                                        variant="secondary"
                                                         className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
                                                       >
                                                         {persona}
@@ -608,7 +608,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                           {routine.pelicoViews.map((view) => (
                                                             <Badge
                                                               key={view}
-                                                              variant="outline"
+                                                              variant="secondary"
                                                               className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                                             >
                                                               {view}
@@ -641,7 +641,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                               >
                                 <PopoverTrigger asChild>
                                   <Button
-                                    variant="outline"
+                                    variant="secondary"
                                     size="sm"
                                     className="h-7 gap-1.5 text-xs"
                                     disabled={availableRoutinesForTeam.length === 0}
@@ -686,7 +686,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                       {routine.name}
                                                     </div>
                                                     {isSuggested && (
-                                                      <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                                      <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
                                                         <Sparkles className="h-2.5 w-2.5" />
                                                         Suggested
                                                       </Badge>
@@ -703,7 +703,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                         {routine.personas.map((persona) => (
                                                           <Badge
                                                             key={persona}
-                                                            variant="outline"
+                                                            variant="secondary"
                                                             className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
                                                           >
                                                             {persona}
@@ -716,7 +716,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                           {routine.pelicoViews.map((view) => (
                                                             <Badge
                                                               key={view}
-                                                              variant="outline"
+                                                              variant="secondary"
                                                               className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                                             >
                                                               {view}
@@ -756,7 +756,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                         {routine.name}
                                       </span>
                                       {isSuggested && (
-                                        <Badge variant="outline" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
+                                        <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
                                           <Sparkles className="h-2.5 w-2.5" />
                                           Suggested
                                         </Badge>
@@ -773,7 +773,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                           {routine.personas.map((persona) => (
                                             <Badge
                                               key={persona}
-                                              variant="outline"
+                                              variant="secondary"
                                               className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
                                             >
                                               {persona}
@@ -786,7 +786,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                                           {routine.pelicoViews.map((view) => (
                                                             <Badge
                                                               key={view}
-                                                              variant="outline"
+                                                              variant="secondary"
                                                               className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
                                                             >
                                                               {view}
@@ -858,7 +858,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                 </div>
               ) : (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setShowAddTeam(true)}
                   className="w-full h-11 border-2 border-dashed hover:border-[#31C7AD] hover:bg-[#31C7AD]/5"
                 >
@@ -929,7 +929,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingTeam(null)}>
+              <Button variant="secondary" onClick={() => setEditingTeam(null)}>
                 Cancel
               </Button>
               <Button onClick={handleSaveEdit} disabled={!editingTeam.name.trim()}>
@@ -956,7 +956,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => duplicateTeamDialog.onConfirm(true)}
               className="w-full sm:w-auto"
             >

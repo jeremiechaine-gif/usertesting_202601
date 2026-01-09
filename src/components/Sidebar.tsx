@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <div className="w-64 bg-muted/50 border-r flex flex-col h-screen transition-all duration-300 ease-in-out">
+    <div className="w-64 bg-muted/50 flex flex-col h-screen transition-all duration-300 ease-in-out">
       {/* Logo/Brand area */}
       <div className="px-6 py-5 flex items-center">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     className={cn(
-                      'w-full justify-start gap-3',
+                      'w-full justify-start gap-3 rounded-md',
                       isActive && 'bg-[#31C7AD] text-white hover:bg-[#2ab89a]'
                     )}
                     onClick={() => onNavigate?.(item.id)}
