@@ -6,6 +6,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Target, Lock, Info } from 'lucide-react';
 import type { FilterDefinition } from '../SortingAndFiltersPopover';
 import { getFilterDisplayValues } from './utils';
@@ -44,29 +45,31 @@ export const ScopeFiltersSection: React.FC<ScopeFiltersSectionProps> = ({
           <div className="p-1 rounded bg-gradient-to-br from-[#31C7AD]/10 to-[#2063F0]/10">
             <Target className="h-3.5 w-3.5 text-[#31C7AD]" />
           </div>
-          <span className="text-sm font-medium">SCOPE FILTERS</span>
+          <span className="text-sm font-medium">
+            {currentScopeName ? `ACTIVE SCOPE: ${currentScopeName}` : 'SCOPE FILTERS'}
+          </span>
           {validFilters.length > 0 && (
-            <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
+            <Badge variant="secondary" className="h-4 px-1.5 text-xs text-muted-foreground ml-1 bg-muted/60 border-border/60">
               {validFilters.length}
             </Badge>
           )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="ml-1 p-0.5 rounded hover:bg-muted/50 cursor-help">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <span className="font-medium text-foreground">Scope filters</span> are applied automatically to all views and cannot be modified here. To change them, edit your scope settings.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </AccordionTrigger>
       <AccordionContent className="pt-3 pb-4 min-w-0">
-        {/* Scope Info Banner */}
-        {currentScopeName && (
-          <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-[#31C7AD]/5 via-[#31C7AD]/3 to-transparent border border-[#31C7AD]/20">
-            <div className="flex items-center gap-2">
-              <div className="p-1 rounded bg-[#31C7AD]/10">
-                <Target className="h-3 w-3 text-[#31C7AD]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground mb-0.5">Active Scope</p>
-                <p className="text-sm font-semibold text-foreground truncate">{currentScopeName}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Filters List */}
         <div className="space-y-2.5 w-full min-w-0 overflow-hidden">
@@ -122,15 +125,6 @@ export const ScopeFiltersSection: React.FC<ScopeFiltersSectionProps> = ({
           })}
         </div>
 
-        {/* Info Message */}
-        <div className="mt-4 p-3 rounded-lg bg-muted/40 border border-muted">
-          <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <span className="font-medium text-foreground">Scope filters</span> are applied automatically to all views and cannot be modified here. To change them, edit your scope settings.
-            </p>
-          </div>
-        </div>
       </AccordionContent>
     </AccordionItem>
   );

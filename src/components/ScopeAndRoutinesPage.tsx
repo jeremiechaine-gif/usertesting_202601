@@ -73,6 +73,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CreateRoutineFullPageWizard } from './CreateRoutineFullPageWizard';
+import { RoutineChip, type SharedTeam } from './ui/routine-chip';
 
 export const ScopeAndRoutinesPage: React.FC<{ 
   onNavigate?: (page: string) => void;
@@ -359,11 +360,12 @@ export const ScopeAndRoutinesPage: React.FC<{
         />
       )}
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Main Header with Gradient */}
-        <div className="relative bg-background">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-4 bg-muted/50">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background border border-border/60 rounded-2xl shadow-sm">
+          {/* Main Header with Gradient */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
+            <div className="relative px-6 py-5">
             {/* Top Header Row */}
             <div className="flex items-center justify-between">
               {/* Left Side */}
@@ -474,239 +476,41 @@ export const ScopeAndRoutinesPage: React.FC<{
                             <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
                               {objective}
                             </h4>
-                            {/* Routines for this objective */}
-                            <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                            {/* Routines for this objective - Grid layout */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
                               {objectiveRoutines.map((routine) => {
-                                const creator = getUser(routine.createdBy);
                                 const currentUserId = getCurrentUserId();
                                 const isOwner = routine.createdBy === currentUserId;
-                                const canEdit = isOwner; // Only owner can edit
                                 
-                                // Map pelicoView to display name
-                                const getPelicoViewDisplayName = (view?: string): string => {
-                                  const viewMap: Record<string, string> = {
-                                    'supply': 'PO Book',
-                                    'production': 'WO Book',
-                                    'customer': 'CO Book',
-                                    'escalation': 'Escalation Room',
-                                    'value-engineering': 'Value Engineering',
-                                    'event-explorer': 'Events Explorer',
-                                    'simulation': 'Planning',
-                                  };
-                                  return view ? (viewMap[view] || view) : '';
-                                };
-
                                 // Check if routine is suggested (exists in library with personas)
                                 const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id || r.label === routine.name);
                                 const isSuggested = libraryRoutine && libraryRoutine.personas && libraryRoutine.personas.length > 0;
                                 
                                 const routineTeamIds = routine.teamIds || [];
                                 const isShared = routineTeamIds.length > 0;
-                                const sharedTeams = teams.filter(team => routineTeamIds.includes(team.id));
+                                const sharedTeams: SharedTeam[] = teams.filter(team => routineTeamIds.includes(team.id)).map(team => ({ id: team.id, name: team.name }));
+                                const availableTeams: SharedTeam[] = teams.map(team => ({ id: team.id, name: team.name }));
                                 
                                 return (
-                                  <div
+                                  <RoutineChip
                                     key={routine.id}
-                                    className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all cursor-pointer"
-                                    onClick={() => handleViewRoutine(routine)}
-                                  >
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm font-medium text-foreground">
-                                          {routine.name}
-                                        </span>
-                                        {isSuggested && (
-                                          <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30 flex items-center gap-1">
-                                            <Sparkles className="h-2.5 w-2.5" />
-                                            Suggested
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      {routine.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
-                                          {routine.description}
-                                        </p>
-                                      )}
-                                      <div className="flex flex-wrap gap-1 items-center mb-2">
-                                        {routine.pelicoView && (
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                                          >
-                                            {getPelicoViewDisplayName(routine.pelicoView)}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      
-                                      {/* Sharing Section */}
-                                      {isOwner && (
-                                        <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-border/30">
-                                          {isShared ? (
-                                            <>
-                                              <span className="text-xs text-muted-foreground">Shared with:</span>
-                                              {sharedTeams.map((team) => (
-                                                <Badge
-                                                  key={team.id}
-                                                  variant="secondary"
-                                                  className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1 group/badge"
-                                                >
-                                                  <Users className="h-3 w-3" />
-                                                  {team.name}
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleToggleRoutineShare(routine.id, team.id);
-                                                    }}
-                                                    className="ml-1 opacity-0 group-hover/badge:opacity-100 transition-opacity hover:text-destructive"
-                                                    title="Remove sharing"
-                                                  >
-                                                    <X className="h-3 w-3" />
-                                                  </button>
-                                                </Badge>
-                                              ))}
-                                              <Popover
-                                                open={routineSharePopoverOpen === routine.id}
-                                                onOpenChange={(open) => setRoutineSharePopoverOpen(open ? routine.id : null)}
-                                              >
-                                                <PopoverTrigger asChild>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-4 px-1.5 text-xs gap-1"
-                                                  >
-                                                    <Plus className="h-3 w-3" />
-                                                    Add
-                                                  </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-64 p-2" align="start">
-                                                  <div className="space-y-1">
-                                                    {teams.filter(team => !routineTeamIds.includes(team.id)).map((team) => (
-                                                      <button
-                                                        key={team.id}
-                                                        onClick={() => {
-                                                          handleToggleRoutineShare(routine.id, team.id);
-                                                          setRoutineSharePopoverOpen(null);
-                                                        }}
-                                                        className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted text-sm transition-colors flex items-center gap-2"
-                                                      >
-                                                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                                                        <span>{team.name}</span>
-                                                      </button>
-                                                    ))}
-                                                    {teams.filter(team => !routineTeamIds.includes(team.id)).length === 0 && (
-                                                      <p className="text-xs text-muted-foreground px-2 py-1.5">
-                                                        All teams already have access
-                                                      </p>
-                                                    )}
-                                                  </div>
-                                                </PopoverContent>
-                                              </Popover>
-                                            </>
-                                          ) : (
-                                            <Popover
-                                              open={routineSharePopoverOpen === routine.id}
-                                              onOpenChange={(open) => setRoutineSharePopoverOpen(open ? routine.id : null)}
-                                            >
-                                              <PopoverTrigger asChild>
-                                                <Button
-                                                  variant="secondary"
-                                                  size="sm"
-                                                  className="h-5 px-2 text-xs gap-1"
-                                                >
-                                                  <Share2 className="h-3 w-3" />
-                                                  Share
-                                                </Button>
-                                              </PopoverTrigger>
-                                              <PopoverContent className="w-64 p-2" align="start">
-                                                <div className="space-y-1">
-                                                  {teams.map((team) => (
-                                                    <button
-                                                      key={team.id}
-                                                      onClick={() => {
-                                                        handleToggleRoutineShare(routine.id, team.id);
-                                                        setRoutineSharePopoverOpen(null);
-                                                      }}
-                                                      className="w-full text-left px-2 py-1.5 rounded-md hover:bg-muted text-sm transition-colors flex items-center gap-2"
-                                                    >
-                                                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                                                      <span>{team.name}</span>
-                                                    </button>
-                                                  ))}
-                                                  {teams.length === 0 && (
-                                                    <p className="text-xs text-muted-foreground px-2 py-1.5">
-                                                      No teams available
-                                                    </p>
-                                                  )}
-                                                </div>
-                                              </PopoverContent>
-                                            </Popover>
-                                          )}
-                                        </div>
-                                      )}
-                                      {!isOwner && isShared && (
-                                        <div className="flex items-center gap-2 flex-wrap mt-2 pt-2 border-t border-border/30">
-                                          <span className="text-xs text-muted-foreground">Shared with:</span>
-                                          {sharedTeams.map((team) => (
-                                            <Badge
-                                              key={team.id}
-                                              variant="secondary"
-                                              className="text-xs h-4 px-1.5 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 border-blue-200 dark:border-blue-800 flex items-center gap-1"
-                                            >
-                                              <Users className="h-3 w-3" />
-                                              {team.name}
-                                            </Badge>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                                          >
-                                            <Share2 className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => handleViewRoutine(routine)}>
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            View
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleShareRoutine(routine)}>
-                                            <Share2 className="h-4 w-4 mr-2" />
-                                            Share link
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleDuplicateRoutine(routine)}>
-                                            <Copy className="h-4 w-4 mr-2" />
-                                            Duplicate
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                      
-                                      {canEdit && (
-                                        <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 hover:bg-[#2063F0]/10 hover:text-[#2063F0]"
-                                            onClick={() => handleEditRoutine(routine)}
-                                          >
-                                            <Edit className="h-3.5 w-3.5" />
-                                          </Button>
-                                          <button
-                                            onClick={() => handleDeleteRoutine(routine.id)}
-                                            className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                                            title="Remove routine"
-                                          >
-                                            <X className="h-3.5 w-3.5" />
-                                          </button>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
+                                    name={routine.name}
+                                    description={routine.description}
+                                    pelicoView={routine.pelicoView}
+                                    selected={false}
+                                    isSuggested={isSuggested}
+                                    onPreview={() => handleViewRoutine(routine)}
+                                    onToggle={() => handleViewRoutine(routine)}
+                                    onShare={() => handleShareRoutine(routine)}
+                                    showShare={true}
+                                    isOwner={isOwner}
+                                    isShared={isShared}
+                                    sharedTeams={sharedTeams}
+                                    availableTeams={availableTeams}
+                                    onToggleShare={(teamId) => handleToggleRoutineShare(routine.id, teamId)}
+                                    addLabel="View"
+                                    removeLabel="View"
+                                  />
                                 );
                               })}
                             </div>
@@ -884,6 +688,7 @@ export const ScopeAndRoutinesPage: React.FC<{
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

@@ -310,7 +310,7 @@ export const ColumnsPopover: React.FC<ColumnsPopoverProps> = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="secondary" size="sm" className="gap-2 h-auto px-3 py-1.5 hover:bg-accent hover:border-[#31C7AD]/30 transition-all">
+        <Button variant="secondary" size="sm" className="gap-2 h-auto px-3 py-1.5">
           <ColumnsIcon className="w-4 h-4" />
           Columns
         </Button>

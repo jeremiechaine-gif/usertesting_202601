@@ -1172,31 +1172,46 @@ All modals follow this structure:
 
 ### Page Layout
 
-**Design Rule:** All page headers must use `py-5` to match the sidebar logo area height, creating visual alignment and consistency across the interface.
+**Design Rule:** All pages use a **rounded container** (card) that wraps both the header and content area, creating a unified, modern look with consistent spacing from edges.
 
 ```tsx
 <div className="flex h-screen">
   {/* Sidebar */}
   <Sidebar />
   
-  {/* Main content */}
-  <div className="flex-1 flex flex-col overflow-hidden">
-    {/* Header - MUST use py-5 to match sidebar logo height */}
-    <header className="px-6 py-5">
-      {/* Page header content */}
-    </header>
-    
-    {/* Content area */}
-    <main className="flex-1 overflow-auto p-6">
-      {/* Page content */}
-    </main>
+  {/* Main content area with padding and background */}
+  <div className="flex-1 flex flex-col overflow-hidden p-4 bg-muted/50">
+    {/* Rounded container wrapping header + content */}
+    <div className="flex-1 flex flex-col overflow-hidden bg-background border border-border/60 rounded-2xl shadow-sm">
+      {/* Header - MUST use py-5 to match sidebar logo height */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
+        <div className="relative px-6 py-5">
+          {/* Page header content */}
+        </div>
+      </div>
+      
+      {/* Content area */}
+      <div className="flex-1 overflow-auto px-6 py-6">
+        {/* Page content */}
+      </div>
+    </div>
   </div>
 </div>
 ```
 
-**Spacing Breakdown:**
-- `py-5` = 1.25rem = 20px vertical padding (top + bottom)
-- This creates consistent horizontal alignment between the sidebar logo and page titles
+**Design Specifications:**
+- **Outer container**: `p-4` = 16px padding around the card, `bg-muted/50` matches sidebar
+- **Rounded card**: `rounded-2xl` = 16px border radius, white background, subtle border and shadow
+- **Header padding**: `py-5` = 20px to match sidebar logo height
+- **Gradient**: Respects rounded top corners with `rounded-t-2xl`
+- **Content**: Standard `px-6 py-6` padding
+
+**Visual Effect:**
+- Creates a card-like appearance floating within the page
+- Consistent spacing from all edges (16px)
+- Unified background color with sidebar
+- Professional, modern aesthetic
 
 ### Section Layout
 

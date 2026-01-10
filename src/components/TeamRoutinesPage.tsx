@@ -20,6 +20,7 @@ import { getRoutines, getTeamRoutines, type Routine } from '@/lib/routines';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import { AddRoutinesModal } from './SimpleOnboardingWizard/AddRoutinesModal';
 import { RoutineModal } from './RoutineModal';
+import { RoutineChip } from './ui/routine-chip';
 
 interface RoutineWithDetails {
   id: string;
@@ -339,53 +340,22 @@ export const TeamRoutinesPage: React.FC<{
                           <h4 className="text-sm font-semibold text-foreground/90 tracking-tight">
                             {objective}
                           </h4>
-                          {/* Routines for this objective */}
-                          <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                          {/* Routines for this objective - Grid layout */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
                             {routines.map((routine) => {
                               return (
-                                <div
+                                <RoutineChip
                                   key={routine.id}
-                                  className="group relative flex items-start gap-3 p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20 hover:border-[#31C7AD]/40 transition-all cursor-pointer"
-                                  onClick={() => handleViewRoutine(routine.id)}
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-sm font-medium text-foreground">
-                                        {routine.name}
-                                      </span>
-                                    </div>
-                                    {routine.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-1 mb-1">
-                                        {routine.description}
-                                      </p>
-                                    )}
-                                    <div className="flex flex-wrap gap-1 items-center">
-                                      {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-                                        <>
-                                          {routine.pelicoViews.map((view) => (
-                                            <Badge
-                                              key={view}
-                                              variant="secondary"
-                                              className="text-xs h-4 px-1.5 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                                            >
-                                              {view}
-                                            </Badge>
-                                          ))}
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRoutineToggle(routine.id);
-                                    }}
-                                    className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                    title="Remove routine"
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
+                                  name={routine.name}
+                                  description={routine.description}
+                                  pelicoView={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
+                                  selected={true}
+                                  isSuggested={false}
+                                  onPreview={() => handleViewRoutine(routine.id)}
+                                  onToggle={() => handleRoutineToggle(routine.id)}
+                                  addLabel="View"
+                                  removeLabel="Remove"
+                                />
                               );
                             })}
                           </div>

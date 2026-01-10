@@ -4,7 +4,7 @@
  * Full-screen page with search, filters, and sorting
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,18 +15,17 @@ import { applyGenericRoutine } from '@/lib/routineLibraryUtils';
 import { columns } from '@/lib/columns';
 import { getColumnLabel } from './sorting-filters/utils';
 import { filterDefinitions } from '@/lib/filterDefinitions';
+import { RoutineChip } from './ui/routine-chip';
+import { getRoutines, createRoutine, updateRoutine, getRoutine, deleteRoutine } from '@/lib/routines';
+import { getCurrentUser, getCurrentUserId } from '@/lib/users';
+import { useRoutine } from '@/contexts/RoutineContext';
 import { 
   Search, 
   ArrowLeft, 
   Filter,
-  Calendar,
-  Clock,
-  Target,
   Zap,
-  TrendingUp,
-  Users,
-  Eye,
   Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -60,6 +59,185 @@ export const RoutineLibraryPage: React.FC<{
   const [horizonFilter, setHorizonFilter] = useState<HorizonFilter>('all');
   const [pelicoViewFilter, setPelicoViewFilter] = useState<PelicoViewFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('name');
+  const [selectedRoutineIds, setSelectedRoutineIds] = useState<Set<string>>(new Set());
+  const { refreshRoutines, refreshKey } = useRoutine();
+
+  // Check which routines are already selected (shared with user's team)
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    if (!currentUser?.teamId) return;
+
+    const routines = getRoutines();
+    const selected = new Set<string>();
+
+    routines.forEach(routine => {
+      // Check if routine is shared with user's team
+      const routineTeamIds = routine.teamIds || [];
+      if (routineTeamIds.includes(currentUser.teamId)) {
+        // Find matching library entry by name
+        const libraryEntry = ROUTINE_LIBRARY.find(entry => entry.label === routine.name);
+        if (libraryEntry) {
+          selected.add(libraryEntry.id);
+        }
+      }
+    });
+
+    setSelectedRoutineIds(selected);
+  }, [refreshKey]);
+
+  // Helper function to create routine from library entry
+  const createRoutineFromLibrary = (libraryEntry: RoutineLibraryEntry): string => {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) {
+      throw new Error('No current user found');
+    }
+
+    // Convert library filters to ColumnFiltersState
+    const filters: any[] = [];
+    if (libraryEntry.filters) {
+      libraryEntry.filters.forEach(filter => {
+        const { columnId, condition, values, dateExpression } = filter;
+        
+        // Handle date expressions
+        if (dateExpression) {
+          const today = new Date();
+          const lowerExpr = dateExpression.toLowerCase().trim();
+          let dateValue: Date | null = null;
+          
+          if (lowerExpr === 'today') {
+            dateValue = today;
+          } else {
+            const match = lowerExpr.match(/(\d+)\s*(week|month|day|year)s?\s*ago/);
+            if (match) {
+              const amount = parseInt(match[1], 10);
+              const unit = match[2];
+              dateValue = new Date(today);
+              
+              switch (unit) {
+                case 'day':
+                  dateValue.setDate(dateValue.getDate() - amount);
+                  break;
+                case 'week':
+                  dateValue.setDate(dateValue.getDate() - (amount * 7));
+                  break;
+                case 'month':
+                  dateValue.setMonth(dateValue.getMonth() - amount);
+                  break;
+                case 'year':
+                  dateValue.setFullYear(dateValue.getFullYear() - amount);
+                  break;
+              }
+            }
+          }
+          
+          if (dateValue) {
+            filters.push({
+              id: columnId,
+              value: {
+                condition: condition || 'lessThan',
+                date: dateValue.toISOString().split('T')[0],
+              },
+            });
+          }
+        } else if (condition && condition !== 'is') {
+          filters.push({
+            id: columnId,
+            value: { condition, values },
+          });
+        } else {
+          filters.push({
+            id: columnId,
+            value: values.length === 1 ? values[0] : values,
+          });
+        }
+      });
+    }
+
+    // Map Pelico View
+    const viewMap: Record<string, any> = {
+      'Supply': 'supply',
+      'Production Control': 'so-book',
+      'Customer Support': 'customer',
+      'Escalation Room': 'escalation',
+      'Value Engineering': 'planning',
+      'Event Explorer': 'events-explorer',
+      'Simulation': 'events-explorer',
+    };
+    const pelicoView = viewMap[libraryEntry.primaryPelicoView] || 'supply';
+
+    // Check if routine already exists (by name and creator)
+    const existingRoutine = getRoutines().find(
+      r => r.name === libraryEntry.label && r.createdBy === currentUserId
+    );
+
+    if (existingRoutine) {
+      return existingRoutine.id;
+    }
+
+    // Create new routine
+    const routine = createRoutine({
+      name: libraryEntry.label,
+      description: libraryEntry.description,
+      filters,
+      sorting: [],
+      columnVisibility: libraryEntry.requiredColumns?.reduce((acc, colId) => {
+        acc[colId] = true;
+        return acc;
+      }, {} as Record<string, boolean>),
+      scopeMode: 'scope-aware',
+      pelicoView,
+      createdBy: currentUserId,
+      teamIds: [],
+    });
+
+    return routine.id;
+  };
+
+  // Toggle routine selection (add/remove from shared routines)
+  const handleToggleRoutineSelection = (libraryEntry: RoutineLibraryEntry) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser?.teamId) {
+      alert('You must be part of a team to share routines');
+      return;
+    }
+
+    const isSelected = selectedRoutineIds.has(libraryEntry.id);
+    
+    if (isSelected) {
+      // Remove routine completely (delete from database)
+      const routines = getRoutines();
+      const routine = routines.find(r => r.name === libraryEntry.label && r.createdBy === getCurrentUserId());
+      
+      if (routine) {
+        // Delete the routine completely
+        deleteRoutine(routine.id);
+        
+        // Update selected state
+        setSelectedRoutineIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(libraryEntry.id);
+          return newSet;
+        });
+      }
+    } else {
+      // Add to shared routines
+      const routineId = createRoutineFromLibrary(libraryEntry);
+      const routine = getRoutine(routineId);
+      
+      if (routine) {
+        const currentTeamIds = routine.teamIds || [];
+        if (!currentTeamIds.includes(currentUser.teamId)) {
+          updateRoutine(routineId, { teamIds: [...currentTeamIds, currentUser.teamId] });
+        }
+        
+        // Update selected state
+        setSelectedRoutineIds(prev => new Set(prev).add(libraryEntry.id));
+      }
+    }
+
+    // Refresh routines in sidebar and other components
+    refreshRoutines();
+  };
 
   // Get unique values for filters
   const uniquePersonas = useMemo(() => {
@@ -143,34 +321,6 @@ export const RoutineLibraryPage: React.FC<{
     return filtered;
   }, [searchQuery, personaFilter, objectiveFilter, horizonFilter, pelicoViewFilter, sortBy]);
 
-  const getPersonaColor = (persona: string) => {
-    const colors: Record<string, string> = {
-      'Approvisionneur': 'bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30',
-      'Planificateur': 'bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30',
-      'Manager': 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-      'Acheteur': 'bg-orange-500/10 text-orange-600 border-orange-500/30',
-    };
-    return colors[persona] || 'bg-muted text-muted-foreground border-border';
-  };
-
-  const getObjectiveColor = (objective: string) => {
-    const colors: Record<string, string> = {
-      'Piloter': 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-      'Corriger': 'bg-red-500/10 text-red-600 border-red-500/30',
-      'Anticiper': 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
-      'Reporter': 'bg-green-500/10 text-green-600 border-green-500/30',
-    };
-    return colors[objective] || 'bg-muted text-muted-foreground border-border';
-  };
-
-  const getFrequencyColor = (frequency: string) => {
-    const colors: Record<string, string> = {
-      'Daily': 'bg-[#31C7AD]/10 text-[#31C7AD]',
-      'Weekly': 'bg-[#2063F0]/10 text-[#2063F0]',
-      'Monthly': 'bg-purple-500/10 text-purple-600',
-    };
-    return colors[frequency] || 'bg-muted text-muted-foreground';
-  };
 
   return (
     <div className="flex h-screen bg-[var(--color-bg-primary)]">
@@ -184,11 +334,12 @@ export const RoutineLibraryPage: React.FC<{
         />
       )}
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Main Header */}
-        <div className="relative bg-background">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-4 bg-muted/50">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background border border-border/60 rounded-2xl shadow-sm">
+          {/* Main Header */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
+            <div className="relative px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
@@ -333,219 +484,27 @@ export const RoutineLibraryPage: React.FC<{
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredAndSortedRoutines.map((routine) => (
-                <div
-                  key={routine.id}
-                  className="group border border-border/60 rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#2063F0]/30 flex flex-col"
-                >
-                  {/* Header */}
-                  <div className="mb-4">
-                    <h3 className="font-bold text-lg mb-2 line-clamp-2">{routine.label}</h3>
-                    {routine.description && (
-                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                        {routine.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Characteristics */}
-                  <div className="flex-1 space-y-3">
-                    {/* Personas */}
-                    {routine.personas && routine.personas.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Personas</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {routine.personas.map((persona) => (
-                            <Badge
-                              key={persona}
-                              variant="secondary"
-                              className={cn("text-xs h-5 px-2", getPersonaColor(persona))}
-                            >
-                              {persona}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Objectives */}
-                    {routine.objectives && routine.objectives.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Objectives</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {routine.objectives.map((objective) => (
-                            <Badge
-                              key={objective}
-                              variant="secondary"
-                              className={cn("text-xs h-5 px-2", getObjectiveColor(objective))}
-                            >
-                              {objective}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Metadata Row */}
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
-                      {routine.horizon && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <div className="min-w-0">
-                            <div className="text-xs text-muted-foreground">Horizon</div>
-                            <div className="text-xs font-medium truncate">{routine.horizon}</div>
-                          </div>
-                        </div>
-                      )}
-                      {routine.frequency && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <div className="min-w-0">
-                            <div className="text-xs text-muted-foreground">Frequency</div>
-                            <Badge
-                              variant="secondary"
-                              className={cn("text-xs h-4 px-1.5 mt-0.5", getFrequencyColor(routine.frequency))}
-                            >
-                              {routine.frequency}
-                            </Badge>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Impact Zones */}
-                    {routine.impactZones && routine.impactZones.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Impact Zones</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {routine.impactZones.map((zone) => (
-                            <Badge
-                              key={zone}
-                              variant="secondary"
-                              className="text-xs h-5 px-2 bg-muted/50 text-muted-foreground border-border"
-                            >
-                              {zone}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pelico Views */}
-                    {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Pelico Views</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {routine.pelicoViews.map((view) => (
-                            <Badge
-                              key={view}
-                              variant="secondary"
-                              className="text-xs h-5 px-2 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30"
-                            >
-                              {view}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Filters */}
-                    {routine.filters && routine.filters.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Applied Filters</span>
-                        </div>
-                        <div className="space-y-2">
-                          {routine.filters.map((filter, index) => {
-                            const columnLabel = getColumnLabel(filter.columnId, columns);
-                            
-                            // Format filter display
-                            let filterDisplay = '';
-                            if (filter.dateExpression) {
-                              const operator = filter.condition === 'lessThan' ? '<' : 
-                                             filter.condition === 'greaterThan' ? '>' : 
-                                             filter.condition === 'lessThanOrEqual' ? '≤' :
-                                             filter.condition === 'greaterThanOrEqual' ? '≥' : '';
-                              filterDisplay = `${operator} ${filter.dateExpression}`;
-                            } else if (filter.values && filter.values.length > 0) {
-                              if (filter.condition === 'is') {
-                                filterDisplay = `= ${filter.values.join(', ')}`;
-                              } else if (filter.condition === 'isNot') {
-                                filterDisplay = `≠ ${filter.values.join(', ')}`;
-                              } else {
-                                filterDisplay = filter.values.join(', ');
-                              }
-                            }
-
-                            return (
-                              <div
-                                key={index}
-                                className="text-xs bg-muted/50 rounded-md px-2.5 py-1.5 border border-border/50"
-                              >
-                                <div className="font-medium text-foreground mb-0.5">{columnLabel}</div>
-                                <div className="text-muted-foreground">{filterDisplay}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Required Columns */}
-                    {routine.requiredColumns && routine.requiredColumns.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-xs font-medium text-muted-foreground">Required Columns</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {routine.requiredColumns.map((colId) => {
-                            const columnLabel = getColumnLabel(colId, columns);
-                            return (
-                              <Badge
-                                key={colId}
-                                variant="secondary"
-                                className="text-xs h-5 px-2 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30"
-                              >
-                                {columnLabel}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Apply Button */}
-                  <div className="mt-4 pt-4 border-t border-border/50">
-                    <Button
-                      onClick={() => {
-                        applyGenericRoutine(routine, onNavigate);
-                      }}
-                      className="w-full gap-2 h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
-                    >
-                      <Zap className="h-4 w-4" />
-                      Apply Routine
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
+              {filteredAndSortedRoutines.map((routine) => {
+                const isSelected = selectedRoutineIds.has(routine.id);
+                return (
+                  <RoutineChip
+                    key={routine.id}
+                    name={routine.label}
+                    description={routine.description}
+                    pelicoView={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
+                    selected={isSelected}
+                    isSuggested={false}
+                    onPreview={() => applyGenericRoutine(routine, onNavigate)}
+                    onToggle={() => handleToggleRoutineSelection(routine)}
+                    addLabel="Add"
+                    removeLabel="Remove"
+                  />
+                );
+              })}
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>

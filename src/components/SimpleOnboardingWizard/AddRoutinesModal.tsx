@@ -9,15 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
+import { RoutineChip } from '@/components/ui/routine-chip';
 import { 
   Search, 
   X,
-  Users,
-  Target,
-  Eye,
   Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -141,26 +138,6 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
     return filtered;
   }, [searchQuery, personaFilter, objectiveFilter, pelicoViewFilter, sortBy, alreadyAssignedRoutineIds]);
 
-  const getPersonaColor = (persona: string) => {
-    const colors: Record<string, string> = {
-      'Supply Planner': 'bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30',
-      'Buyer': 'bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30',
-      'Procurement Manager': 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-      'Scheduler': 'bg-orange-500/10 text-orange-600 border-orange-500/30',
-    };
-    return colors[persona] || 'bg-muted text-muted-foreground border-border';
-  };
-
-  const getObjectiveColor = (objective: string) => {
-    const colors: Record<string, string> = {
-      'Monitor': 'bg-blue-500/10 text-blue-600 border-blue-500/30',
-      'Correct': 'bg-red-500/10 text-red-600 border-red-500/30',
-      'Anticipate': 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30',
-      'Report': 'bg-green-500/10 text-green-600 border-green-500/30',
-      'Prioritize': 'bg-purple-500/10 text-purple-600 border-purple-500/30',
-    };
-    return colors[objective] || 'bg-muted text-muted-foreground border-border';
-  };
 
   const selectedCount = selectedRoutineIds.length;
 
@@ -275,102 +252,24 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
                 {filteredAndSortedRoutines.map((routine) => {
                   const isSelected = selectedRoutineIds.includes(routine.id);
                   return (
-                    <div
+                    <RoutineChip
                       key={routine.id}
-                      className={cn(
-                        "group border rounded-xl p-5 hover:shadow-lg transition-all bg-background hover:border-[#2063F0]/30 flex flex-col cursor-pointer",
-                        isSelected ? "border-[#2063F0] bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5 shadow-lg shadow-[#2063F0]/10" : "border-border/60"
-                      )}
-                      onClick={() => onRoutineToggle(routine.id)}
-                    >
-                      {/* Selection Checkbox */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg mb-2 line-clamp-2">{routine.label}</h3>
-                          {routine.description && (
-                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                              {routine.description}
-                            </p>
-                          )}
-                        </div>
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => onRoutineToggle(routine.id)}
-                          className="mt-1 ml-2 shrink-0 data-[state=checked]:bg-[#2063F0] data-[state=checked]:border-[#2063F0]"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-
-                      {/* Characteristics */}
-                      <div className="flex-1 space-y-3">
-                        {/* Personas */}
-                        {routine.personas && routine.personas.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">Personas</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {routine.personas.map((persona) => (
-                                <Badge
-                                  key={persona}
-                                  variant="secondary"
-                                  className={cn("text-xs h-5 px-2", getPersonaColor(persona))}
-                                >
-                                  {persona}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Objectives */}
-                        {routine.objectives && routine.objectives.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">Objectives</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {routine.objectives.map((objective) => (
-                                <Badge
-                                  key={objective}
-                                  variant="secondary"
-                                  className={cn("text-xs h-5 px-2", getObjectiveColor(objective))}
-                                >
-                                  {objective}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Pelico Views */}
-                        {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">Pelico Views</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {routine.pelicoViews.map((view) => (
-                                <Badge
-                                  key={view}
-                                  variant="secondary"
-                                  className="text-xs h-5 px-2 bg-pink-500/10 text-pink-600 border-pink-500/30"
-                                >
-                                  {view}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      name={routine.label}
+                      description={routine.description}
+                      pelicoView={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
+                      selected={isSelected}
+                      isSuggested={false}
+                      onPreview={() => {
+                        // Preview functionality can be added here if needed
+                      }}
+                      onToggle={() => onRoutineToggle(routine.id)}
+                      addLabel="Add"
+                      removeLabel="Remove"
+                    />
                   );
                 })}
               </div>

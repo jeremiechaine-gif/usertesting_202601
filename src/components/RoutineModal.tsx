@@ -77,6 +77,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const [createPersonaModalOpen, setCreatePersonaModalOpen] = useState(false);
   const [availablePersonas, setAvailablePersonas] = useState<string[]>([]);
   const [personaSearchQuery, setPersonaSearchQuery] = useState('');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const currentUser = getCurrentUser();
   const isManager = currentUser?.role === 'manager';
 
@@ -199,6 +200,8 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
       setSelectedObjectives([]);
       // Use currentPelicoView if provided (when creating from a Pelico View page)
       setSelectedPelicoView(currentPelicoView);
+      // Reset more options visibility
+      setShowMoreOptions(false);
     }
   }, [routine, open, currentPelicoView]);
 
@@ -350,7 +353,80 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               />
             </div>
 
-            {/* Suggestion for Role Profiles */}
+            {/* Pelico View - Always visible and required */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">
+                Pelico View <span className="text-destructive">*</span>
+              </Label>
+              {routine || (currentPelicoView && !routine) ? (
+                // Edit mode OR Create mode from Pelico View page: Read-only display
+                <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                      {getPelicoViewDisplayName(routine?.pelicoView || currentPelicoView)}
+                    </Badge>
+                  </div>
+                  {(routine?.pelicoView || currentPelicoView) && onNavigate && routine && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 gap-2"
+                      onClick={() => {
+                        const page = getPelicoViewPage(routine.pelicoView);
+                        if (page && routine.id) {
+                          // Store routine ID in sessionStorage to auto-apply it when page loads
+                          sessionStorage.setItem('pendingRoutineId', routine.id);
+                          onNavigate(page);
+                          onOpenChange(false);
+                        }
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Routine
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                // Create mode from Scope & Routines: Dropdown to select Pelico View
+                <>
+                  <Select
+                    value={selectedPelicoView || ''}
+                    onValueChange={(value) => setSelectedPelicoView(value as PelicoViewPage)}
+                  >
+                    <SelectTrigger className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20">
+                      <SelectValue placeholder="Select a Pelico View..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PELICO_VIEWS.map((view) => (
+                        <SelectItem key={view.value} value={view.value}>
+                          {view.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!selectedPelicoView && (
+                    <p className="text-xs text-destructive">Pelico View is required for new routines.</p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* More Options Button */}
+            <div className="pt-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowMoreOptions(!showMoreOptions)}
+                className="h-9"
+              >
+                {showMoreOptions ? 'Less options' : 'More options'}
+                <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showMoreOptions && "rotate-180")} />
+              </Button>
+            </div>
+
+            {/* More Options Sections - Hidden by default */}
+            {showMoreOptions && (
+              <div className="space-y-5 pt-2 border-t border-border/50">
+                {/* Suggestion for Role Profiles */}
             <div className="space-y-2">
               <div className="space-y-1.5">
                 <Label className="text-sm font-semibold">
@@ -543,61 +619,6 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               )}
             </div>
 
-            {/* Pelico View */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Pelico View {!routine && !currentPelicoView && <span className="text-destructive">*</span>}
-              </Label>
-              {routine || (currentPelicoView && !routine) ? (
-                // Edit mode OR Create mode from Pelico View page: Read-only display
-                <div className="rounded-lg border border-border/60 p-4 bg-muted/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
-                      {getPelicoViewDisplayName(routine?.pelicoView || currentPelicoView)}
-                    </Badge>
-                  </div>
-                  {(routine?.pelicoView || currentPelicoView) && onNavigate && routine && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 gap-2"
-                      onClick={() => {
-                        const page = getPelicoViewPage(routine.pelicoView);
-                        if (page && routine.id) {
-                          // Store routine ID in sessionStorage to auto-apply it when page loads
-                          sessionStorage.setItem('pendingRoutineId', routine.id);
-                          onNavigate(page);
-                          onOpenChange(false);
-                        }
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                      View Routine
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                // Create mode from Scope & Routines: Dropdown to select Pelico View
-                <Select
-                  value={selectedPelicoView || ''}
-                  onValueChange={(value) => setSelectedPelicoView(value as PelicoViewPage)}
-                >
-                  <SelectTrigger className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20">
-                    <SelectValue placeholder="Select a Pelico View..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PELICO_VIEWS.map((view) => (
-                      <SelectItem key={view.value} value={view.value}>
-                        {view.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {!routine && !selectedPelicoView && !currentPelicoView && (
-                <p className="text-xs text-destructive">Pelico View is required for new routines.</p>
-              )}
-            </div>
 
             {/* Scope Mode - Hidden */}
             {/* Scope Mode section is hidden but scopeMode state is still used internally */}
@@ -740,32 +761,34 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
               )}
             </div>
 
-            {/* Current Configuration Summary */}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Current Configuration</Label>
-              <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
-                    <Zap className="h-3 w-3 mr-1" />
-                    {currentFilters.length} filters
-                  </Badge>
-                  <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
-                    {currentSorting.length} sorts
-                  </Badge>
-                  {currentGroupBy && (
-                    <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
-                      Group by: {currentGroupBy}
-                    </Badge>
-                  )}
-                  <Badge variant="secondary" className="bg-background/50 border-border/60">
-                    Page size: {currentPageSize}
-                  </Badge>
+                {/* Current Configuration Summary */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Current Configuration</Label>
+                  <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                        <Zap className="h-3 w-3 mr-1" />
+                        {currentFilters.length} filters
+                      </Badge>
+                      <Badge variant="secondary" className="bg-background/50 border-[#2063F0]/30 text-[#2063F0]">
+                        {currentSorting.length} sorts
+                      </Badge>
+                      {currentGroupBy && (
+                        <Badge variant="secondary" className="bg-background/50 border-[#31C7AD]/30 text-[#31C7AD]">
+                          Group by: {currentGroupBy}
+                        </Badge>
+                      )}
+                      <Badge variant="secondary" className="bg-background/50 border-border/60">
+                        Page size: {currentPageSize}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      This routine will save the current view configuration (filters, sorting, grouping, page size).
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  This routine will save the current view configuration (filters, sorting, grouping, page size).
-                </p>
               </div>
-            </div>
+            )}
           </div>
         </ScrollArea>
 
@@ -778,9 +801,10 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
             Cancel
           </Button>
           <Button
+            variant="default"
             onClick={handleSave}
-            disabled={!name.trim() || (!routine && !selectedPelicoView)}
-            className="h-9 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!name.trim() || (!routine && !selectedPelicoView && !currentPelicoView)}
+            className="h-9"
           >
             {routine ? 'Update' : 'Create'} Routine
           </Button>

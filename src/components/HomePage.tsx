@@ -6,7 +6,6 @@ import { OnboardingTeamBuilder } from './OnboardingTeamBuilder/OnboardingTeamBui
 import { SimpleOnboardingWizard } from './SimpleOnboardingWizard/SimpleOnboardingWizard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PlanDropdown } from './PlanDropdown';
 import { type Scope, getScopes } from '@/lib/scopes';
 import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
 import { resetScopesAndRoutines } from '@/lib/resetData';
@@ -62,7 +61,6 @@ const ONBOARDING_TASKS_STORAGE_KEY = 'pelico-onboarding-tasks-status';
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [scopeModalOpen, setScopeModalOpen] = useState(false);
   const [editingScope, setEditingScope] = useState<Scope | null>(null);
   const [routineBuilderOpen, setRoutineBuilderOpen] = useState(false);
@@ -287,59 +285,55 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         </Button>
       )}
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
-        {/* Main Header with Gradient */}
-        <div className="relative bg-background">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
-            {/* Top Header Row */}
-            <div className="flex items-center justify-between">
-              {/* Left Side */}
-              <div className="flex items-center gap-4">
-                {sidebarCollapsed && (
-                  <Button 
-                    variant="ghost" 
-                    className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
-                    onClick={() => setSidebarCollapsed(false)}
-                  >
-                    <Menu className="w-4 h-4" />
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative p-4 bg-muted/50">
+        {/* Rounded container wrapping header + content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-background border border-border/60 rounded-2xl shadow-sm">
+          {/* Main Header with Gradient */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
+            <div className="relative px-6 py-5">
+              {/* Top Header Row */}
+              <div className="flex items-center justify-between">
+                {/* Left Side */}
+                <div className="flex items-center gap-4">
+                  {sidebarCollapsed && (
+                    <Button 
+                      variant="ghost" 
+                      className="h-9 px-3 gap-2 hover:bg-[#31C7AD]/10"
+                      onClick={() => setSidebarCollapsed(false)}
+                    >
+                      <Menu className="w-4 h-4" />
+                      <img 
+                        src="/images/Pelico-small-logo.svg" 
+                        alt="Pelico" 
+                        className="h-4 w-auto"
+                      />
+                      <span className="text-sm font-medium">Menu</span>
+                    </Button>
+                  )}
+                  {/* Pelico small logo */}
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
                     <img 
                       src="/images/Pelico-small-logo.svg" 
                       alt="Pelico" 
-                      className="h-4 w-auto"
+                      className="w-5 h-5 shrink-0 brightness-0 invert"
                     />
-                    <span className="text-sm font-medium">Menu</span>
-                  </Button>
-                )}
-                {/* Pelico small logo */}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
+                  </div>
                 </div>
-                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Home</h1>
-                <div className="h-6 w-px bg-border/60" />
-                <PlanDropdown
-                  selectedPlan={selectedPlan}
-                  onPlanSelect={setSelectedPlan}
-                />
-              </div>
 
-              {/* Right Side */}
-              <div className="flex items-center gap-3">
-                {/* Notifications */}
-                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
-                  <Bell className="w-5 h-5" />
-                </Button>
+                {/* Right Side */}
+                <div className="flex items-center gap-3">
+                  {/* Notifications */}
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
+                    <Bell className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto px-6 py-6">
+          {/* Main Content */}
+          <div className="flex-1 overflow-auto px-6 py-6">
           {/* Welcome Section */}
           <div className="mb-8">
             <h2 className="text-3xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
@@ -600,6 +594,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

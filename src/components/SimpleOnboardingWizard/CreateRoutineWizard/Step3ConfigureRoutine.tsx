@@ -479,21 +479,21 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
 
       {/* UX Guidance Banner */}
       {!showAddFilterView && (
-        <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 bg-gradient-to-br from-[#2063F0]/5 to-transparent w-full max-w-full overflow-x-hidden">
-          <Info className="h-4 w-4 sm:h-5 sm:w-5 text-[#2063F0] mt-0.5 shrink-0" />
+        <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 dark:border-[#2063F0]/30 bg-gradient-to-br from-[#2063F0]/5 dark:from-[#2063F0]/10 to-transparent w-full max-w-full overflow-x-hidden">
+          <Info className="h-4 w-4 sm:h-5 sm:w-5 text-[#2063F0] dark:text-[#60A5FA] mt-0.5 shrink-0" />
           <div className="flex-1 space-y-2 min-w-0">
             <p className="text-xs sm:text-sm font-semibold text-foreground">Configure your routine view</p>
             <div className="space-y-1.5 text-xs text-muted-foreground">
               <p className="flex items-start gap-2">
-                <span className="font-medium text-[#2063F0] shrink-0">•</span>
-                <span className="min-w-0">Use the <strong>Sorting & Filters</strong> sections below to add filters and sorting rules</span>
+                <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
+                <span className="min-w-0">Use the <strong className="text-foreground">Sorting & Filters</strong> sections below to add filters and sorting rules</span>
               </p>
               <p className="flex items-start gap-2">
-                <span className="font-medium text-[#2063F0] shrink-0">•</span>
+                <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
                 <span className="min-w-0">Click on column headers in the preview table to sort or filter directly</span>
               </p>
               <p className="flex items-start gap-2">
-                <span className="font-medium text-[#2063F0] shrink-0">•</span>
+                <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
                 <span className="min-w-0">The table preview updates in real-time as you configure your routine</span>
               </p>
             </div>
@@ -509,7 +509,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
             <div className="flex items-center gap-2 flex-1 sm:flex-initial min-w-0">
               <Badge 
                 variant="secondary" 
-                className="text-xs shrink-0 bg-pink-500/10 text-pink-600 border-0 px-3 py-1.5 whitespace-nowrap"
+                className="text-xs shrink-0 bg-pink-500/10 dark:bg-pink-500/20 text-pink-600 dark:text-pink-400 border-0 px-3 py-1.5 whitespace-nowrap"
               >
                 {view.name}
               </Badge>
@@ -718,7 +718,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
       {!showAddFilterView && (
         <div className="p-4 rounded-lg border border-border bg-muted/30">
           <p className="text-xs text-muted-foreground">
-            <strong>Note:</strong> You can always edit filters, sorting, and other settings after creating the routine. 
+            <strong className="text-foreground dark:text-foreground">Note:</strong> You can always edit filters, sorting, and other settings after creating the routine. 
             Multiple routines can exist per view, so you can create different configurations for different needs.
           </p>
         </div>

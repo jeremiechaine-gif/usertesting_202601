@@ -226,10 +226,11 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
         />
       )}
       
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <div className="relative bg-background shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none" />
-          <div className="relative px-6 py-5">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-4 bg-muted/50">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background border border-border/60 rounded-2xl shadow-sm">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
+            <div className="relative px-6 py-5">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
@@ -558,6 +559,7 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
             </div>
           </div>
           </div>
+        </div>
         </div>
       </div>
 

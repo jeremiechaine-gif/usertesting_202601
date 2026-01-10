@@ -90,12 +90,17 @@
 
 /* Page title styling with Anuphan font - exact specifications */
 .page-title {
-  @apply font-title tracking-tight;
+  @apply font-title tracking-tight text-foreground;
   font-weight: 500;
   font-size: 48px;
   line-height: 53px;
   color: rgb(15, 42, 47);
   font-style: normal;
+}
+
+/* Dark mode: white text for page titles */
+.dark .page-title {
+  color: white;
 }
 
 /* Override for responsive sizes when used with Tailwind classes */

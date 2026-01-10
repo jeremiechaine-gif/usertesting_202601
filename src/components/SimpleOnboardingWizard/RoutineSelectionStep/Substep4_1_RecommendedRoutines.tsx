@@ -176,8 +176,8 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
                   </Badge>
                 </div>
 
-                {/* Routines Grid - 3 columns on large screens */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Routines Grid - Responsive columns with proper spacing (max 3 columns for better readability) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
                   {routines.map((routine) => {
                     const isAdded = isRoutineAdded(routine.id);
                     return (

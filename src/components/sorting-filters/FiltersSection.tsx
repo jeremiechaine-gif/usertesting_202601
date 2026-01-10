@@ -42,9 +42,9 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
     <AccordionItem value="filters" className="border-none">
       <AccordionTrigger className="py-2 hover:no-underline">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">CURRENT FILTERS</span>
+          <span className="text-xs font-normal text-muted-foreground">CURRENT FILTERS</span>
           {draftFilters.length > 0 && (
-            <Badge className="h-5 px-1.5 text-xs text-white ml-1" style={{ backgroundColor: '#31C7AD' }}>
+            <Badge variant="secondary" className="h-4 px-1.5 text-xs text-muted-foreground ml-1 bg-muted/60 border-border/60">
               {draftFilters.length}
             </Badge>
           )}
@@ -54,14 +54,14 @@ export const FiltersSection: React.FC<FiltersSectionProps> = ({
         {draftFilters.length === 0 ? (
           <div className="border-2 border-dashed rounded-md p-6 text-center">
             <p className="text-sm text-muted-foreground mb-3">No filter yet</p>
-            <Button variant="default" size="sm" onClick={onAddFilter} className="gap-2">
+            <Button variant="accent" size="sm" onClick={onAddFilter} className="gap-2">
               <Plus className="h-4 w-4" />
               Add filter
             </Button>
           </div>
         ) : (
           <div className="space-y-2 min-w-0">
-            <Button variant="default" size="sm" onClick={onAddFilter} className="gap-2">
+            <Button variant="accent" size="sm" onClick={onAddFilter} className="gap-2">
               <Plus className="h-4 w-4" />
               Add filter
             </Button>

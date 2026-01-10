@@ -370,9 +370,10 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
             
             {currentStep === 'configure' && (
               <Button
+                variant="default"
                 onClick={handleSave}
                 disabled={!canProceedFromConfigure}
-                className="w-full sm:w-auto bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
+                className="w-full sm:w-auto"
               >
                 Create
                 <ArrowRight className="h-4 w-4 ml-2" />

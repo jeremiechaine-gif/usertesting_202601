@@ -14,7 +14,7 @@ const buttonVariants = cva(
         accent:
           "bg-[#9dd7f5] text-[#1a1a1a] font-normal hover:bg-[#00332e] hover:text-white focus-visible:border-[#0070f3] disabled:bg-[#E0E0E0] disabled:text-[#999999]",
         secondary:
-          "bg-white text-[#1a1a1a] font-normal border border-[#e0e0e0] hover:bg-[#00332e] hover:text-white hover:border-[#00332e] focus-visible:border-[#0070f3] disabled:bg-[#E0E0E0] disabled:text-[#999999] disabled:border-[#e0e0e0]",
+          "bg-white dark:bg-[#1a1a1a] text-[#1a1a1a] dark:text-white font-normal border border-[#e0e0e0] dark:border-[#404040] hover:bg-[#00332e] hover:text-white hover:border-[#00332e] dark:hover:bg-[#00332e] dark:hover:text-white dark:hover:border-[#00332e] focus-visible:border-[#0070f3] disabled:bg-[#E0E0E0] dark:disabled:bg-[#2a2a2a] disabled:text-[#999999] dark:disabled:text-[#666666] disabled:border-[#e0e0e0] dark:disabled:border-[#404040]",
         destructive:
           "bg-[#ffb3ba] text-[#1a1a1a] font-normal hover:bg-[#d32f2f] hover:text-white focus-visible:border-[#0070f3] disabled:bg-[#E0E0E0] disabled:text-[#999999]",
         ghost: "hover:bg-accent hover:text-accent-foreground font-normal focus-visible:border-[#0070f3]",

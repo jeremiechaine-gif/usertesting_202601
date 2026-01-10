@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       {/* User profile footer */}
-      <div className="border-t p-4 bg-background">
+      <div className="p-4 bg-muted/50">
         <div className="w-full flex items-center gap-3">
           <div className="flex-1 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shadow-sm shrink-0">
