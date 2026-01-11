@@ -293,9 +293,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
             <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
             <div className="relative px-6 py-5">
               {/* Top Header Row */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between mb-4">
                 {/* Left Side */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
                   {sidebarCollapsed && (
                     <Button 
                       variant="ghost" 
@@ -311,22 +311,23 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                       <span className="text-sm font-medium">Menu</span>
                     </Button>
                   )}
-                  {/* Pelico small logo */}
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                    <img 
-                      src="/images/Pelico-small-logo.svg" 
-                      alt="Pelico" 
-                      className="w-5 h-5 shrink-0 brightness-0 invert"
-                    />
+                  {/* Welcome Section */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-3xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
+                          Hello {userName},
+                        </h2>
+                        <p className="text-muted-foreground text-base">Here's what we have for you today</p>
+                      </div>
+                      {/* Notifications - aligned with Hello */}
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
+                          <Bell className="w-5 h-5" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                {/* Right Side */}
-                <div className="flex items-center gap-3">
-                  {/* Notifications */}
-                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10">
-                    <Bell className="w-5 h-5" />
-                  </Button>
                 </div>
               </div>
             </div>
@@ -334,14 +335,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto px-6 py-6">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
-              Hello {userName},
-            </h2>
-            <p className="text-muted-foreground text-base">Here's what we have for you today</p>
-          </div>
-
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Pelico Onboarding Card */}

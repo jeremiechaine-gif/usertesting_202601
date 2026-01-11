@@ -304,13 +304,6 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
-                </div>
                 <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Teams & members</h1>
               </div>
             </div>
@@ -375,16 +368,16 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                       <div
                         key={team.id}
                         className={cn(
-                          "group border rounded-xl overflow-hidden transition-all",
+                          "group rounded-xl overflow-hidden transition-all",
                           isAdminTeam 
-                            ? "bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-900/10 border-purple-200 dark:border-purple-800" 
-                            : "bg-background hover:shadow-lg hover:border-[#31C7AD]/30"
+                            ? "bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-900/10 border border-purple-200 dark:border-purple-800" 
+                            : "bg-muted hover:border hover:border-[#31C7AD]/30 hover:shadow-lg"
                         )}
                       >
                         {/* Team Header */}
                         <div className={cn(
                           "px-5 py-4 border-b",
-                          isAdminTeam ? "bg-purple-50/50 dark:bg-purple-950/20" : "bg-muted/30"
+                          isAdminTeam ? "bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800" : "bg-muted border-border/60"
                         )}>
                           <div className="flex items-start justify-between">
                             <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -412,9 +405,9 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                                     {teamUsers.length} {teamUsers.length === 1 ? 'member' : 'members'}
                                   </Badge>
                                   <Button
-                                    variant="secondary"
+                                    variant="accent"
                                     size="sm"
-                                    className="h-6 px-2 text-xs gap-1.5 hover:bg-[#31C7AD]/10 hover:text-[#31C7AD] border"
+                                    className="h-6 px-2 text-xs gap-1.5"
                                     onClick={() => {
                                       if (onNavigate) {
                                         onNavigate(`team-routines/${team.id}`);

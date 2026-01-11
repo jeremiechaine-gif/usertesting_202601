@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sparkles, Eye, Plus, X, Check, Share2, Users } from 'lucide-react';
+import { Sparkles, Eye, Plus, X, Check, Share2, Users, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getPelicoViewDisplayName } from '@/lib/routines';
 import type { PelicoViewPage } from '@/lib/routines';
@@ -32,10 +32,16 @@ export interface RoutineChipProps {
   isSuggested?: boolean;
   /** Whether to show "Custom" badge */
   isCustom?: boolean;
+  /** Whether routine is from library (vs custom/user-created) */
+  isFromLibrary?: boolean;
   /** Callback when preview button is clicked */
   onPreview?: () => void;
   /** Callback when add/remove button is clicked */
   onToggle?: () => void;
+  /** Callback when remove button is clicked (for library routines - removes from view only) */
+  onRemove?: () => void;
+  /** Callback when delete button is clicked (for custom routines - deletes permanently) */
+  onDelete?: () => void;
   /** Callback when share button is clicked (for Scope & Routines page) */
   onShare?: () => void;
   /** Whether to show share button and sharing info (for Scope & Routines page) */
@@ -67,8 +73,11 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
   selected = false,
   isSuggested = false,
   isCustom = false,
+  isFromLibrary = false,
   onPreview,
   onToggle,
+  onRemove,
+  onDelete,
   onShare,
   showShare = false,
   isOwner = false,
@@ -86,6 +95,20 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
     e.stopPropagation();
     if (onToggle) {
       onToggle();
+    }
+  };
+
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemove) {
+      onRemove();
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete();
     }
   };
 
@@ -323,55 +346,82 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
       {/* Actions */}
       {showActions && (
         <div className={cn("mt-3 pt-3 border-t border-border flex gap-2 pb-4 min-w-0", showShare && isOwner && "mt-2 pt-2")}>
+          {/* Preview button */}
           {onPreview && (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="secondary"
+              size="icon"
               onClick={handlePreviewClick}
-              className="flex-1 gap-2 text-xs px-4" // 16px horizontal padding
+              className="h-8 w-8"
+              title="Preview"
             >
-              <Eye className="h-3.5 w-3.5" />
-              Preview
+              <Eye className="h-4 w-4" />
             </Button>
           )}
-          {onToggle && (
-            <>
-              {!selected ? (
-                <Button
-                  variant="accent"
-                  size="sm"
-                  onClick={handleToggleClick}
-                  className="flex-1 gap-2 text-xs px-4" // 16px horizontal padding
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {addLabel}
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleToggleClick}
-                  className="flex-1 gap-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 px-4" // 16px horizontal padding
-                >
-                  <X className="h-3.5 w-3.5" />
-                  {removeLabel}
-                </Button>
-              )}
-            </>
-          )}
+          {/* Share button */}
           {showShare && onShare && (
             <Button
               variant="secondary"
-              size="sm"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onShare();
               }}
-              className="gap-2 text-xs px-4"
+              className="h-8 w-8"
+              title="Share"
             >
-              <Share2 className="h-3.5 w-3.5" />
-              Share
+              <Share2 className="h-4 w-4" />
             </Button>
+          )}
+          {/* Remove button for library routines (owner only) */}
+          {onRemove && isOwner && (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleRemoveClick}
+              className="h-8 w-8"
+              title="Remove"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          {/* Delete button for custom routines (owner only) */}
+          {onDelete && isOwner && (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleDeleteClick}
+              className="h-8 w-8"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          {/* Toggle button (for other use cases) */}
+          {onToggle && !onRemove && !onDelete && (
+            <>
+              {!selected ? (
+                <Button
+                  variant="accent"
+                  size="icon"
+                  onClick={handleToggleClick}
+                  className="h-8 w-8"
+                  title={addLabel}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleToggleClick}
+                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  title={removeLabel}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}

@@ -101,12 +101,13 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [selectedTargetUser, setSelectedTargetUser] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [routineSharePopoverOpen, setRoutineSharePopoverOpen] = useState<string | null>(null);
+  const [removedRoutineIds, setRemovedRoutineIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadScopes();
     loadRoutines();
     loadTeams();
-  }, [viewMode, refreshKey]); // Reload when routines change
+  }, [viewMode, refreshKey, removedRoutineIds]); // Reload when routines change or removed routines change
 
   const loadTeams = () => {
     setTeams(getTeams());
@@ -121,13 +122,18 @@ export const ScopeAndRoutinesPage: React.FC<{
     const currentUserId = getCurrentUserId();
     const currentUser = getCurrentUser();
     
+    let loadedRoutines: Routine[];
     if (viewMode === 'my-routines') {
-      setRoutines(getRoutinesByCreator(currentUserId));
+      loadedRoutines = getRoutinesByCreator(currentUserId);
     } else if (viewMode === 'shared-routines') {
-      setRoutines(getAccessibleRoutines(currentUserId, currentUser?.teamId || null).filter(r => r.createdBy !== currentUserId));
+      loadedRoutines = getAccessibleRoutines(currentUserId, currentUser?.teamId || null).filter(r => r.createdBy !== currentUserId);
     } else {
-      setRoutines(getRoutines());
+      loadedRoutines = getRoutines();
     }
+    
+    // Filter out removed routines (for library routines that were removed from view)
+    const filteredRoutines = loadedRoutines.filter(r => !removedRoutineIds.has(r.id));
+    setRoutines(filteredRoutines);
   };
 
   // Get objectives for a routine (from library or empty array)
@@ -294,6 +300,11 @@ export const ScopeAndRoutinesPage: React.FC<{
     }
   };
 
+  const handleRemoveRoutine = (routineId: string) => {
+    // Remove from current view only (don't delete from database)
+    setRemovedRoutineIds(prev => new Set(prev).add(routineId));
+  };
+
   const handleShareRoutine = (routine: Routine) => {
     const link = shareRoutine(routine.id);
     if (link) {
@@ -385,14 +396,6 @@ export const ScopeAndRoutinesPage: React.FC<{
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                {/* Pelico small logo */}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
-                </div>
                 <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                   {viewMode === 'my-routines' ? 'My Routines' : 
                    viewMode === 'shared-routines' ? 'Shared Routines' : 
@@ -482,8 +485,9 @@ export const ScopeAndRoutinesPage: React.FC<{
                                 const currentUserId = getCurrentUserId();
                                 const isOwner = routine.createdBy === currentUserId;
                                 
-                                // Check if routine is suggested (exists in library with personas)
+                                // Check if routine is from library
                                 const libraryRoutine = ROUTINE_LIBRARY.find(r => r.id === routine.id || r.label === routine.name);
+                                const isFromLibrary = !!libraryRoutine;
                                 const isSuggested = libraryRoutine && libraryRoutine.personas && libraryRoutine.personas.length > 0;
                                 
                                 const routineTeamIds = routine.teamIds || [];
@@ -499,8 +503,10 @@ export const ScopeAndRoutinesPage: React.FC<{
                                     pelicoView={routine.pelicoView}
                                     selected={false}
                                     isSuggested={isSuggested}
+                                    isFromLibrary={isFromLibrary}
                                     onPreview={() => handleViewRoutine(routine)}
-                                    onToggle={() => handleViewRoutine(routine)}
+                                    onRemove={isOwner && isFromLibrary ? () => handleRemoveRoutine(routine.id) : undefined}
+                                    onDelete={isOwner && !isFromLibrary ? () => handleDeleteRoutine(routine.id) : undefined}
                                     onShare={() => handleShareRoutine(routine)}
                                     showShare={true}
                                     isOwner={isOwner}
@@ -508,8 +514,6 @@ export const ScopeAndRoutinesPage: React.FC<{
                                     sharedTeams={sharedTeams}
                                     availableTeams={availableTeams}
                                     onToggleShare={(teamId) => handleToggleRoutineShare(routine.id, teamId)}
-                                    addLabel="View"
-                                    removeLabel="View"
                                   />
                                 );
                               })}

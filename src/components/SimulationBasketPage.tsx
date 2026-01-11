@@ -246,13 +246,6 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] shadow-sm">
-                  <img 
-                    src="/images/Pelico-small-logo.svg" 
-                    alt="Pelico" 
-                    className="w-5 h-5 shrink-0 brightness-0 invert"
-                  />
-                </div>
                 {selectedRoutineId ? (() => {
                   const routine = getRoutine(selectedRoutineId);
                   return routine ? (
