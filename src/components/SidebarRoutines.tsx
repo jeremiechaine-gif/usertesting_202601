@@ -1,11 +1,11 @@
 /**
  * Sidebar Routines Component
  * Displays MY ROUTINES and SHARED ROUTINES sections in the sidebar
- * Supports folders, drag and drop, and context menus
+ * Supports folders, drag and drop, reordering, and context menus
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Folder, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound, AlertTriangle, ShoppingCart, FileText, Box, TrendingUp, Search } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Folder, FolderOpen, Zap, MoreVertical, ChevronRight, ChevronDown, GripVertical, Package, Wrench, Headphones, BarChart3, Upload, Settings, Users, FolderKanban, UserCircle, UsersRound, AlertTriangle, ShoppingCart, FileText, Box, TrendingUp, Search, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,11 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getRoutinesByCreator, getAccessibleRoutines, getRoutine, type Routine } from '@/lib/routines';
-import { getFolders, updateFolder, deleteFolder, type RoutineFolder } from '@/lib/folders';
+import { getFolders, updateFolder, deleteFolder, createFolder, type RoutineFolder } from '@/lib/folders';
 import { getCurrentUserId } from '@/lib/users';
 import { useRoutine } from '@/contexts/RoutineContext';
+import { useToast } from '@/components/ui/toast';
 
 interface SidebarRoutinesProps {
   activeRoutineId?: string | null;
@@ -32,20 +34,38 @@ interface RoutineItemProps {
   onClick: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
   isShared?: boolean;
+  onDragStart?: (e: React.DragEvent, routineId: string) => void;
+  onDragEnd?: () => void;
+  dragOverTarget?: string | null;
+  sectionType?: 'my' | 'shared';
 }
 
-const RoutineItem: React.FC<RoutineItemProps> = ({ routine, isActive, onClick, onContextMenu, isShared = false }) => {
+const RoutineItem: React.FC<RoutineItemProps> = ({ 
+  routine, 
+  isActive, 
+  onClick, 
+  onContextMenu, 
+  isShared = false,
+  onDragStart,
+  onDragEnd,
+  dragOverTarget,
+  sectionType
+}) => {
   const [isDragging, setIsDragging] = useState(false);
+  const isDragOver = dragOverTarget === routine.id;
 
   const handleDragStart = (e: React.DragEvent) => {
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', routine.id);
     e.dataTransfer.setData('application/routine-id', routine.id);
+    e.dataTransfer.setData('application/section-type', sectionType || 'my');
+    onDragStart?.(e, routine.id);
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
+    onDragEnd?.();
   };
 
   return (
@@ -54,10 +74,11 @@ const RoutineItem: React.FC<RoutineItemProps> = ({ routine, isActive, onClick, o
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={cn(
-        'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors',
+        'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200',
         isActive && 'bg-[#31C7AD] text-white',
         !isActive && 'hover:bg-muted/50',
-        isDragging && 'opacity-50'
+        isDragging && 'opacity-50 scale-95',
+        isDragOver && !isDragging && 'ring-2 ring-[#2063F0] ring-offset-1 bg-[#2063F0]/10 dark:bg-[#2063F0]/20'
       )}
       onClick={onClick}
     >
@@ -108,15 +129,54 @@ interface FolderItemProps {
   onRoutineClick: (routineId: string) => void;
   onFolderUpdate?: () => void;
   isShared?: boolean;
+  dragOverTarget?: string | null;
+  draggingRoutineId?: string | null;
+  draggingFolderId?: string | null;
+  sectionType?: 'my' | 'shared';
+  onRoutineDragStart?: (e: React.DragEvent, routineId: string) => void;
+  onRoutineDragEnd?: () => void;
+  onFolderDragStart?: (e: React.DragEvent, folderId: string) => void;
+  onFolderDragEnd?: () => void;
+  onFolderRename?: (folderId: string, newName: string) => void;
+  onFolderDelete?: (folderId: string) => void;
 }
 
-const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutineId, onRoutineClick, onFolderUpdate, isShared = false }) => {
+const FolderItem: React.FC<FolderItemProps> = ({ 
+  folder, 
+  routines, 
+  activeRoutineId, 
+  onRoutineClick, 
+  onFolderUpdate, 
+  isShared = false,
+  dragOverTarget,
+  draggingRoutineId,
+  draggingFolderId,
+  sectionType,
+  onRoutineDragStart,
+  onRoutineDragEnd,
+  onFolderDragStart,
+  onFolderDragEnd,
+  onFolderRename,
+  onFolderDelete
+}) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [dragOver, setDragOver] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(folder.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
   
   const folderRoutines = useMemo(() => {
     return routines.filter((r) => folder.routineIds.includes(r.id));
   }, [routines, folder.routineIds]);
+
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -144,23 +204,125 @@ const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutine
     }
   };
 
+  const handleRenameStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRenaming(true);
+    setRenameValue(folder.name);
+  };
+
+  const handleRenameSubmit = () => {
+    if (renameValue.trim() && renameValue !== folder.name) {
+      onFolderRename?.(folder.id, renameValue.trim());
+      updateFolder(folder.id, { name: renameValue.trim() });
+      onFolderUpdate?.();
+    }
+    setIsRenaming(false);
+  };
+
+  const handleRenameCancel = () => {
+    setRenameValue(folder.name);
+    setIsRenaming(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm(`Delete folder "${folder.name}"? Routines will be moved out of the folder.`)) {
+      onFolderDelete?.(folder.id);
+      deleteFolder(folder.id);
+      onFolderUpdate?.();
+      showToast({
+        description: `Folder "${folder.name}" deleted`,
+        variant: 'success',
+      });
+    }
+  };
+
+  const handleFolderDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/folder-id', folder.id);
+    e.dataTransfer.setData('application/section-type', sectionType || 'my');
+    onFolderDragStart?.(e, folder.id);
+  };
+
+  const handleFolderDragEnd = () => {
+    setIsDragging(false);
+    onFolderDragEnd?.();
+  };
+
   return (
-    <div>
+    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
       <div
-        className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        draggable
+        onDragStart={handleFolderDragStart}
+        onDragEnd={handleFolderDragEnd}
+        className={cn(
+          "group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-all duration-200",
+          dragOver && 'bg-[#2063F0]/10 dark:bg-[#2063F0]/20 ring-2 ring-[#2063F0] ring-offset-1',
+          !dragOver && 'hover:bg-muted/50',
+          isDragging && 'opacity-50 scale-95',
+          draggingFolderId === folder.id && 'opacity-50 scale-95'
         )}
-        <Folder className="w-4 h-4 text-muted-foreground" />
-        <span className="flex-1 text-sm font-medium">{folder.name}</span>
+        onClick={() => setIsExpanded(!isExpanded)}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <GripVertical className={cn('w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing', isDragging && 'opacity-100', 'text-muted-foreground')} />
+        {isExpanded ? (
+          <FolderOpen className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <Folder className="w-4 h-4 text-muted-foreground" />
+        )}
+        {isRenaming ? (
+          <Input
+            ref={inputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={handleRenameSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleRenameSubmit();
+              } else if (e.key === 'Escape') {
+                handleRenameCancel();
+              }
+            }}
+            className="h-6 text-sm font-medium flex-1"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span className="flex-1 text-sm font-medium">{folder.name}</span>
+        )}
+        {!isRenaming && (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5"
+              onClick={handleRenameStart}
+              title="Rename folder"
+            >
+              <Edit2 className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-destructive hover:text-destructive"
+              onClick={handleDelete}
+              title="Delete folder"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
       </div>
       {isExpanded && (
         <div 
-          className={cn('ml-6 mt-1 space-y-0.5', dragOver && 'bg-muted/30 rounded-md p-1')}
+          className={cn(
+            'ml-6 mt-1 space-y-0.5 transition-all duration-200',
+            dragOver && 'bg-muted/30 rounded-md p-1'
+          )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -173,6 +335,10 @@ const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutine
               onClick={() => onRoutineClick(routine.id)}
               onContextMenu={() => {}}
               isShared={isShared}
+              onDragStart={onRoutineDragStart}
+              onDragEnd={onRoutineDragEnd}
+              dragOverTarget={dragOverTarget}
+              sectionType={sectionType}
             />
           ))}
         </div>
@@ -181,15 +347,71 @@ const FolderItem: React.FC<FolderItemProps> = ({ folder, routines, activeRoutine
   );
 };
 
+// Helper function to generate folder name from routine names
+const generateFolderName = (routine1: Routine, routine2: Routine): string => {
+  const names = [routine1.name, routine2.name].sort();
+  const maxTotalLength = 40; // Maximum total length for the folder name
+  const maxIndividualLength = 18; // Maximum length per routine name
+  
+  let name1 = names[0];
+  let name2 = names[1];
+  
+  // Truncate individual names if too long
+  if (name1.length > maxIndividualLength) {
+    name1 = name1.substring(0, maxIndividualLength) + '...';
+  }
+  if (name2.length > maxIndividualLength) {
+    name2 = name2.substring(0, maxIndividualLength) + '...';
+  }
+  
+  let folderName = `${name1} & ${name2}`;
+  
+  // Truncate the entire folder name if still too long
+  if (folderName.length > maxTotalLength) {
+    const availableLength = maxTotalLength - 3; // Reserve space for "..."
+    folderName = folderName.substring(0, availableLength) + '...';
+  }
+  
+  return folderName;
+};
+
+// Helper function to get custom order from localStorage
+const getCustomOrder = (sectionType: 'my' | 'shared', userId: string): string[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const key = `pelico-routine-order-${sectionType}-${userId}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper function to save custom order to localStorage
+const saveCustomOrder = (sectionType: 'my' | 'shared', userId: string, order: string[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `pelico-routine-order-${sectionType}-${userId}`;
+    localStorage.setItem(key, JSON.stringify(order));
+  } catch (error) {
+    console.error('Failed to save custom order:', error);
+  }
+};
+
 export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineId, onRoutineClick, activeItem, onNavigate }) => {
   const currentUserId = getCurrentUserId();
-  const { refreshKey: routineRefreshKey } = useRoutine(); // Get refresh key from context
+  const { refreshKey: routineRefreshKey } = useRoutine();
+  const { showToast } = useToast();
   const [showAllMyRoutines, setShowAllMyRoutines] = useState(false);
   const [showAllSharedRoutines, setShowAllSharedRoutines] = useState(false);
   const [isMyRoutinesExpanded, setIsMyRoutinesExpanded] = useState(true);
   const [isSharedRoutinesExpanded, setIsSharedRoutinesExpanded] = useState(true);
   const [isPelicoViewsExpanded, setIsPelicoViewsExpanded] = useState(false);
-  const [folderRefreshKey, setFolderRefreshKey] = useState(0); // Force re-render after folder updates
+  const [folderRefreshKey, setFolderRefreshKey] = useState(0);
+  const [draggingRoutineId, setDraggingRoutineId] = useState<string | null>(null);
+  const [draggingFolderId, setDraggingFolderId] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [draggingSectionType, setDraggingSectionType] = useState<'my' | 'shared' | null>(null);
 
   // Auto-expand Pelico Views section when an active item belongs to it
   useEffect(() => {
@@ -239,23 +461,30 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
     folders.forEach((folder) => {
       const validRoutineIds = folder.routineIds.filter((id) => routineIds.has(id));
       if (validRoutineIds.length === 0) {
-        // Folder is empty, delete it
         deleteFolder(folder.id);
       } else if (validRoutineIds.length !== folder.routineIds.length) {
-        // Some routines were deleted, update folder
         updateFolder(folder.id, { routineIds: validRoutineIds });
       }
     });
     
-    // Re-fetch folders after cleanup
     const updatedFolders = getFolders(currentUserId);
-    // Filter out folders that have no routines (shouldn't happen after cleanup, but just in case)
     const validFolders = updatedFolders.filter((folder) => {
       return folder.routineIds.some((id) => routineIds.has(id));
     });
     
     return validFolders.sort((a, b) => a.name.localeCompare(b.name));
   }, [currentUserId, folderRefreshKey, routineRefreshKey]);
+
+  // Get shared folders (folders containing shared routines)
+  const sharedFolders = useMemo(() => {
+    const folders = getFolders(); // Get all folders
+    const sharedRoutineIds = new Set(sharedRoutines.map((r) => r.id));
+    
+    // Filter folders that contain at least one shared routine
+    return folders.filter((folder) => {
+      return folder.routineIds.some((id) => sharedRoutineIds.has(id));
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [sharedRoutines, folderRefreshKey, routineRefreshKey]);
 
   const handleFolderUpdate = () => {
     setFolderRefreshKey((prev) => prev + 1);
@@ -267,8 +496,226 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
     return myRoutines.filter((r) => !folderRoutineIds.has(r.id));
   }, [myRoutines, myFolders]);
 
+  const sharedRoutinesNotInFolders = useMemo(() => {
+    const folderRoutineIds = new Set(sharedFolders.flatMap((f) => f.routineIds));
+    return sharedRoutines.filter((r) => !folderRoutineIds.has(r.id));
+  }, [sharedRoutines, sharedFolders]);
+
   const displayedMyRoutines = showAllMyRoutines ? routinesNotInFolders : routinesNotInFolders.slice(0, 5);
-  const displayedSharedRoutines = showAllSharedRoutines ? sharedRoutines : sharedRoutines.slice(0, 5);
+  const displayedSharedRoutines = showAllSharedRoutines ? sharedRoutinesNotInFolders : sharedRoutinesNotInFolders.slice(0, 5);
+
+  const handleRoutineDragStart = (e: React.DragEvent, routineId: string) => {
+    setDraggingRoutineId(routineId);
+    const sectionType = e.dataTransfer.getData('application/section-type') as 'my' | 'shared';
+    setDraggingSectionType(sectionType);
+  };
+
+  const handleRoutineDragEnd = () => {
+    setDraggingRoutineId(null);
+    setDragOverTarget(null);
+    setDraggingSectionType(null);
+  };
+
+  const handleFolderDragStart = (e: React.DragEvent, folderId: string) => {
+    setDraggingFolderId(folderId);
+    const sectionType = e.dataTransfer.getData('application/section-type') as 'my' | 'shared';
+    setDraggingSectionType(sectionType);
+  };
+
+  const handleFolderDragEnd = () => {
+    setDraggingFolderId(null);
+    setDragOverTarget(null);
+    setDraggingSectionType(null);
+  };
+
+  const handleFolderDrop = (e: React.DragEvent, targetRoutineId: string | null, targetFolderId: string | null, sectionType: 'my' | 'shared') => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedFolderId = e.dataTransfer.getData('application/folder-id');
+    const draggedSectionType = e.dataTransfer.getData('application/section-type') as 'my' | 'shared';
+    
+    if (!draggedFolderId || draggedFolderId === targetFolderId) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    // Only allow moving folders within the same section
+    if (draggedSectionType !== sectionType) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    const draggedFolder = (sectionType === 'my' ? myFolders : sharedFolders).find((f) => f.id === draggedFolderId);
+    if (!draggedFolder) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    if (targetRoutineId) {
+      // Dropping folder on a routine - merge folder routines with the routine
+      const targetRoutine = getRoutine(targetRoutineId);
+      if (!targetRoutine) {
+        setDragOverTarget(null);
+        return;
+      }
+
+      // Check if target routine is already in a folder
+      const targetRoutineFolder = (sectionType === 'my' ? myFolders : sharedFolders).find(
+        (f) => f.routineIds.includes(targetRoutineId) && f.id !== draggedFolderId
+      );
+
+      if (targetRoutineFolder) {
+        // Merge dragged folder into target folder
+        const allRoutineIds = [...new Set([...targetRoutineFolder.routineIds, ...draggedFolder.routineIds])];
+        updateFolder(targetRoutineFolder.id, {
+          routineIds: allRoutineIds,
+        });
+        deleteFolder(draggedFolderId);
+        handleFolderUpdate();
+        showToast({
+          description: `Merged folder "${draggedFolder.name}" into "${targetRoutineFolder.name}"`,
+          variant: 'success',
+        });
+      } else {
+        // Remove target routine from its current folder if any
+        const allFolders = sectionType === 'my' ? myFolders : sharedFolders;
+        allFolders.forEach((folder) => {
+          if (folder.id !== draggedFolderId && folder.routineIds.includes(targetRoutineId)) {
+            updateFolder(folder.id, {
+              routineIds: folder.routineIds.filter((id) => id !== targetRoutineId),
+            });
+          }
+        });
+
+        // Add target routine to dragged folder
+        if (!draggedFolder.routineIds.includes(targetRoutineId)) {
+          updateFolder(draggedFolderId, {
+            routineIds: [...draggedFolder.routineIds, targetRoutineId],
+          });
+          handleFolderUpdate();
+          showToast({
+            description: `Added "${targetRoutine.name}" to folder "${draggedFolder.name}"`,
+            variant: 'success',
+          });
+        }
+      }
+    } else if (targetFolderId) {
+      // Dropping folder on another folder - merge folders
+      const targetFolder = (sectionType === 'my' ? myFolders : sharedFolders).find((f) => f.id === targetFolderId);
+      if (!targetFolder || targetFolder.id === draggedFolderId) {
+        setDragOverTarget(null);
+        return;
+      }
+
+      // Merge dragged folder into target folder
+      const allRoutineIds = [...new Set([...targetFolder.routineIds, ...draggedFolder.routineIds])];
+      updateFolder(targetFolder.id, {
+        routineIds: allRoutineIds,
+      });
+      deleteFolder(draggedFolderId);
+      handleFolderUpdate();
+      showToast({
+        description: `Merged folder "${draggedFolder.name}" into "${targetFolder.name}"`,
+        variant: 'success',
+      });
+    }
+
+    setDragOverTarget(null);
+  };
+
+  const handleRoutineDragOver = (e: React.DragEvent, targetRoutineId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggingRoutineId && draggingRoutineId !== targetRoutineId) {
+      setDragOverTarget(targetRoutineId);
+    }
+  };
+
+  const handleRoutineDrop = (e: React.DragEvent, targetRoutineId: string, sectionType: 'my' | 'shared') => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const draggedRoutineId = e.dataTransfer.getData('application/routine-id');
+    const draggedSectionType = e.dataTransfer.getData('application/section-type') as 'my' | 'shared';
+    
+    if (!draggedRoutineId || draggedRoutineId === targetRoutineId) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    // Only allow creating folders within the same section
+    if (draggedSectionType !== sectionType) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    const draggedRoutine = getRoutine(draggedRoutineId);
+    const targetRoutine = getRoutine(targetRoutineId);
+    
+    if (!draggedRoutine || !targetRoutine) {
+      setDragOverTarget(null);
+      return;
+    }
+
+    // Check if target routine is already in a folder
+    const targetFolder = (sectionType === 'my' ? myFolders : sharedFolders).find(
+      (f) => f.routineIds.includes(targetRoutineId)
+    );
+
+    if (targetFolder) {
+      // Add dragged routine to existing folder
+      if (!targetFolder.routineIds.includes(draggedRoutineId)) {
+        // Remove dragged routine from its current folder if any
+        const draggedFolder = (sectionType === 'my' ? myFolders : sharedFolders).find(
+          (f) => f.routineIds.includes(draggedRoutineId)
+        );
+        if (draggedFolder) {
+          updateFolder(draggedFolder.id, {
+            routineIds: draggedFolder.routineIds.filter((id) => id !== draggedRoutineId),
+          });
+        }
+        
+        updateFolder(targetFolder.id, {
+          routineIds: [...targetFolder.routineIds, draggedRoutineId],
+        });
+        handleFolderUpdate();
+        showToast({
+          description: `Added "${draggedRoutine.name}" to folder "${targetFolder.name}"`,
+          variant: 'success',
+        });
+      }
+    } else {
+      // Create new folder with both routines
+      // Remove both routines from their current folders if any
+      const allFolders = sectionType === 'my' ? myFolders : sharedFolders;
+      allFolders.forEach((folder) => {
+        if (folder.routineIds.includes(draggedRoutineId) || folder.routineIds.includes(targetRoutineId)) {
+          updateFolder(folder.id, {
+            routineIds: folder.routineIds.filter(
+              (id) => id !== draggedRoutineId && id !== targetRoutineId
+            ),
+          });
+        }
+      });
+
+      const folderName = generateFolderName(draggedRoutine, targetRoutine);
+      const newFolder = createFolder({
+        name: folderName,
+        routineIds: [draggedRoutineId, targetRoutineId],
+        userId: currentUserId,
+        parentFolderId: null,
+      });
+
+      handleFolderUpdate();
+      showToast({
+        description: `Created folder "${folderName}"`,
+        variant: 'success',
+      });
+    }
+
+    setDragOverTarget(null);
+  };
 
   const handleRoutineClick = (routineId: string) => {
     const routine = getRoutine(routineId);
@@ -277,30 +724,36 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
       return;
     }
 
-    // Check if routine has a pelicoView (should always have one)
     if (!routine.pelicoView) {
       alert(`Error: Routine "${routine.name}" does not have a Pelico View associated. Please edit the routine to assign a view.`);
       return;
     }
 
-    // Check if we're already on the correct Pelico View page
     const isOnCorrectPage = activeItem === routine.pelicoView;
     
     if (isOnCorrectPage) {
-      // We're already on the correct page, just select the routine
       onRoutineClick?.(routineId);
     } else {
-      // We need to navigate to the Pelico View page
-      // Store routine ID in sessionStorage to auto-apply it when page loads
       sessionStorage.setItem('pendingRoutineId', routineId);
-      
-      // Navigate to the Pelico View page
       onNavigate?.(routine.pelicoView);
     }
   };
 
+  const handleFolderRename = (folderId: string, newName: string) => {
+    updateFolder(folderId, { name: newName });
+    handleFolderUpdate();
+  };
+
+  const handleFolderDelete = (folderId: string) => {
+    const folder = myFolders.find((f) => f.id === folderId) || sharedFolders.find((f) => f.id === folderId);
+    if (folder) {
+      deleteFolder(folderId);
+      handleFolderUpdate();
+    }
+  };
+
   const hasMyRoutines = myRoutines.length > 0 || myFolders.length > 0;
-  const hasSharedRoutines = sharedRoutines.length > 0;
+  const hasSharedRoutines = sharedRoutines.length > 0 || sharedFolders.length > 0;
 
   return (
     <div className="space-y-4 mt-2">
@@ -329,7 +782,10 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
               e.preventDefault();
               e.stopPropagation();
               const routineId = e.dataTransfer.getData('application/routine-id');
-              if (routineId) {
+              const folderId = e.dataTransfer.getData('application/folder-id');
+              const sectionType = e.dataTransfer.getData('application/section-type');
+              
+              if (routineId && sectionType === 'my') {
                 // Remove routine from all folders when dropped outside
                 myFolders.forEach((folder) => {
                   if (folder.routineIds.includes(routineId)) {
@@ -338,34 +794,91 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                     });
                   }
                 });
-                // Trigger re-render
                 handleFolderUpdate();
+              } else if (folderId && sectionType === 'my') {
+                // Folder dropped outside - no action needed, just reset state
               }
+              setDragOverTarget(null);
             }}
           >
             {hasMyRoutines ? (
               <>
                 {/* Folders */}
                 {myFolders.map((folder) => (
-                  <FolderItem
+                  <div
                     key={folder.id}
-                    folder={folder}
-                    routines={myRoutines}
-                    activeRoutineId={activeRoutineId}
-                    onRoutineClick={handleRoutineClick}
-                    onFolderUpdate={handleFolderUpdate}
-                  />
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggingFolderId && draggingFolderId !== folder.id) {
+                        setDragOverTarget(`folder-${folder.id}`);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverTarget === `folder-${folder.id}`) {
+                        setDragOverTarget(null);
+                      }
+                    }}
+                    onDrop={(e) => handleFolderDrop(e, null, folder.id, 'my')}
+                  >
+                    <FolderItem
+                      folder={folder}
+                      routines={myRoutines}
+                      activeRoutineId={activeRoutineId}
+                      onRoutineClick={handleRoutineClick}
+                      onFolderUpdate={handleFolderUpdate}
+                      dragOverTarget={dragOverTarget === `folder-${folder.id}` ? `folder-${folder.id}` : dragOverTarget}
+                      draggingRoutineId={draggingRoutineId}
+                      draggingFolderId={draggingFolderId}
+                      sectionType="my"
+                      onRoutineDragStart={handleRoutineDragStart}
+                      onRoutineDragEnd={handleRoutineDragEnd}
+                      onFolderDragStart={handleFolderDragStart}
+                      onFolderDragEnd={handleFolderDragEnd}
+                      onFolderRename={handleFolderRename}
+                      onFolderDelete={handleFolderDelete}
+                    />
+                  </div>
                 ))}
                 
                 {/* Routines not in folders */}
                 {displayedMyRoutines.map((routine) => (
-                  <RoutineItem
+                  <div
                     key={routine.id}
-                    routine={routine}
-                    isActive={activeRoutineId === routine.id}
-                    onClick={() => handleRoutineClick(routine.id)}
-                    onContextMenu={() => {}}
-                  />
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggingRoutineId && draggingRoutineId !== routine.id) {
+                        handleRoutineDragOver(e, routine.id);
+                      } else if (draggingFolderId) {
+                        setDragOverTarget(routine.id);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverTarget === routine.id) {
+                        setDragOverTarget(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      const folderId = e.dataTransfer.getData('application/folder-id');
+                      if (folderId) {
+                        handleFolderDrop(e, routine.id, null, 'my');
+                      } else {
+                        handleRoutineDrop(e, routine.id, 'my');
+                      }
+                    }}
+                  >
+                    <RoutineItem
+                      routine={routine}
+                      isActive={activeRoutineId === routine.id}
+                      onClick={() => handleRoutineClick(routine.id)}
+                      onContextMenu={() => {}}
+                      onDragStart={handleRoutineDragStart}
+                      onDragEnd={handleRoutineDragEnd}
+                      dragOverTarget={dragOverTarget}
+                      sectionType="my"
+                    />
+                  </div>
                 ))}
                 
                 {routinesNotInFolders.length > 5 && (
@@ -403,21 +916,118 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
         </button>
         
         {isSharedRoutinesExpanded && (
-          <div className={cn("space-y-1", hasSharedRoutines ? "mt-1" : "mt-0.5")}>
+          <div 
+            className={cn("space-y-1", hasSharedRoutines ? "mt-1" : "mt-0.5")}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const routineId = e.dataTransfer.getData('application/routine-id');
+              const folderId = e.dataTransfer.getData('application/folder-id');
+              const sectionType = e.dataTransfer.getData('application/section-type');
+              
+              if (routineId && sectionType === 'shared') {
+                // Remove routine from all folders when dropped outside
+                sharedFolders.forEach((folder) => {
+                  if (folder.routineIds.includes(routineId)) {
+                    updateFolder(folder.id, {
+                      routineIds: folder.routineIds.filter((id) => id !== routineId),
+                    });
+                  }
+                });
+                handleFolderUpdate();
+              } else if (folderId && sectionType === 'shared') {
+                // Folder dropped outside - no action needed, just reset state
+              }
+              setDragOverTarget(null);
+            }}
+          >
             {hasSharedRoutines ? (
               <>
-                {displayedSharedRoutines.map((routine) => (
-                  <RoutineItem
-                    key={routine.id}
-                    routine={routine}
-                    isActive={activeRoutineId === routine.id}
-                    onClick={() => handleRoutineClick(routine.id)}
-                    onContextMenu={() => {}}
-                    isShared={true}
-                  />
+                {/* Folders */}
+                {sharedFolders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggingFolderId && draggingFolderId !== folder.id) {
+                        setDragOverTarget(`folder-${folder.id}`);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverTarget === `folder-${folder.id}`) {
+                        setDragOverTarget(null);
+                      }
+                    }}
+                    onDrop={(e) => handleFolderDrop(e, null, folder.id, 'shared')}
+                  >
+                    <FolderItem
+                      folder={folder}
+                      routines={sharedRoutines}
+                      activeRoutineId={activeRoutineId}
+                      onRoutineClick={handleRoutineClick}
+                      onFolderUpdate={handleFolderUpdate}
+                      isShared={true}
+                      dragOverTarget={dragOverTarget === `folder-${folder.id}` ? `folder-${folder.id}` : dragOverTarget}
+                      draggingRoutineId={draggingRoutineId}
+                      draggingFolderId={draggingFolderId}
+                      sectionType="shared"
+                      onRoutineDragStart={handleRoutineDragStart}
+                      onRoutineDragEnd={handleRoutineDragEnd}
+                      onFolderDragStart={handleFolderDragStart}
+                      onFolderDragEnd={handleFolderDragEnd}
+                      onFolderRename={handleFolderRename}
+                      onFolderDelete={handleFolderDelete}
+                    />
+                  </div>
                 ))}
                 
-                {sharedRoutines.length > 5 && (
+                {/* Routines not in folders */}
+                {displayedSharedRoutines.map((routine) => (
+                  <div
+                    key={routine.id}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (draggingRoutineId && draggingRoutineId !== routine.id) {
+                        handleRoutineDragOver(e, routine.id);
+                      } else if (draggingFolderId) {
+                        setDragOverTarget(routine.id);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverTarget === routine.id) {
+                        setDragOverTarget(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      const folderId = e.dataTransfer.getData('application/folder-id');
+                      if (folderId) {
+                        handleFolderDrop(e, routine.id, null, 'shared');
+                      } else {
+                        handleRoutineDrop(e, routine.id, 'shared');
+                      }
+                    }}
+                  >
+                    <RoutineItem
+                      routine={routine}
+                      isActive={activeRoutineId === routine.id}
+                      onClick={() => handleRoutineClick(routine.id)}
+                      onContextMenu={() => {}}
+                      isShared={true}
+                      onDragStart={handleRoutineDragStart}
+                      onDragEnd={handleRoutineDragEnd}
+                      dragOverTarget={dragOverTarget}
+                      sectionType="shared"
+                    />
+                  </div>
+                ))}
+                
+                {sharedRoutinesNotInFolders.length > 5 && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -465,7 +1075,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                     !isActive && 'hover:bg-muted/50'
                   )}
                   onClick={() => {
-                    setIsPelicoViewsExpanded(true); // Keep section open when clicking an item
+                    setIsPelicoViewsExpanded(true);
                     onNavigate?.(item.id);
                   }}
                 >
@@ -502,4 +1112,3 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
     </div>
   );
 };
-
