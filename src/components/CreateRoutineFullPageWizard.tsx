@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
   ArrowRight, 
-  CheckCircle2, 
   X,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createRoutine } from '@/lib/routines';
@@ -188,63 +189,179 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
 
   const canProceedFromConfigure = routineName.trim().length > 0;
 
-  const substeps: { id: CreateRoutineStep; label: string }[] = [
-    { id: 'choose-view', label: 'Choose View' },
-    { id: 'configure', label: 'Configure' },
-  ];
+  // Step labels matching SimpleOnboardingWizard
+  const stepLabels: Record<number, string> = {
+    0: 'Welcome & Create Teams',
+    1: 'Add Members',
+    2: 'Create Scopes',
+    3: 'Routines',
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex overflow-hidden" style={{ width: '100vw', maxWidth: '100vw', overflowX: 'hidden' }}>
-      {/* Sidebar */}
-      <div className="hidden sm:flex w-48 lg:w-64 border-r border-border bg-muted/30 flex-col shrink-0">
-        <div className="p-4 sm:p-6 border-b border-border">
-          <h2 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-            Create Routine
-          </h2>
+      {/* Sidebar Navigation - Matching SimpleOnboardingWizard design */}
+      <div className="w-72 bg-muted/30 border-r border-border flex flex-col shrink-0">
+        {/* Sidebar Header */}
+        <div className="px-6 py-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
+                Set-up your workspace
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/images/Pelico-small-logo.svg" 
+                alt="Pelico" 
+                className="h-8 w-auto"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Complete these steps to configure your workspace
+          </p>
         </div>
-        
-        <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+
+        {/* Steps Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 py-4">
           <div className="space-y-2">
-            {substeps.map((substep, index) => {
-              const isActive = currentStep === substep.id;
-              const isCompleted = ['choose-view', 'configure'].indexOf(currentStep) > index;
-              
+            {[0, 1, 2, 3].map((stepIndex) => {
+              const isActive = stepIndex === 3; // Step 4 (Routines) is active when creating routine
+              const isCompleted = stepIndex < 3; // Steps 1-3 are completed
+              const showRoutineSubsteps = stepIndex === 3 && isActive;
+
               return (
-                <button
-                  key={substep.id}
-                  onClick={() => {
-                    // Allow navigation to completed steps or current step
-                    if (isCompleted || isActive) {
-                      setCurrentStep(substep.id);
-                    }
-                  }}
-                  className={cn(
-                    'w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm',
-                    isActive && 'bg-[#2063F0] text-white',
-                    isCompleted && !isActive && 'bg-muted hover:bg-muted/80',
-                    !isActive && !isCompleted && 'text-muted-foreground hover:bg-muted/50'
-                  )}
-                >
+                <React.Fragment key={stepIndex}>
                   <div
                     className={cn(
-                      'w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-                      isCompleted
-                        ? 'bg-[#31C7AD] text-white'
-                        : isActive
-                        ? 'bg-white text-[#2063F0]'
-                        : 'bg-muted text-muted-foreground'
+                      'w-full flex items-start gap-3 p-4 rounded-lg transition-all text-left',
+                      'border-2',
+                      isActive
+                        ? 'border-[#2063F0] bg-[#2063F0]/10 shadow-md'
+                        : isCompleted
+                        ? 'border-[#31C7AD]/30 bg-[#31C7AD]/5'
+                        : 'border-border bg-background'
                     )}
                   >
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                    ) : (
-                      index + 1
-                    )}
+                    <div className="flex-shrink-0 mt-0.5">
+                      {isCompleted ? (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#31C7AD] text-white">
+                          <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                      ) : isActive ? (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2063F0] text-white font-semibold">
+                          {stepIndex + 1}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-muted-foreground/30 bg-background">
+                          <Circle className="h-5 w-5 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={cn(
+                          'text-sm font-semibold mb-1',
+                          isActive && 'text-[#2063F0]',
+                          isCompleted && 'text-[#31C7AD]',
+                          !isActive && !isCompleted && 'text-foreground'
+                        )}
+                      >
+                        Step {stepIndex + 1}
+                      </div>
+                      <div
+                        className={cn(
+                          'text-xs',
+                          isActive ? 'text-[#2063F0]' : 'text-muted-foreground'
+                        )}
+                      >
+                        {stepLabels[stepIndex]}
+                      </div>
+                      {isCompleted && (
+                        <div className="mt-1 text-xs text-[#31C7AD] font-medium">
+                          Completed
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-sm font-medium">{substep.label}</span>
-                </button>
+                  
+                  {/* Routine Creation Substeps - Only show when Step 4 is active */}
+                  {showRoutineSubsteps && (
+                    <div className="ml-6 space-y-2 border-l-2 border-[#2063F0]/20 pl-4 mt-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Create routine
+                      </div>
+                      {(['choose-view', 'configure'] as const).map((substep, substepIndex) => {
+                        const substepLabels = {
+                          'choose-view': 'Choose view',
+                          'configure': 'Configure',
+                        };
+                        const isSubstepActive = currentStep === substep;
+                        const isSubstepCompleted = ['choose-view', 'configure'].indexOf(currentStep) > substepIndex;
+                        const canNavigateToSubstep = isSubstepCompleted || isSubstepActive;
+
+                        return (
+                          <button
+                            key={substep}
+                            onClick={() => {
+                              if (canNavigateToSubstep) {
+                                setCurrentStep(substep);
+                              }
+                            }}
+                            disabled={!canNavigateToSubstep}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all text-left text-xs',
+                              isSubstepActive
+                                ? 'bg-[#2063F0]/10 text-[#2063F0] font-medium'
+                                : isSubstepCompleted
+                                ? 'text-[#31C7AD] hover:bg-[#31C7AD]/5 cursor-pointer'
+                                : 'text-muted-foreground opacity-50 cursor-not-allowed'
+                            )}
+                          >
+                            <div className="flex-shrink-0">
+                              {isSubstepCompleted ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-[#31C7AD]" />
+                              ) : isSubstepActive ? (
+                                <div className="w-3.5 h-3.5 rounded-full bg-[#2063F0]" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5 text-muted-foreground/30" />
+                              )}
+                            </div>
+                            <span>{substepLabels[substep]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })}
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="py-4 shrink-0">
+          <div className="px-4 text-xs text-muted-foreground space-y-1">
+            <div className="flex items-center justify-between">
+              <span>Progress</span>
+              <span className="font-semibold text-foreground">
+                4 / 4
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#2063F0] to-[#31C7AD] transition-all duration-300"
+                style={{ width: '100%' }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -258,7 +375,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-sm text-muted-foreground mb-1">
-                  Routines / Create Routine / {substeps.find(s => s.id === currentStep)?.label}
+                  Routines / Create Routine / {currentStep === 'choose-view' ? 'Choose view' : 'Configure'}
                 </div>
                 <h1 className="text-xl sm:text-2xl page-title">
                   Create Routine

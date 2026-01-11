@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Eye,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
@@ -310,6 +311,21 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
       return t;
     });
     
+    onTeamsUpdate(updatedTeams);
+  };
+
+  // Clear all routines for a team
+  const handleClearRoutines = (teamId: string) => {
+    const updatedTeams = teams.map(t => {
+      if (t.id === teamId) {
+        return {
+          ...t,
+          assignedRoutineIds: [],
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return t;
+    });
     onTeamsUpdate(updatedTeams);
   };
 
@@ -632,29 +648,45 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                           <p className="text-sm text-muted-foreground break-words">{team.description}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            // TODO: Implement edit team
-                          }}
-                          className="h-8 w-8 p-0"
-                          title="Edit team"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            onTeamsUpdate(teams.filter(t => t.id !== team.id));
-                          }}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          title="Delete team"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Clear routines button - visible when there are routines assigned */}
+                        {teamRoutinesCount > 0 && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleClearRoutines(team.id)}
+                            className="h-8 gap-1.5 text-xs whitespace-nowrap"
+                            title="Clear all routines"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Clear routines</span>
+                            <span className="sm:hidden">Clear</span>
+                          </Button>
+                        )}
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Implement edit team
+                            }}
+                            className="h-8 w-8 p-0"
+                            title="Edit team"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              onTeamsUpdate(teams.filter(t => t.id !== team.id));
+                            }}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            title="Delete team"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
