@@ -25,6 +25,7 @@ import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
+import { RecommendedRoutinesModal } from './RecommendedRoutinesModal';
 import { CreateRoutineFullPageWizard } from '../CreateRoutineFullPageWizard';
 import { getRoutines } from '@/lib/routines';
 import { Substep4_1_RecommendedRoutines } from './RoutineSelectionStep/Substep4_1_RecommendedRoutines';
@@ -84,8 +85,10 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 }) => {
   const [routineAddMode, setRoutineAddMode] = useState<Record<string, 'personas' | 'manual'>>({});
   const [openAddRoutinesModal, setOpenAddRoutinesModal] = useState<string | null>(null);
+  const [openRecommendedRoutinesModal, setOpenRecommendedRoutinesModal] = useState<string | null>(null);
   const [creatingRoutineForTeam, setCreatingRoutineForTeam] = useState<string | null>(null);
   const [tempSelectedRoutineIds, setTempSelectedRoutineIds] = useState<string[]>([]);
+  const [tempSelectedRecommendedRoutineIds, setTempSelectedRecommendedRoutineIds] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh when routines are created
   
   // State for new substeps flow
@@ -346,29 +349,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     return null;
   }, [currentSubstep, teamsWithPersona, currentTeamIndex]);
 
-  // Initialize: if we have teams with persona and we're starting, go to recommended routines for first team
-  // Only do this when we're on team-selection AND we haven't processed all teams yet
-  useEffect(() => {
-    // Only trigger if:
-    // 1. We're on team-selection
-    // 2. We have teams with persona
-    // 3. We're at index 0 (first team)
-    // 4. There are still teams to process (currentTeamIndex < teamsWithPersona.length - 1 means we haven't finished)
-    //    OR we haven't started yet (this is the initial load)
-    const allTeamsProcessed = currentTeamIndex >= teamsWithPersona.length - 1;
-    
-    if (teamsWithPersona.length > 0 && 
-        currentSubstep === 'team-selection' && 
-        currentTeamIndex === 0 &&
-        !allTeamsProcessed) {
-      const firstTeam = teamsWithPersona[0];
-      // Always navigate to recommended-routines for teams with persona
-      if (firstTeam && onSubstepChange) {
-        console.log('[RoutineSelectionStep] Initializing recommended flow for first team');
-        onSubstepChange('recommended-routines');
-      }
-    }
-  }, [teamsWithPersona, currentSubstep, currentTeamIndex, onSubstepChange]);
+  // Always start with team-selection view to show all team cards
+  // Users can navigate to recommended-routines by clicking "View recommended" button
 
   // Handle preview routine
   const handlePreviewRoutine = useCallback((routineId: string) => {
@@ -587,21 +569,23 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-8 pt-4 space-y-6 pb-0">
+        <div className="px-4 sm:px-6 lg:px-8 pt-4 space-y-4 sm:space-y-6 pb-0">
           {/* Info Banner */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
-            <div className="p-2 rounded-lg bg-[#31C7AD]/10">
-              <AlertCircle className="h-5 w-5 text-[#31C7AD]" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium mb-1">Create teams and assign routines</p>
-              <p className="text-xs text-muted-foreground">
-                Teams have been created from your selected roles. Assign routines to each team. Routines are automatically suggested based on personas.
-              </p>
+          <div className="flex flex-col sm:flex-row items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className="p-2 rounded-lg bg-[#31C7AD]/10 shrink-0">
+                <AlertCircle className="h-5 w-5 text-[#31C7AD]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium mb-1">Create teams and assign routines</p>
+                <p className="text-xs text-muted-foreground">
+                  Teams have been created from your selected roles. Assign routines to each team. Routines are automatically suggested based on personas.
+                </p>
+              </div>
             </div>
             {teams.length > 0 && (
-              <div className="shrink-0">
-                <div className="px-2.5 py-1 rounded-full bg-[#2063F0]/10 border border-[#2063F0]/20">
+              <div className="shrink-0 w-full sm:w-auto">
+                <div className="px-2.5 py-1 rounded-full bg-[#2063F0]/10 border border-[#2063F0]/20 inline-block">
                   <span className="text-xs font-semibold text-[#2063F0]">
                     {teams.length} team{teams.length !== 1 ? 's' : ''}
                   </span>
@@ -611,7 +595,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
           </div>
 
           {/* Teams List */}
-          <div className="space-y-4">
+          <div className="space-y-4 sm:space-y-6">
             {teams.map((team) => {
               const teamRoutinesGrouped = getTeamRoutinesGroupedByObjectives(team.id);
               const teamRoutinesCount = Object.values(teamRoutinesGrouped).flat().length;
@@ -633,19 +617,19 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                   className="group rounded-xl border-2 border-border bg-background hover:shadow-lg transition-all overflow-hidden"
                 >
                   {/* Team Header */}
-                  <div className="p-5 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5 border-b border-border">
-                    <div className="flex items-start justify-between mb-3">
+                  <div className="p-4 sm:p-5 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5 border-b border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-lg">{team.name}</h3>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-base sm:text-lg break-words">{team.name}</h3>
                           {team.persona && (
-                            <Badge className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20">
+                            <Badge className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20 shrink-0">
                               {team.persona}
                             </Badge>
                           )}
                         </div>
                         {team.description && (
-                          <p className="text-sm text-muted-foreground">{team.description}</p>
+                          <p className="text-sm text-muted-foreground break-words">{team.description}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -676,15 +660,15 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                   </div>
 
                   {/* Team Content */}
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     {/* Routines Section */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-[#31C7AD]" />
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Zap className="h-4 w-4 text-[#31C7AD] shrink-0" />
                           <span className="text-sm font-medium">Routines ({teamRoutinesCount})</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {/* Two distinct buttons */}
                           {team.persona ? (
                             <>
@@ -692,19 +676,15 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 variant="secondary"
                                 size="sm"
                                 onClick={() => {
-                                  // Navigate to recommended routines substep for this team
-                                  const teamIndex = teamsWithPersona.findIndex(t => t.id === team.id);
-                                  if (teamIndex !== -1) {
-                                    setCurrentTeamIndex(teamIndex);
-                                    if (onSubstepChange) {
-                                      onSubstepChange('recommended-routines');
-                                    }
-                                  }
+                                  // Open recommended routines modal for this team
+                                  setOpenRecommendedRoutinesModal(team.id);
+                                  setTempSelectedRecommendedRoutineIds([]);
                                 }}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                View recommended
+                                <Sparkles className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">View recommended</span>
+                                <span className="sm:hidden">Recommended</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -714,10 +694,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                   handleAddAllSuggestedRoutines(team.id);
                                 }}
                                 disabled={hasAllSuggestedRoutines}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                Add suggested
+                                <Sparkles className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">Add suggested</span>
+                                <span className="sm:hidden">Add all</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -729,10 +710,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                   setTempSelectedRoutineIds([]);
                                   setOpenAddRoutinesModal(team.id);
                                 }}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
-                                <Plus className="h-3 w-3" />
-                                Add manually
+                                <Plus className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">Add manually</span>
+                                <span className="sm:hidden">Add</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -743,10 +725,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                     onSubstepChange('create-routine');
                                   }
                                 }}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
-                                <Plus className="h-3 w-3" />
-                                Create Routine
+                                <Plus className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">Create Routine</span>
+                                <span className="sm:hidden">Create</span>
                               </Button>
                             </>
                           ) : (
@@ -760,11 +743,12 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                   setTempSelectedRoutineIds([]);
                                   setOpenAddRoutinesModal(team.id);
                                 }}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                                 disabled={availableRoutinesForTeam.length === 0}
                               >
-                                <Plus className="h-3 w-3" />
-                                Add manually
+                                <Plus className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">Add manually</span>
+                                <span className="sm:hidden">Add</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -775,10 +759,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                     onSubstepChange('create-routine');
                                   }
                                 }}
-                                className="h-7 gap-1.5 text-xs"
+                                className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
-                                <Plus className="h-3 w-3" />
-                                Create Routine
+                                <Plus className="h-3 w-3 shrink-0" />
+                                <span className="hidden sm:inline">Create Routine</span>
+                                <span className="sm:hidden">Create</span>
                               </Button>
                             </>
                           )}
@@ -893,6 +878,63 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
               }
               setOpenAddRoutinesModal(null);
               setTempSelectedRoutineIds([]);
+            }}
+            alreadyAssignedRoutineIds={alreadyAssignedIds}
+          />
+        );
+      })()}
+
+      {/* Recommended Routines Modal */}
+      {openRecommendedRoutinesModal && (() => {
+        const team = teams.find(t => t.id === openRecommendedRoutinesModal);
+        if (!team || !team.persona) return null;
+        const alreadyAssignedIds = team.assignedRoutineIds || [];
+        return (
+          <RecommendedRoutinesModal
+            open={openRecommendedRoutinesModal !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setOpenRecommendedRoutinesModal(null);
+                setTempSelectedRecommendedRoutineIds([]);
+              }
+            }}
+            teamId={team.id}
+            teamName={team.name}
+            teamPersona={team.persona}
+            selectedRoutineIds={tempSelectedRecommendedRoutineIds}
+            onRoutineToggle={(routineId) => {
+              // Only allow toggle if not already assigned
+              if (!alreadyAssignedIds.includes(routineId)) {
+                setTempSelectedRecommendedRoutineIds(prev =>
+                  prev.includes(routineId)
+                    ? prev.filter(id => id !== routineId)
+                    : [...prev, routineId]
+                );
+              }
+            }}
+            onAddSelected={() => {
+              if (openRecommendedRoutinesModal && team) {
+                const updatedTeams = teams.map(t => {
+                  if (t.id === openRecommendedRoutinesModal) {
+                    const routineIds = t.assignedRoutineIds || [];
+                    const routinesToAdd = tempSelectedRecommendedRoutineIds.filter(id => !routineIds.includes(id));
+                    return {
+                      ...t,
+                      assignedRoutineIds: [...routineIds, ...routinesToAdd],
+                      updatedAt: new Date().toISOString(),
+                    };
+                  }
+                  return t;
+                });
+                onTeamsUpdate(updatedTeams);
+              }
+              setOpenRecommendedRoutinesModal(null);
+              setTempSelectedRecommendedRoutineIds([]);
+            }}
+            onAddAllSuggested={() => {
+              if (openRecommendedRoutinesModal && team) {
+                handleAddAllSuggestedRoutines(team.id);
+              }
             }}
             alreadyAssignedRoutineIds={alreadyAssignedIds}
           />

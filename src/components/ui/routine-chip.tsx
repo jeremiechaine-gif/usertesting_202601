@@ -173,7 +173,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
     >
       {/* Top section - Icons and badges row */}
       <div className="flex items-center justify-between gap-2 pt-3 pb-2 min-w-0">
-        {/* Left side - Icons (Suggested, Selected) */}
+        {/* Left side - Suggested Indicator, Pelico View Badge, Custom Badge */}
         <div className="flex flex-row gap-1.5 items-center shrink-0">
           {/* Suggested Indicator - Icon with tooltip */}
           {isSuggested && (
@@ -191,36 +191,36 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
             </TooltipProvider>
           )}
           
-          {/* Selected Indicator */}
-          {selected && (
-            <div
-              className="h-5 w-5 rounded-full bg-[#31C7AD] flex items-center justify-center cursor-pointer hover:bg-[#31C7AD]/80 transition-colors shrink-0"
-              onClick={handleToggleClick}
-              title="Click to remove"
+          {/* Pelico View Badge */}
+          {pelicoViewName && (
+            <Badge
+              variant="secondary"
+              className="text-xs h-5 px-2 bg-pink-500/10 text-pink-600 border-pink-500/30 shrink-0 whitespace-nowrap"
             >
-              <Check className="h-3 w-3 text-white" strokeWidth={3} />
-            </div>
+              {pelicoViewName}
+            </Badge>
+          )}
+          
+          {/* Custom Badge */}
+          {isCustom && (
+            <Badge
+              variant="secondary"
+              className="text-xs h-5 px-2 bg-blue-500/10 text-blue-600 border-blue-500/30 shrink-0 whitespace-nowrap"
+            >
+              Custom
+            </Badge>
           )}
         </div>
         
-        {/* Right side - Pelico View Badge */}
-        {pelicoViewName && (
-          <Badge
-            variant="secondary"
-            className="text-xs h-5 px-2 bg-pink-500/10 text-pink-600 border-pink-500/30 shrink-0 whitespace-nowrap"
+        {/* Right side - Selected Indicator */}
+        {selected && (
+          <div
+            className="h-5 w-5 rounded-full bg-[#31C7AD] flex items-center justify-center cursor-pointer hover:bg-[#31C7AD]/80 transition-colors shrink-0"
+            onClick={handleToggleClick}
+            title="Click to remove"
           >
-            {pelicoViewName}
-          </Badge>
-        )}
-        
-        {/* Custom Badge */}
-        {isCustom && (
-          <Badge
-            variant="secondary"
-            className="text-xs h-5 px-2 bg-blue-500/10 text-blue-600 border-blue-500/30 shrink-0 whitespace-nowrap"
-          >
-            Custom
-          </Badge>
+            <Check className="h-3 w-3 text-white" strokeWidth={3} />
+          </div>
         )}
       </div>
 
@@ -237,7 +237,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
       </div>
 
       {/* Description */}
-      <div className="min-w-0 overflow-hidden pb-3">
+      <div className="min-w-0 overflow-hidden flex-1">
         {description && (
           <p className="text-xs text-muted-foreground line-clamp-2 break-words">
             {description}
@@ -343,9 +343,12 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
         </div>
       )}
 
-      {/* Actions */}
+      {/* Actions - Always at the bottom */}
       {showActions && (
-        <div className={cn("mt-3 pt-3 border-t border-border flex gap-2 pb-4 min-w-0", showShare && isOwner && "mt-2 pt-2")}>
+        <div className={cn(
+          "mt-auto pt-3 border-t border-border flex gap-2 pb-4 min-w-0",
+          showShare && isOwner && "mt-2 pt-2"
+        )}>
           {/* Preview button */}
           {onPreview && (
             <Button
@@ -373,30 +376,6 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
               <Share2 className="h-4 w-4" />
             </Button>
           )}
-          {/* Remove button for library routines (owner only) */}
-          {onRemove && isOwner && (
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={handleRemoveClick}
-              className="h-8 w-8"
-              title="Remove"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-          {/* Delete button for custom routines (owner only) */}
-          {onDelete && isOwner && (
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={handleDeleteClick}
-              className="h-8 w-8"
-              title="Delete"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
           {/* Toggle button (for other use cases) */}
           {onToggle && !onRemove && !onDelete && (
             <>
@@ -422,6 +401,32 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
                 </Button>
               )}
             </>
+          )}
+          {/* Spacer to push Remove/Delete to the right */}
+          <div className="flex-1" />
+          {/* Remove button for library routines (owner only, visible when selected) */}
+          {onRemove && isOwner && selected && (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleRemoveClick}
+              className="h-8 w-8"
+              title="Remove"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          {/* Delete button for custom routines (owner only, visible when selected) */}
+          {onDelete && isOwner && selected && (
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={handleDeleteClick}
+              className="h-8 w-8"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           )}
         </div>
       )}
