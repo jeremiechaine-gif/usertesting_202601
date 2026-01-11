@@ -291,9 +291,40 @@ export const getTeamRoutines = (teamId: string, teamAssignedRoutineIds?: string[
 
 /**
  * Get count of routines assigned to a team
+ * Includes both user-created routines and library routines
+ * This matches the logic in TeamRoutinesPage.getTeamRoutinesGroupedByObjectives exactly
  */
 export const getTeamRoutinesCount = (teamId: string, teamAssignedRoutineIds?: string[]): number => {
-  return getTeamRoutines(teamId, teamAssignedRoutineIds).length;
+  // Get user-created routines (directly assigned + shared via routine.teamIds)
+  const userCreatedRoutines = getTeamRoutines(teamId, teamAssignedRoutineIds);
+  const userCreatedRoutineIds = new Set(userCreatedRoutines.map(r => r.id));
+  
+  // Count library routines that are in team.assignedRoutineIds
+  // We need to import ROUTINE_LIBRARY dynamically to avoid circular dependencies
+  // This matches the logic in TeamRoutinesPage.getTeamRoutinesGroupedByObjectives exactly
+  let libraryRoutinesCount = 0;
+  if (teamAssignedRoutineIds && teamAssignedRoutineIds.length > 0) {
+    try {
+      // Dynamic import to avoid circular dependency
+      const { ROUTINE_LIBRARY } = require('./onboarding/routineLibrary');
+      // Filter library routines: those in team.assignedRoutineIds that are NOT user-created
+      // This matches: team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
+      const libraryRoutineIds = teamAssignedRoutineIds.filter(id => {
+        // Only count library routines (not user-created ones)
+        return !userCreatedRoutineIds.has(id);
+      });
+      
+      // Count only those that exist in ROUTINE_LIBRARY
+      libraryRoutinesCount = libraryRoutineIds.filter(id => {
+        return ROUTINE_LIBRARY.some((r: { id: string }) => r.id === id);
+      }).length;
+    } catch (error) {
+      console.warn('Failed to load ROUTINE_LIBRARY for counting:', error);
+    }
+  }
+  
+  // Return total count matching what getTeamRoutinesGroupedByObjectives would return
+  return userCreatedRoutines.length + libraryRoutinesCount;
 };
 
 /**
