@@ -187,6 +187,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     } else if (step === 2) {
       // Step 2: Scopes are optional, can proceed
       setStep(3); // Go to Routines step
+      // Always start with team-selection view to show all team cards
+      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
     }
     saveState();
   };
@@ -491,16 +493,16 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Header - Hide on welcome substep and when creating a routine (substep) */}
         {!(step === 0 && currentSubstep.step0 === 'welcome') && !routineCreationStep && (
-          <div className="px-8 py-4 border-b border-border bg-background shrink-0">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 border-b border-border bg-background shrink-0">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl page-title">{stepLabels[step]}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl sm:text-2xl page-title break-words">{stepLabels[step]}</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
                   {step === 0 && 'Welcome and create teams from Role profiles or manually'}
                   {step === 1 && 'Add members to each team'}
                   {step === 2 && 'Assign scopes to team members'}
                   {step === 3 && currentSubstep.step3 === 'recommended-routines' 
-                    ? 'Configuration des routines par équipe'
+                    ? 'Configure routines per team'
                     : 'Assign routines to each team'}
                 </p>
               </div>
@@ -580,8 +582,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
 
         {/* Fixed Footer - Hide when creating a routine (substep) */}
         {!routineCreationStep && (
-          <div className="py-4 border-t border-border bg-background shrink-0 flex items-center">
-            <div className="px-8 flex items-center justify-between gap-3 w-full">
+          <div className="py-3 sm:py-4 border-t border-border bg-background shrink-0 flex items-center">
+            <div className="px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-2">
                 <Button 
                   variant="ghost" 
@@ -599,22 +601,23 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     }
                   }}
                   disabled={step === 0 && currentSubstep.step0 === 'welcome'}
-                  className="gap-2"
+                  className="gap-2 flex-1 sm:flex-initial"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back
+                  <span className="hidden sm:inline">Back</span>
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={handleClearAll}
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5 flex-1 sm:flex-initial"
                 >
-                  Clear All
+                  <span className="hidden sm:inline">Clear All</span>
+                  <span className="sm:hidden">Clear</span>
                 </Button>
               </div>
               <Button
-                variant="default"
+                variant={step === 3 && currentSubstep.step3 === 'routine-preview' ? 'secondary' : 'default'}
                 onClick={() => {
                   console.log('[SimpleOnboardingWizard] Button clicked, step:', step, 'substep:', currentSubstep.step3);
                   // Handle continue for step 3 substeps
@@ -643,8 +646,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     if (addRoutineFromPreviewRef.current) {
                       addRoutineFromPreviewRef.current();
                     } else {
-                      // Fallback: go back to recommended-routines
-                      setCurrentSubstep({ ...currentSubstep, step3: 'recommended-routines' });
+                      // Fallback: go back to team-selection
+                      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
                       saveState();
                     }
                   } else if (step === 3) {
@@ -659,7 +662,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     ? false
                     : !canProceed()
                 }
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto"
               >
                 {step === 3 && currentSubstep.step3 === 'recommended-routines' 
                   ? (() => {
@@ -667,16 +670,18 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                       const teamsWithPersona = teams.filter(t => t.persona);
                       // We can't easily access currentTeamIndex here, so use a generic message
                       // The actual logic is handled in RoutineSelectionStep
-                      return 'Continuer';
+                      return 'Next';
                     })()
                   : step === 3 && currentSubstep.step3 === 'routine-preview'
-                  ? 'Ajouter la routine'
+                  ? 'Remove routine'
                   : step === 3 
                   ? 'Complete Setup' 
-                  : 'Continue'}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                  : 'Next'}
+                {!(step === 3 && currentSubstep.step3 === 'routine-preview') && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
               </Button>
             </div>
           </div>

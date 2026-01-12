@@ -30,7 +30,7 @@ import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routi
 import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
-import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { Search, Bell, Settings, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 import { Badge } from '@/components/ui/badge';
 
@@ -248,10 +248,26 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <PlanDropdown
-                  selectedPlan={selectedPlan}
-                  onPlanSelect={setSelectedPlan}
-                />
+                {selectedRoutineId ? (() => {
+                  const routine = getRoutine(selectedRoutineId);
+                  return routine ? (
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                        {routine.name}
+                      </h1>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
+                      >
+                        {getPelicoViewDisplayName(routine.pelicoView)}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
+                  );
+                })() : (
+                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
+                )}
                 <ScopeDropdown
                   selectedScopeId={currentScopeId}
                   onScopeSelect={setCurrentScopeId}
@@ -261,33 +277,12 @@ export const LineOfBalancePage: React.FC<{ onNavigate?: (page: string) => void; 
 
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
+                  <Settings className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
-            </div>
-            
-            {/* Page Title */}
-            <div className="mb-3">
-              {selectedRoutineId ? (() => {
-                const routine = getRoutine(selectedRoutineId);
-                return routine ? (
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                      {routine.name}
-                    </h1>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
-                    >
-                      {getPelicoViewDisplayName(routine.pelicoView)}
-                    </Badge>
-                  </div>
-                ) : (
-                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
-                );
-              })() : (
-                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Line of Balance</h1>
-              )}
             </div>
           </div>
         </div>

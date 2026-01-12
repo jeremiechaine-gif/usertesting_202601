@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap, Upload } from 'lucide-react';
+import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap, Upload, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { getUsers, getCurrentUserId, type User } from '@/lib/users';
@@ -320,7 +320,10 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
           </div>
 
           {/* Teams Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className={cn(
+            "grid gap-6",
+            teams.length === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
+          )}>
             {teams.map((team, teamIndex) => {
               const teamMembers = getTeamMembers(team.id);
               const availableMembers = getFilteredMembers(team.id);
@@ -354,7 +357,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                         className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         title="Delete team"
                       >
-                        <X className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -580,7 +583,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                       {teamMembers.length > 0 && (
                         <div>
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
                             onClick={() => {
                               const updatedTeams = teams.map(t => {
@@ -591,7 +594,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               });
                               onTeamsUpdate(updatedTeams);
                             }}
-                            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            className="h-7 gap-1.5 text-xs"
                           >
                             <X className="h-3 w-3" />
                             Clear

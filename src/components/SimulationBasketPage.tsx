@@ -22,14 +22,14 @@ import { ColumnHeader } from './ColumnHeader';
 const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.SortingAndFiltersPopover })));
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
-import { ScopeDropdown } from './ScopeDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
+import { ParametersDrawer } from './ParametersDrawer';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
-import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { Search, Bell, Settings, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 import { Badge } from '@/components/ui/badge';
 
@@ -69,6 +69,8 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
   const [routineModalMode, setRoutineModalMode] = useState<'create' | 'update'>('create');
   const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null);
+  const [parametersDrawerOpen, setParametersDrawerOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
 
   const data = useMemo(() => mockData, []);
   
@@ -266,14 +268,17 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
                 })() : (
                   <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Simulation Basket</h1>
                 )}
-                <ScopeDropdown
-                  selectedScopeId={currentScopeId}
-                  onScopeSelect={setCurrentScopeId}
-                  onScopeFiltersChange={() => {}}
-                />
               </div>
 
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors"
+                  onClick={() => setParametersDrawerOpen(true)}
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
@@ -660,6 +665,18 @@ export const SimulationBasketPage: React.FC<{ onNavigate?: (page: string) => voi
           currentPelicoView={undefined}
         />
       )}
+
+      <ParametersDrawer
+        open={parametersDrawerOpen}
+        onOpenChange={setParametersDrawerOpen}
+        selectedScopeId={currentScopeId}
+        onScopeSelect={setCurrentScopeId}
+        onScopeFiltersChange={(filters) => {
+          setScopeFilters(filters);
+        }}
+        selectedPlan={selectedPlan}
+        onPlanSelect={setSelectedPlan}
+      />
     </div>
   );
 };

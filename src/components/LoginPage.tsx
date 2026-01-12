@@ -40,10 +40,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <div className="bg-background border border-border rounded-2xl shadow-xl p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
-              Connexion à Pelico
+              Login to Pelico
             </h1>
             <p className="text-sm text-muted-foreground">
-              Connectez-vous pour accéder à votre espace de travail
+              Log in to access your workspace
             </p>
           </div>
 
@@ -51,28 +51,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-sm font-medium">
-                  Prénom
+                  First Name
                 </Label>
                 <Input
                   id="firstName"
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Prénom"
+                  placeholder="First Name"
                   className="h-11"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-sm font-medium">
-                  Nom
+                  Last Name
                 </Label>
                 <Input
                   id="lastName"
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Nom"
+                  placeholder="Last Name"
                   className="h-11"
                 />
               </div>
@@ -87,37 +87,38 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre.email@pelico.com"
+                placeholder="your.email@pelico.com"
                 className="h-11"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Mot de passe
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="h-11"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-11"
+                />
+              </div>
 
             <Button
               type="submit"
-              className="w-full h-11 mt-6 bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white font-medium shadow-md transition-all"
+              variant="default"
+              className="w-full h-11 mt-6 font-medium"
             >
-              Valider
+              Log in
             </Button>
           </form>
         </div>
 
         {/* Footer note */}
         <p className="text-xs text-center text-muted-foreground mt-6">
-          Prototype - Aucune vérification d'authentification
+          Prototype - No authentication verification
         </p>
       </div>
     </div>

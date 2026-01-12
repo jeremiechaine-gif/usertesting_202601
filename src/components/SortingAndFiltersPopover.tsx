@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { getRoutine } from '@/lib/routines';
 import {
@@ -28,6 +29,9 @@ import {
   Search,
   ChevronDown,
   Zap,
+  Target,
+  Info,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ColumnDef, SortingState, ColumnFiltersState } from '@tanstack/react-table';
@@ -38,6 +42,8 @@ import { getSortableColumns, groupFilterDefinitions, filterSearchResults, getCol
 import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
 import { ScopeFiltersSection } from './sorting-filters/ScopeFiltersSection';
+import { getFilterDisplayValues, getColumnLabel } from './sorting-filters/utils';
+import type { ScopeFilter } from '@/lib/scopes';
 // @ts-expect-error - filterDefinitions is used in useState initializer which TypeScript doesn't detect
 import { filterDefinitions } from '@/lib/filterDefinitions';
 
@@ -572,112 +578,99 @@ const MainView: React.FC<MainViewProps> = ({
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-6 py-5 space-y-6 min-w-0">
-          <Accordion type="multiple" defaultValue={scopeFilters && scopeFilters.length > 0 ? ['active-routine', 'sorting', 'filters'] : ['sorting', 'filters']} className="w-full min-w-0">
-            {/* Scope Filters Section - Display first if scope filters exist, closed by default */}
-            {scopeFilters && scopeFilters.length > 0 && (
-              <>
-                <ScopeFiltersSection
-                  scopeFilters={scopeFilters}
-                  filterDefinitions={filterDefinitions}
-                  columns={columns}
-                  currentScopeName={currentScopeName}
-                />
-                <Separator className="my-6" />
-                
-                {/* Active Routine Section - Contains Sorting and Filters as nested sections */}
-                <AccordionItem value="active-routine" className="border-none">
-                  <AccordionTrigger className="py-2 hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5">
-                        <Zap className="h-3.5 w-3.5 text-[#2063F0]" />
-                      </div>
-                      <span className="text-sm font-medium">
-                        {selectedRoutine ? `ACTIVE ROUTINE: ${selectedRoutine.name}` : 'ACTIVE ROUTINE: None'}
-                      </span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-4 min-w-0">
-                    <div className="pl-4 border-l-2 border-[#2063F0]/20">
-                      {selectedRoutine && (
-                        <div className="mb-4">
-                          <div className="p-3 rounded-lg bg-gradient-to-r from-[#2063F0]/5 via-[#2063F0]/3 to-transparent border border-[#2063F0]/20">
-                            <div className="flex items-start gap-2">
-                              <Zap className="h-4 w-4 text-[#2063F0] shrink-0 mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground mb-1">Routine Details</p>
-                                <p className="text-sm font-semibold text-foreground mb-1">{selectedRoutine.name}</p>
-                                {selectedRoutine.description && (
-                                  <p className="text-xs text-muted-foreground">{selectedRoutine.description}</p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+          <Accordion type="multiple" defaultValue={['active-routine', 'sorting', 'filters']} className="w-full min-w-0">
+            {/* ACTIVE SCOPE Section - Always visible, collapsed by default */}
+            <AccordionItem value="active-scope" className="border-none">
+              <AccordionTrigger className="py-2 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded bg-gradient-to-br from-[#31C7AD]/10 to-[#2063F0]/10">
+                    <Target className="h-3.5 w-3.5 text-[#31C7AD]" />
+                  </div>
+                  <span className="text-sm font-medium">
+                    {currentScopeName ? `ACTIVE SCOPE: ${currentScopeName}` : 'ACTIVE SCOPE: None'}
+                  </span>
+                  {scopeFilters && scopeFilters.length > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1.5 text-xs text-muted-foreground ml-1 bg-muted/60 border-border/60">
+                      {scopeFilters.filter((f) => f.values && f.values.length > 0).length}
+                    </Badge>
+                  )}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="ml-1 p-0.5 rounded hover:bg-muted/50 cursor-help">
+                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>
-                      )}
-                      
-                      {/* Nested Accordion for Sorting and Filters */}
-                      <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full min-w-0">
-                        {/* Sorting Section - Nested under Routine */}
-                        <SortingSection
-                          draftSorting={draftSorting}
-                          sortableColumns={sortableColumns}
-                          dismissedTip={dismissedTip}
-                          onDismissTip={onDismissTip}
-                          onAddSort={onAddSort}
-                          onUpdateSort={onUpdateSort}
-                          onRemoveSort={onRemoveSort}
-                          onReorderSort={onReorderSort}
-                          sortsNotInRoutine={chipsNotInRoutine.sorts}
-                        />
-                        
-                        {/* User/Routine Filters Section - Nested under Routine */}
-                        <FiltersSection
-                          draftFilters={draftFilters}
-                          filterDefinitions={filterDefinitions}
-                          columns={columns}
-                          onAddFilter={onAddFilter}
-                          onUpdateFilterValues={onUpdateFilterValues}
-                          onRemoveFilter={onRemoveFilter}
-                          onOpenFilterModal={onOpenFilterModal}
-                          filtersNotInRoutine={chipsNotInRoutine.filters}
-                        />
-                      </Accordion>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <Separator className="my-6" />
-              </>
-            )}
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          <span className="font-medium text-foreground">Scope filters</span> are applied automatically to all views and cannot be modified here. To change them, edit your scope settings.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-3 pb-4 min-w-0">
+                {scopeFilters && scopeFilters.length > 0 ? (
+                  <ScopeFiltersContent
+                    scopeFilters={scopeFilters}
+                    filterDefinitions={filterDefinitions}
+                    columns={columns}
+                  />
+                ) : (
+                  <div className="text-xs text-muted-foreground pl-4">
+                    No scope filters active
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+            <Separator className="my-6" />
             
-            {/* Sorting Section - Only shown when no scope filters exist */}
-            {(!scopeFilters || scopeFilters.length === 0) && (
-              <>
-                <SortingSection
-                  draftSorting={draftSorting}
-                  sortableColumns={sortableColumns}
-                  dismissedTip={dismissedTip}
-                  onDismissTip={onDismissTip}
-                  onAddSort={onAddSort}
-                  onUpdateSort={onUpdateSort}
-                  onRemoveSort={onRemoveSort}
-                  onReorderSort={onReorderSort}
-                  sortsNotInRoutine={chipsNotInRoutine.sorts}
-                />
-                <Separator className="my-6" />
-                
-                {/* User/Routine Filters Section */}
-                <FiltersSection
-                  draftFilters={draftFilters}
-                  filterDefinitions={filterDefinitions}
-                  columns={columns}
-                  onAddFilter={onAddFilter}
-                  onUpdateFilterValues={onUpdateFilterValues}
-                  onRemoveFilter={onRemoveFilter}
-                  onOpenFilterModal={onOpenFilterModal}
-                  filtersNotInRoutine={chipsNotInRoutine.filters}
-                />
-              </>
-            )}
+            {/* ACTIVE ROUTINE Section - Always visible, expanded by default, contains Sorting and Filters */}
+            <AccordionItem value="active-routine" className="border-none">
+              <AccordionTrigger className="py-2 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded bg-gradient-to-br from-[#2063F0]/10 to-[#2063F0]/5">
+                    <Zap className="h-3.5 w-3.5 text-[#2063F0]" />
+                  </div>
+                  <span className="text-sm font-medium">
+                    {selectedRoutine ? `ACTIVE ROUTINE: ${selectedRoutine.name}` : 'ACTIVE ROUTINE: None'}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-3 pb-4 min-w-0">
+                <div className="pl-4 border-l-2 border-[#2063F0]/20">
+                  {/* Nested Accordion for Sorting and Filters */}
+                  <Accordion type="multiple" defaultValue={['sorting', 'filters']} className="w-full min-w-0">
+                    {/* Sorting Section - Nested under Routine */}
+                    <SortingSection
+                      draftSorting={draftSorting}
+                      sortableColumns={sortableColumns}
+                      dismissedTip={dismissedTip}
+                      onDismissTip={onDismissTip}
+                      onAddSort={onAddSort}
+                      onUpdateSort={onUpdateSort}
+                      onRemoveSort={onRemoveSort}
+                      onReorderSort={onReorderSort}
+                      sortsNotInRoutine={chipsNotInRoutine.sorts}
+                    />
+                    
+                    {/* User/Routine Filters Section - Nested under Routine */}
+                    <FiltersSection
+                      draftFilters={draftFilters}
+                      filterDefinitions={filterDefinitions}
+                      columns={columns}
+                      onAddFilter={onAddFilter}
+                      onUpdateFilterValues={onUpdateFilterValues}
+                      onRemoveFilter={onRemoveFilter}
+                      onOpenFilterModal={onOpenFilterModal}
+                      filtersNotInRoutine={chipsNotInRoutine.filters}
+                    />
+                  </Accordion>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <Separator className="my-6" />
           </Accordion>
         </div>
       </ScrollArea>
@@ -767,6 +760,89 @@ const MainView: React.FC<MainViewProps> = ({
           </Button>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Scope Filters Content Component (content only, without AccordionItem wrapper)
+interface ScopeFiltersContentProps {
+  scopeFilters: Array<{ id: string; filterId: string; values: (string | number)[] }>;
+  filterDefinitions: FilterDefinition[];
+  columns: ColumnDef<any>[];
+}
+
+const ScopeFiltersContent: React.FC<ScopeFiltersContentProps> = ({
+  scopeFilters,
+  filterDefinitions,
+  columns,
+}) => {
+  // Filter out filters with empty values
+  const validFilters = scopeFilters.filter((filter) => filter.values && filter.values.length > 0);
+  
+  const getFilterDef = (filterId: string): FilterDefinition | undefined => {
+    return filterDefinitions.find((f) => f.id === filterId);
+  };
+
+  if (validFilters.length === 0) {
+    return (
+      <div className="text-xs text-muted-foreground pl-4">
+        No scope filters active
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2.5 w-full min-w-0 overflow-hidden">
+      {validFilters.map((filter) => {
+        const filterDef = getFilterDef(filter.filterId);
+        const displayValues = getFilterDisplayValues(filter, filterDef);
+        const columnLabel = getColumnLabel(filter.filterId, columns);
+        
+        return (
+          <div
+            key={filter.id}
+            className="group relative rounded-lg border border-[#31C7AD]/20 bg-gradient-to-r from-[#31C7AD]/5 via-transparent to-transparent p-3.5 transition-all hover:border-[#31C7AD]/30 hover:shadow-sm"
+          >
+            <div className="flex items-start gap-3">
+              {/* Lock Icon */}
+              <div className="p-1.5 rounded-md bg-[#31C7AD]/10 shrink-0 mt-0.5">
+                <Lock className="h-3.5 w-3.5 text-[#31C7AD]" />
+              </div>
+              
+              {/* Filter Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-sm font-semibold text-foreground">
+                    {columnLabel}
+                  </span>
+                  <Badge 
+                    variant="secondary" 
+                    className="h-5 px-1.5 text-xs font-medium border-[#31C7AD]/40 text-[#31C7AD] bg-[#31C7AD]/5"
+                  >
+                    Scope
+                  </Badge>
+                </div>
+                
+                {/* Filter Values */}
+                {displayValues.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {displayValues.map((value, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-background border border-border/60 text-foreground"
+                      >
+                        {value}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No values selected</span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

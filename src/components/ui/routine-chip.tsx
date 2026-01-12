@@ -404,8 +404,9 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
           )}
           {/* Spacer to push Remove/Delete to the right */}
           <div className="flex-1" />
-          {/* Remove button for library routines (owner only, visible when selected) */}
-          {onRemove && isOwner && selected && (
+          {/* Remove button for library routines (owner only) */}
+          {/* Visible when: (selected OR showShare) AND isOwner AND onRemove is provided */}
+          {onRemove && isOwner && (selected || showShare) && (
             <Button
               variant="destructive"
               size="icon"
@@ -416,8 +417,9 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
               <X className="h-4 w-4" />
             </Button>
           )}
-          {/* Delete button for custom routines (owner only, visible when selected) */}
-          {onDelete && isOwner && selected && (
+          {/* Delete button for custom routines (owner only) */}
+          {/* Visible when: (selected OR showShare) AND isOwner AND onDelete is provided */}
+          {onDelete && isOwner && (selected || showShare) && (
             <Button
               variant="destructive"
               size="icon"

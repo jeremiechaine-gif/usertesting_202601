@@ -22,15 +22,14 @@ import { ColumnHeader } from './ColumnHeader';
 const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.SortingAndFiltersPopover })));
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
-import { ScopeDropdown } from './ScopeDropdown';
-import { PlanDropdown } from './PlanDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
+import { ParametersDrawer } from './ParametersDrawer';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
-import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { Search, Bell, Settings, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 import { Badge } from '@/components/ui/badge';
 
@@ -71,6 +70,7 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
   const [routineModalMode, setRoutineModalMode] = useState<'create' | 'update'>('create');
   const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null);
+  const [parametersDrawerOpen, setParametersDrawerOpen] = useState(false);
 
   const data = useMemo(() => mockData, []);
   
@@ -248,46 +248,41 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <PlanDropdown
-                  selectedPlan={selectedPlan}
-                  onPlanSelect={setSelectedPlan}
-                />
-                <ScopeDropdown
-                  selectedScopeId={currentScopeId}
-                  onScopeSelect={setCurrentScopeId}
-                  onScopeFiltersChange={() => {}}
-                />
+                {selectedRoutineId ? (() => {
+                  const routine = getRoutine(selectedRoutineId);
+                  return routine ? (
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                        {routine.name}
+                      </h1>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
+                      >
+                        {getPelicoViewDisplayName(routine.pelicoView)}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Planning</h1>
+                  );
+                })() : (
+                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Planning</h1>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors"
+                  onClick={() => setParametersDrawerOpen(true)}
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
-            </div>
-            
-            {/* Page Title */}
-            <div className="mb-3">
-              {selectedRoutineId ? (() => {
-                const routine = getRoutine(selectedRoutineId);
-                return routine ? (
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                      {routine.name}
-                    </h1>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
-                    >
-                      {getPelicoViewDisplayName(routine.pelicoView)}
-                    </Badge>
-                  </div>
-                ) : (
-                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Planning</h1>
-                );
-              })() : (
-                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Planning</h1>
-              )}
             </div>
           </div>
         </div>
@@ -662,6 +657,18 @@ export const PlanningPage: React.FC<{ onNavigate?: (page: string) => void; onLog
           currentPelicoView={routineModalMode === 'create' ? 'planning' : undefined}
         />
       )}
+
+      <ParametersDrawer
+        open={parametersDrawerOpen}
+        onOpenChange={setParametersDrawerOpen}
+        selectedScopeId={currentScopeId}
+        onScopeSelect={setCurrentScopeId}
+        onScopeFiltersChange={(filters) => {
+          setScopeFilters(filters);
+        }}
+        selectedPlan={selectedPlan}
+        onPlanSelect={setSelectedPlan}
+      />
     </div>
   );
 };

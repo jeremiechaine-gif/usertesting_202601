@@ -306,6 +306,16 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                 )}
                 <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Teams & members</h1>
               </div>
+              {isManager && (
+                <Button
+                  variant="default"
+                  onClick={handleCreateTeam}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Team
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -315,28 +325,10 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
           <div className="max-w-6xl">
             {/* Teams Section */}
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
-                    <Building2 className="h-5 w-5 text-[#31C7AD]" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Teams</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {sortedTeams.length} {sortedTeams.length === 1 ? 'team' : 'teams'} • {users.length} {users.length === 1 ? 'member' : 'members'}
-                    </p>
-                  </div>
-                </div>
-                {isManager && sortedTeams.length > 0 && (
-                  <Button
-                    variant="default"
-                    onClick={handleCreateTeam}
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Team
-                  </Button>
-                )}
+              <div className="mb-6">
+                <h2 className="text-xl font-bold">
+                  {sortedTeams.length} {sortedTeams.length === 1 ? 'team' : 'teams'} • {users.length} {users.length === 1 ? 'member' : 'members'}
+                </h2>
               </div>
 
               {sortedTeams.length === 0 ? (

@@ -293,38 +293,49 @@ export const getTeamRoutines = (teamId: string, teamAssignedRoutineIds?: string[
  * Get count of routines assigned to a team
  * Includes both user-created routines and library routines
  * This matches the logic in TeamRoutinesPage.getTeamRoutinesGroupedByObjectives exactly
+ * 
+ * IMPORTANT: This function must match getTeamRoutinesGroupedByObjectives logic exactly:
+ * 1. Get user-created routines via getTeamRoutines (includes directly assigned + shared via routine.teamIds)
+ * 2. Include library routines from teamAssignedRoutineIds that are NOT user-created
+ * 3. Return the total count
+ * 
+ * This function replicates the exact logic from getTeamRoutinesGroupedByObjectives to ensure consistency.
  */
 export const getTeamRoutinesCount = (teamId: string, teamAssignedRoutineIds?: string[]): number => {
-  // Get user-created routines (directly assigned + shared via routine.teamIds)
-  const userCreatedRoutines = getTeamRoutines(teamId, teamAssignedRoutineIds);
-  const userCreatedRoutineIds = new Set(userCreatedRoutines.map(r => r.id));
+  // Step 1: Get user-created routines (directly assigned + shared via routine.teamIds)
+  // This matches getTeamRoutinesGroupedByObjectives line 110: getTeamRoutines(team.id, team.assignedRoutineIds)
+  const teamRoutines = getTeamRoutines(teamId, teamAssignedRoutineIds);
+  const teamRoutineIds = new Set(teamRoutines.map(r => r.id));
   
-  // Count library routines that are in team.assignedRoutineIds
-  // We need to import ROUTINE_LIBRARY dynamically to avoid circular dependencies
-  // This matches the logic in TeamRoutinesPage.getTeamRoutinesGroupedByObjectives exactly
+  // Step 2: Count library routines from teamAssignedRoutineIds that are NOT user-created
+  // This matches getTeamRoutinesGroupedByObjectives lines 137-152:
+  // team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
   let libraryRoutinesCount = 0;
   if (teamAssignedRoutineIds && teamAssignedRoutineIds.length > 0) {
     try {
       // Dynamic import to avoid circular dependency
       const { ROUTINE_LIBRARY } = require('./onboarding/routineLibrary');
-      // Filter library routines: those in team.assignedRoutineIds that are NOT user-created
-      // This matches: team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
-      const libraryRoutineIds = teamAssignedRoutineIds.filter(id => {
-        // Only count library routines (not user-created ones)
-        return !userCreatedRoutineIds.has(id);
-      });
       
-      // Count only those that exist in ROUTINE_LIBRARY
-      libraryRoutinesCount = libraryRoutineIds.filter(id => {
-        return ROUTINE_LIBRARY.some((r: { id: string }) => r.id === id);
-      }).length;
+      // Filter library routines: those in teamAssignedRoutineIds that are NOT user-created
+      // This exactly matches: team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
+      const assignedLibraryRoutines = (teamAssignedRoutineIds || [])
+        .filter(id => !teamRoutineIds.has(id)) // Only library routines not already counted as user-created
+        .map(id => {
+          const libraryRoutine = ROUTINE_LIBRARY.find((r: { id: string }) => r.id === id);
+          return libraryRoutine ? id : null;
+        })
+        .filter((id): id is string => id !== null);
+      
+      libraryRoutinesCount = assignedLibraryRoutines.length;
     } catch (error) {
       console.warn('Failed to load ROUTINE_LIBRARY for counting:', error);
     }
   }
   
-  // Return total count matching what getTeamRoutinesGroupedByObjectives would return
-  return userCreatedRoutines.length + libraryRoutinesCount;
+  // Step 3: Return total count matching what getTeamRoutinesGroupedByObjectives would return
+  // This matches: [...routinesWithDetails, ...assignedLibraryRoutines].length
+  // Which equals: teamRoutines.length + assignedLibraryRoutines.length
+  return teamRoutines.length + libraryRoutinesCount;
 };
 
 /**

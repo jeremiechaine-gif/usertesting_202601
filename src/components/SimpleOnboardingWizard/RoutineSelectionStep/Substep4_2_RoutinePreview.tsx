@@ -4,20 +4,17 @@
  */
 
 import React, { useState, useMemo, useCallback, Suspense, lazy } from 'react';
-import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, getPaginationRowModel, flexRender, type ColumnFiltersState, type SortingState } from '@tanstack/react-table';
+import { type ColumnFiltersState, type SortingState } from '@tanstack/react-table';
 import { mockData } from '@/lib/mockData';
 import { columns } from '@/lib/columns';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Settings2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
 import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
-import { filterDefinitions } from '@/lib/filterDefinitions';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { RoutinePreviewTable } from '@/components/RoutinePreviewTable';
+import { useScope } from '@/contexts/ScopeContext';
 
-// Lazy load heavy modals
-const SortingAndFiltersPopover = lazy(() => import('@/components/SortingAndFiltersPopover').then(m => ({ default: m.SortingAndFiltersPopover })));
+// Lazy load ColumnFilterModal
 const ColumnFilterModal = lazy(() => import('@/components/ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 
 interface Substep4_2_RoutinePreviewProps {
@@ -113,167 +110,65 @@ export const Substep4_2_RoutinePreview: React.FC<Substep4_2_RoutinePreviewProps>
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
+  
+  // Scope context for scope filters
+  const { getScopeFilters } = useScope();
+  const scopeFilters = useMemo(() => getScopeFilters(), [getScopeFilters]);
 
   const data = useMemo(() => mockData, []);
-
-  // Table instance
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnFilters,
-    },
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    enableMultiSort: true,
-    initialState: {
-      pagination: {
-        pageSize: 10, // Show fewer rows in preview
-      },
-    },
-  });
 
   const handleOpenFilterModal = useCallback((columnId: string) => {
     setFilterModalColumnId(columnId);
     setFilterModalOpen(true);
   }, []);
 
-  const handleAddRoutine = useCallback(() => {
-    onAddRoutine(columnFilters, sorting);
-  }, [columnFilters, sorting, onAddRoutine]);
-
-  const filteredRowCount = table.getFilteredRowModel().rows.length;
-  const totalRowCount = table.getRowCount();
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="shrink-0 p-6 border-b border-border bg-background">
+      <div className="shrink-0 px-6 py-3 border-b border-border bg-background">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Retour
-              </Button>
-              <Separator orientation="vertical" className="h-6" />
-              <h3 className="text-lg font-semibold">Aperçu : {routine.label}</h3>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="gap-2 mb-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Button>
+            <h3 className="text-lg font-semibold mb-2">Preview: {routine.label}</h3>
             {routine.description && (
               <p className="text-sm text-muted-foreground">{routine.description}</p>
             )}
           </div>
         </div>
-
-        {/* Routine Metadata */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <Badge variant="secondary" className="text-xs">
-            {routine.frequency}
-          </Badge>
-          {routine.pelicoViews && routine.pelicoViews.length > 0 && (
-            <Badge variant="secondary" className="text-xs bg-pink-500/10 text-pink-600 border-pink-500/30">
-              {routine.pelicoViews[0]}
-            </Badge>
-          )}
-          {routine.objectives && routine.objectives.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {routine.objectives[0]}
-            </Badge>
-          )}
-        </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="shrink-0 p-4 border-b border-border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Suspense fallback={<div className="h-9 w-32 bg-muted animate-pulse rounded" />}>
-              <SortingAndFiltersPopover
-                sorting={sorting}
-                columnFilters={columnFilters}
-                onSortingChange={setSorting}
-                onColumnFiltersChange={setColumnFilters}
-                columns={columns}
-                filterDefinitions={filterDefinitions}
-                onOpenFilterModal={handleOpenFilterModal}
-              />
-            </Suspense>
-            <div className="text-xs text-muted-foreground">
-              {filteredRowCount} ligne{filteredRowCount > 1 ? 's' : ''} sur {totalRowCount}
-            </div>
-          </div>
-          <Button onClick={handleAddRoutine} className="gap-2">
-            <Check className="h-4 w-4" />
-            Ajouter cette routine
-          </Button>
-        </div>
+      {/* Table Preview */}
+      <RoutinePreviewTable
+        data={data}
+        columns={columns}
+        sorting={sorting}
+        columnFilters={columnFilters}
+        onSortingChange={setSorting}
+        onColumnFiltersChange={setColumnFilters}
+        viewName={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
+        scopeFilters={scopeFilters}
+        userFilters={columnFilters.filter(f => !scopeFilters.some(sf => sf.id === f.id))}
+        routineFilters={[]}
+        onOpenFilterModal={handleOpenFilterModal}
+        maxHeight="400px"
+        maxRows={10}
+        showRowCountMessage={true}
+      />
+
+      {/* Info Message */}
+      <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
+        <p className="text-xs text-muted-foreground">
+          <strong>Note :</strong> Ceci est un aperçu avec des données d'exemple. Vous pouvez modifier les filtres et le tri avant d'ajouter la routine à votre équipe.
+        </p>
       </div>
-
-      {/* Preview Table */}
-      <ScrollArea className="flex-1">
-        <div className="p-6">
-          <div className="rounded-lg border border-border overflow-hidden bg-background">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  {table.getHeaderGroups().map(headerGroup => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map(header => (
-                        <th
-                          key={header.id}
-                          className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider"
-                          style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {table.getRowModel().rows.map(row => (
-                    <tr
-                      key={row.id}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
-                      {row.getVisibleCells().map(cell => (
-                        <td
-                          key={cell.id}
-                          className="px-4 py-3 text-sm"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Info Message */}
-          <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
-            <p className="text-xs text-muted-foreground">
-              <strong>Note :</strong> Ceci est un aperçu avec des données d'exemple. Vous pouvez modifier les filtres et le tri avant d'ajouter la routine à votre équipe.
-            </p>
-          </div>
-        </div>
-      </ScrollArea>
 
       {/* Filter Modal */}
       {filterModalOpen && filterModalColumnId && (

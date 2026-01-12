@@ -15,11 +15,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { getRoutinesByCreator, getAccessibleRoutines, getRoutine, type Routine } from '@/lib/routines';
+import { getRoutinesByCreator, getAccessibleRoutines, getRoutine, deleteRoutine, type Routine } from '@/lib/routines';
 import { getFolders, updateFolder, deleteFolder, createFolder, type RoutineFolder } from '@/lib/folders';
 import { getCurrentUserId } from '@/lib/users';
 import { useRoutine } from '@/contexts/RoutineContext';
 import { useToast } from '@/components/ui/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface SidebarRoutinesProps {
   activeRoutineId?: string | null;
@@ -38,6 +46,7 @@ interface RoutineItemProps {
   onDragEnd?: () => void;
   dragOverTarget?: string | null;
   sectionType?: 'my' | 'shared';
+  onDelete?: (routineId: string) => void;
 }
 
 const RoutineItem: React.FC<RoutineItemProps> = ({ 
@@ -49,7 +58,8 @@ const RoutineItem: React.FC<RoutineItemProps> = ({
   onDragStart,
   onDragEnd,
   dragOverTarget,
-  sectionType
+  sectionType,
+  onDelete
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const isDragOver = dragOverTarget === routine.id;
@@ -113,7 +123,15 @@ const RoutineItem: React.FC<RoutineItemProps> = ({
             <>
               <DropdownMenuItem>Duplicate</DropdownMenuItem>
               <DropdownMenuItem>Share</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(routine.id);
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
             </>
           )}
         </DropdownMenuContent>
@@ -139,6 +157,7 @@ interface FolderItemProps {
   onFolderDragEnd?: () => void;
   onFolderRename?: (folderId: string, newName: string) => void;
   onFolderDelete?: (folderId: string) => void;
+  onRoutineDelete?: (routineId: string) => void;
 }
 
 const FolderItem: React.FC<FolderItemProps> = ({ 
@@ -157,7 +176,8 @@ const FolderItem: React.FC<FolderItemProps> = ({
   onFolderDragStart,
   onFolderDragEnd,
   onFolderRename,
-  onFolderDelete
+  onFolderDelete,
+  onRoutineDelete
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [dragOver, setDragOver] = useState(false);
@@ -339,6 +359,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
               onDragEnd={onRoutineDragEnd}
               dragOverTarget={dragOverTarget}
               sectionType={sectionType}
+              onDelete={onRoutineDelete}
             />
           ))}
         </div>
@@ -400,7 +421,7 @@ const saveCustomOrder = (sectionType: 'my' | 'shared', userId: string, order: st
 
 export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineId, onRoutineClick, activeItem, onNavigate }) => {
   const currentUserId = getCurrentUserId();
-  const { refreshKey: routineRefreshKey } = useRoutine();
+  const { refreshKey: routineRefreshKey, refreshRoutines } = useRoutine();
   const { showToast } = useToast();
   const [showAllMyRoutines, setShowAllMyRoutines] = useState(false);
   const [showAllSharedRoutines, setShowAllSharedRoutines] = useState(false);
@@ -412,6 +433,8 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
   const [draggingFolderId, setDraggingFolderId] = useState<string | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [draggingSectionType, setDraggingSectionType] = useState<'my' | 'shared' | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [routineToDelete, setRoutineToDelete] = useState<Routine | null>(null);
 
   // Auto-expand Pelico Views section when an active item belongs to it
   useEffect(() => {
@@ -752,6 +775,48 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
     }
   };
 
+  const handleDeleteClick = (routineId: string) => {
+    const routine = getRoutine(routineId);
+    if (routine) {
+      setRoutineToDelete(routine);
+      setDeleteConfirmOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (routineToDelete) {
+      const success = deleteRoutine(routineToDelete.id);
+      if (success) {
+        // Refresh routines context to update all components
+        refreshRoutines();
+        // Refresh folders in case the routine was in a folder
+        handleFolderUpdate();
+        
+        showToast({
+          description: `Routine "${routineToDelete.name}" deleted`,
+          variant: 'success',
+        });
+        
+        // Navigate away if the deleted routine was active
+        if (activeRoutineId === routineToDelete.id && onNavigate) {
+          onNavigate('home');
+        }
+      } else {
+        showToast({
+          description: `Failed to delete routine "${routineToDelete.name}"`,
+          variant: 'error',
+        });
+      }
+      setDeleteConfirmOpen(false);
+      setRoutineToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setRoutineToDelete(null);
+  };
+
   const hasMyRoutines = myRoutines.length > 0 || myFolders.length > 0;
   const hasSharedRoutines = sharedRoutines.length > 0 || sharedFolders.length > 0;
 
@@ -837,6 +902,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                       onFolderDragEnd={handleFolderDragEnd}
                       onFolderRename={handleFolderRename}
                       onFolderDelete={handleFolderDelete}
+                      onRoutineDelete={handleDeleteClick}
                     />
                   </div>
                 ))}
@@ -877,6 +943,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                       onDragEnd={handleRoutineDragEnd}
                       dragOverTarget={dragOverTarget}
                       sectionType="my"
+                      onDelete={handleDeleteClick}
                     />
                   </div>
                 ))}
@@ -982,6 +1049,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                       onFolderDragEnd={handleFolderDragEnd}
                       onFolderRename={handleFolderRename}
                       onFolderDelete={handleFolderDelete}
+                      onRoutineDelete={handleDeleteClick}
                     />
                   </div>
                 ))}
@@ -1023,6 +1091,7 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
                       onDragEnd={handleRoutineDragEnd}
                       dragOverTarget={dragOverTarget}
                       sectionType="shared"
+                      onDelete={handleDeleteClick}
                     />
                   </div>
                 ))}
@@ -1109,6 +1178,36 @@ export const SidebarRoutines: React.FC<SidebarRoutinesProps> = ({ activeRoutineI
           );
         })}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleDeleteCancel();
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Routine</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{routineToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={handleDeleteCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

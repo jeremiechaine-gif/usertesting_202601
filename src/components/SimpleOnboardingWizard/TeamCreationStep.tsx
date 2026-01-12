@@ -440,10 +440,10 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
               {/* Welcome Message - Subtle and integrated */}
               <div className="text-center mb-8">
                 <h2 className="text-2xl page-title bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
-                  Bienvenue, {getUserDisplayName()} !
+                  Welcome, {getUserDisplayName()}!
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Créez vos équipes pour commencer la configuration de votre espace de travail
+                  Create your teams to start configuring your workspace
                 </p>
               </div>
 

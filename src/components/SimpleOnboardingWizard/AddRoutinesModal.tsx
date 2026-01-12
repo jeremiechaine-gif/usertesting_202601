@@ -4,7 +4,7 @@
  * Based on the design from AllRoutinesSelectionStep
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,8 @@ import {
   Search, 
   X,
   Filter,
+  ArrowLeft,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -32,6 +34,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import type { ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import { RoutinePreviewTable } from '@/components/RoutinePreviewTable';
+import { mockData } from '@/lib/mockData';
+import { columns } from '@/lib/columns';
+import { useScope } from '@/contexts/ScopeContext';
+import { createRoutine } from '@/lib/routines';
+import { getCurrentUserId } from '@/lib/users';
+import { filterDefinitions } from '@/lib/filterDefinitions';
+
+// Lazy load ColumnFilterModal
+const ColumnFilterModal = lazy(() => import('@/components/ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 
 type SortOption = 'name' | 'frequency' | 'horizon';
 type PersonaFilter = string | 'all';
@@ -45,6 +58,94 @@ interface AddRoutinesModalProps {
   onRoutineToggle: (routineId: string) => void;
   onAddSelected: () => void;
   alreadyAssignedRoutineIds?: string[]; // Routines already assigned to the team
+  teamId?: string; // Team ID for creating custom routines
+}
+
+/**
+ * Convert RoutineLibraryEntry filters to ColumnFiltersState
+ */
+function convertRoutineFiltersToColumnFilters(routine: RoutineLibraryEntry): ColumnFiltersState {
+  const filters: ColumnFiltersState = [];
+  if (routine.filters) {
+    routine.filters.forEach(filter => {
+      const { columnId, condition, values, dateExpression } = filter;
+      
+      // Handle date expressions
+      if (dateExpression) {
+        const today = new Date();
+        const match = dateExpression.toLowerCase().match(/(\d+)\s*(week|month|day)s?\s*ago/);
+        if (match) {
+          const amount = parseInt(match[1], 10);
+          const unit = match[2];
+          const date = new Date(today);
+          
+          switch (unit) {
+            case 'day':
+              date.setDate(date.getDate() - amount);
+              break;
+            case 'week':
+              date.setDate(date.getDate() - (amount * 7));
+              break;
+            case 'month':
+              date.setMonth(date.getMonth() - amount);
+              break;
+          }
+          
+          filters.push({
+            id: columnId,
+            value: {
+              condition: condition || 'lessThan',
+              date: date.toISOString().split('T')[0],
+            },
+          });
+        }
+      } else if (condition && condition !== 'is') {
+        filters.push({
+          id: columnId,
+          value: {
+            condition,
+            values,
+          },
+        });
+      } else {
+        filters.push({
+          id: columnId,
+          value: values.length === 1 ? values[0] : values,
+        });
+      }
+    });
+  }
+  return filters;
+}
+
+/**
+ * Check if filters or sorting have been modified from the original routine
+ */
+function hasFiltersOrSortingChanged(
+  originalFilters: ColumnFiltersState,
+  originalSorting: SortingState,
+  currentFilters: ColumnFiltersState,
+  currentSorting: SortingState
+): boolean {
+  // Compare filters
+  if (originalFilters.length !== currentFilters.length) return true;
+  
+  const originalFiltersMap = new Map(originalFilters.map(f => [f.id, JSON.stringify(f.value)]));
+  const currentFiltersMap = new Map(currentFilters.map(f => [f.id, JSON.stringify(f.value)]));
+  
+  if (originalFiltersMap.size !== currentFiltersMap.size) return true;
+  
+  for (const [id, value] of originalFiltersMap) {
+    if (currentFiltersMap.get(id) !== value) return true;
+  }
+  
+  // Compare sorting
+  if (originalSorting.length !== currentSorting.length) return true;
+  
+  const originalSortingStr = JSON.stringify(originalSorting);
+  const currentSortingStr = JSON.stringify(currentSorting);
+  
+  return originalSortingStr !== currentSortingStr;
 }
 
 export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
@@ -54,12 +155,24 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
   onRoutineToggle,
   onAddSelected,
   alreadyAssignedRoutineIds = [],
+  teamId,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [personaFilter, setPersonaFilter] = useState<PersonaFilter>('all');
   const [objectiveFilter, setObjectiveFilter] = useState<ObjectiveFilter>('all');
   const [pelicoViewFilter, setPelicoViewFilter] = useState<PelicoViewFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('name');
+  
+  // Preview state
+  const [previewingRoutineId, setPreviewingRoutineId] = useState<string | null>(null);
+  const [previewFilters, setPreviewFilters] = useState<ColumnFiltersState>([]);
+  const [previewSorting, setPreviewSorting] = useState<SortingState>([]);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
+  
+  // Scope context for scope filters
+  const { getScopeFilters } = useScope();
+  const scopeFilters = useMemo(() => getScopeFilters(), [getScopeFilters]);
 
   // Get unique values for filters
   const uniquePersonas = useMemo(() => {
@@ -146,6 +259,182 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
       onRoutineToggle(routineId);
     });
   };
+
+  // Get the routine being previewed
+  const previewingRoutine = useMemo(() => {
+    if (!previewingRoutineId) return null;
+    return ROUTINE_LIBRARY.find(r => r.id === previewingRoutineId);
+  }, [previewingRoutineId]);
+
+  // Initialize preview filters and sorting when entering preview mode
+  const initialPreviewFilters = useMemo(() => {
+    if (!previewingRoutine) return [];
+    return convertRoutineFiltersToColumnFilters(previewingRoutine);
+  }, [previewingRoutine]);
+
+  const initialPreviewSorting: SortingState = useMemo(() => {
+    // Routines from library don't have sorting by default
+    return [];
+  }, []);
+
+  // Update preview filters/sorting when routine changes
+  useEffect(() => {
+    if (previewingRoutineId) {
+      setPreviewFilters(initialPreviewFilters);
+      setPreviewSorting(initialPreviewSorting);
+    }
+  }, [previewingRoutineId, initialPreviewFilters, initialPreviewSorting]);
+
+  const handleOpenFilterModal = useCallback((columnId: string) => {
+    setFilterModalColumnId(columnId);
+    setFilterModalOpen(true);
+  }, []);
+
+  const handlePreviewRoutine = useCallback((routineId: string) => {
+    setPreviewingRoutineId(routineId);
+  }, []);
+
+  const handleBackFromPreview = useCallback(() => {
+    setPreviewingRoutineId(null);
+    setPreviewFilters([]);
+    setPreviewSorting([]);
+  }, []);
+
+  const handleAddRoutineFromPreview = useCallback(() => {
+    if (!previewingRoutine) return;
+
+    const hasChanged = hasFiltersOrSortingChanged(
+      initialPreviewFilters,
+      initialPreviewSorting,
+      previewFilters,
+      previewSorting
+    );
+
+    if (hasChanged) {
+      // Create a custom routine with modified filters/sorting
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId) {
+        console.error('No current user found');
+        return;
+      }
+
+      // Map Pelico View string to PelicoViewPage
+      const pelicoViewMap: Record<string, string> = {
+        'Escalation Room': 'escalation',
+        'Purchase Order Book': 'supply',
+        'Service Order Book': 'so-book',
+        'Customer Order Book': 'customer',
+        'Work Order Book': 'wo-book',
+        'Missing Parts': 'missing-parts',
+        'Line of Balance': 'line-of-balance',
+        'Planning': 'planning',
+        'Events Explorer': 'events-explorer',
+      };
+
+      const pelicoView = previewingRoutine.pelicoViews && previewingRoutine.pelicoViews.length > 0
+        ? pelicoViewMap[previewingRoutine.pelicoViews[0]] || 'supply'
+        : 'supply';
+
+      const customRoutine = createRoutine({
+        name: `${previewingRoutine.label} (Custom)`,
+        description: previewingRoutine.description,
+        filters: previewFilters,
+        sorting: previewSorting,
+        pelicoView: pelicoView as any,
+        scopeMode: 'scope-aware',
+        createdBy: currentUserId,
+        teamIds: teamId ? [teamId] : [],
+        personas: previewingRoutine.personas,
+        objectives: previewingRoutine.objectives,
+      });
+
+      // Add the custom routine ID to selected routines
+      onRoutineToggle(customRoutine.id);
+    } else {
+      // Add the library routine as-is
+      onRoutineToggle(previewingRoutine.id);
+    }
+
+    // Return to selection view
+    handleBackFromPreview();
+  }, [previewingRoutine, initialPreviewFilters, initialPreviewSorting, previewFilters, previewSorting, teamId, onRoutineToggle, handleBackFromPreview]);
+
+  // Show preview if a routine is being previewed
+  if (previewingRoutine && previewingRoutineId) {
+    const hasChanged = hasFiltersOrSortingChanged(
+      initialPreviewFilters,
+      initialPreviewSorting,
+      previewFilters,
+      previewSorting
+    );
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-[95vw] w-full h-[95vh] flex flex-col p-0 overflow-hidden">
+          {/* Preview Header */}
+          <div className="shrink-0 px-6 py-3 border-b border-border bg-background pr-12">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBackFromPreview}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <div className="h-6 w-px bg-border" />
+                <div>
+                  <h3 className="text-lg font-semibold">Preview: {previewingRoutine.label}</h3>
+                  {previewingRoutine.description && (
+                    <p className="text-sm text-muted-foreground">{previewingRoutine.description}</p>
+                  )}
+                </div>
+              </div>
+              <Button onClick={handleAddRoutineFromPreview} className="gap-2">
+                <Check className="h-4 w-4" />
+                {hasChanged ? 'Add as Custom Routine' : 'Add Routine'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Preview Table */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <RoutinePreviewTable
+              data={mockData}
+              columns={columns}
+              sorting={previewSorting}
+              columnFilters={previewFilters}
+              onSortingChange={setPreviewSorting}
+              onColumnFiltersChange={setPreviewFilters}
+              viewName={previewingRoutine.pelicoViews && previewingRoutine.pelicoViews.length > 0 ? previewingRoutine.pelicoViews[0] : undefined}
+              scopeFilters={scopeFilters}
+              userFilters={previewFilters.filter(f => !scopeFilters.some(sf => sf.id === f.id))}
+              routineFilters={[]}
+              onOpenFilterModal={handleOpenFilterModal}
+              maxHeight="calc(95vh - 200px)"
+              maxRows={50}
+              showRowCountMessage={true}
+            />
+          </div>
+
+          {/* Filter Modal */}
+          {filterModalOpen && filterModalColumnId && (
+            <Suspense fallback={null}>
+              <ColumnFilterModal
+                open={filterModalOpen}
+                onOpenChange={setFilterModalOpen}
+                columnId={filterModalColumnId}
+                columnFilters={previewFilters}
+                onColumnFiltersChange={setPreviewFilters}
+              />
+            </Suspense>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -263,9 +552,7 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                       pelicoView={routine.pelicoViews && routine.pelicoViews.length > 0 ? routine.pelicoViews[0] : undefined}
                       selected={isSelected}
                       isSuggested={false}
-                      onPreview={() => {
-                        // Preview functionality can be added here if needed
-                      }}
+                      onPreview={() => handlePreviewRoutine(routine.id)}
                       onToggle={() => onRoutineToggle(routine.id)}
                       addLabel="Add"
                       removeLabel="Remove"

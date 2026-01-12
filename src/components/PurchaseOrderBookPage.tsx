@@ -23,15 +23,14 @@ import { ColumnHeader } from './ColumnHeader';
 const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover').then(m => ({ default: m.SortingAndFiltersPopover })));
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
-import { ScopeDropdown } from './ScopeDropdown';
-import { PlanDropdown } from './PlanDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
+import { ParametersDrawer } from './ParametersDrawer';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
-import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { Search, Bell, Settings, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 
 export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => void; onLogout?: () => void }> = ({ onNavigate, onLogout }) => {
@@ -81,6 +80,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
   const [routineModalOpen, setRoutineModalOpen] = useState(false);
   const [routineModalMode, setRoutineModalMode] = useState<'create' | 'update'>('create');
   const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null);
+  const [parametersDrawerOpen, setParametersDrawerOpen] = useState(false);
   
   // Track if scope is overridden by routine (for future UI indicator)
   const [_scopeOverridden, setScopeOverridden] = useState(false);
@@ -279,9 +279,7 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-[#31C7AD]/5 via-[#2063F0]/5 to-transparent pointer-events-none rounded-t-2xl" />
             <div className="relative px-6 py-5">
-            {/* Top Header Row */}
             <div className="flex items-center justify-between mb-5">
-              {/* Left Side */}
               <div className="flex items-center gap-4">
                 {sidebarCollapsed && (
                   <Button 
@@ -298,48 +296,41 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
                     <span className="text-sm font-medium">Menu</span>
                   </Button>
                 )}
-                <PlanDropdown
-                  selectedPlan={selectedPlan}
-                  onPlanSelect={setSelectedPlan}
-                />
-                <ScopeDropdown
-                  selectedScopeId={currentScopeId}
-                  onScopeSelect={setCurrentScopeId}
-                  onScopeFiltersChange={() => {}} // Handled by context
-                />
+                {selectedRoutineId ? (() => {
+                  const routine = getRoutine(selectedRoutineId);
+                  return routine ? (
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                        {routine.name}
+                      </h1>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
+                      >
+                        {getPelicoViewDisplayName(routine.pelicoView)}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+                  );
+                })() : (
+                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
+                )}
               </div>
 
-              {/* Right Side */}
               <div className="flex items-center gap-2">
-                {/* Notifications */}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors"
+                  onClick={() => setParametersDrawerOpen(true)}
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>
               </div>
-            </div>
-            
-            {/* Page Title */}
-            <div className="mb-3">
-              {selectedRoutineId ? (() => {
-                const routine = getRoutine(selectedRoutineId);
-                return routine ? (
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                      {routine.name}
-                    </h1>
-                    <Badge
-                      variant="secondary"
-                      className="text-xs h-6 px-2.5 rounded-full bg-pink-500/10 text-pink-600 border-pink-500/30 font-medium shrink-0"
-                    >
-                      {getPelicoViewDisplayName(routine.pelicoView)}
-                    </Badge>
-                  </div>
-                ) : (
-                  <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
-                );
-              })() : (
-                <h1 className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">Purchase Order Book</h1>
-              )}
             </div>
           </div>
         </div>
@@ -828,6 +819,18 @@ export const PurchaseOrderBookPage: React.FC<{ onNavigate?: (page: string) => vo
           currentPelicoView={routineModalMode === 'create' ? 'supply' : undefined}
         />
       )}
+
+      <ParametersDrawer
+        open={parametersDrawerOpen}
+        onOpenChange={setParametersDrawerOpen}
+        selectedScopeId={currentScopeId}
+        onScopeSelect={setCurrentScopeId}
+        onScopeFiltersChange={(filters) => {
+          setScopeFilters(filters);
+        }}
+        selectedPlan={selectedPlan}
+        onPlanSelect={setSelectedPlan}
+      />
     </div>
   );
 };

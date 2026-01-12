@@ -29,7 +29,7 @@ import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routi
 import { RoutineModal } from './RoutineModal';
 import { cn } from '@/lib/utils';
 import { getColumnIdFromFilterId } from './sorting-filters/utils';
-import { Search, Bell, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
+import { Search, Bell, Settings, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Menu } from 'lucide-react';
 import { ColumnsPopover } from './ColumnsPopover';
 import { Badge } from '@/components/ui/badge';
 
@@ -274,6 +274,9 @@ export const ProductionControlPage: React.FC<{ onNavigate?: (page: string) => vo
               </div>
 
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
+                  <Settings className="w-5 h-5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#31C7AD]/10 transition-colors">
                   <Bell className="w-5 h-5" />
                 </Button>

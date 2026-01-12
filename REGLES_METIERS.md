@@ -132,6 +132,20 @@
   - `getRoutinesByTeam(teamId)` : Routines partagées avec une équipe
   - `getAccessibleRoutines(userId, userTeamId)` : Routines accessibles (créées par l'utilisateur OU partagées avec son équipe)
 
+### 2.7 Suppression vs Retrait des Routines
+- **Routines génériques (de la bibliothèque)** :
+  - Les routines provenant de `ROUTINE_LIBRARY` sont des routines génériques
+  - **Action disponible** : **Remove** (retirer de la vue uniquement)
+  - Le retrait ne supprime pas la routine de la base de données, seulement de la vue actuelle
+  - La routine peut être rajoutée plus tard depuis la bibliothèque
+  - Seul le propriétaire peut retirer une routine générique
+- **Routines custom (créées par l'utilisateur)** :
+  - Les routines créées par l'utilisateur via `createRoutine()` sont des routines custom
+  - **Action disponible** : **Delete** (suppression permanente)
+  - La suppression est irréversible et supprime définitivement la routine de la base de données
+  - Seul le propriétaire (`createdBy === currentUserId`) peut supprimer une routine custom
+- **Détection** : Une routine est considérée comme générique si son ID ou son nom correspond à une entrée dans `ROUTINE_LIBRARY`
+
 ---
 
 ## 3. Gestion des Filtres

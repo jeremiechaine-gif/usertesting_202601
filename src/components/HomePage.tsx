@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { type Scope, getScopes } from '@/lib/scopes';
 import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
 import { resetScopesAndRoutines } from '@/lib/resetData';
+import { useRoutine } from '@/contexts/RoutineContext';
 import { 
   Bell, 
   Menu, 
@@ -70,6 +71,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [resetConfirmStep, setResetConfirmStep] = useState<'first' | 'second'>('first');
   const [simpleOnboardingProgress, setSimpleOnboardingProgress] = useState({ completed: 0, total: 4 });
+  
+  // Get routine refresh function to update sidebar after reset
+  const { refreshRoutines } = useRoutine();
   
   // Initialize tasks with default values
   const getInitialTasks = (): OnboardingTask[] => [
@@ -250,8 +254,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         resetScopesAndRoutines();
         setResetConfirmOpen(false);
         setResetConfirmStep('first');
-        // Reload the page
-        window.location.reload();
+        
+        // Reset local state instead of reloading the page
+        setOnboardingTasks(getInitialTasks());
+        setSimpleOnboardingProgress({ completed: 0, total: 4 });
+        
+        // Refresh routines in sidebar to reflect the reset
+        refreshRoutines();
+        
+        // Note: We stay on the home page - no page reload needed
       } catch (error) {
         console.error('Error resetting data:', error);
         alert('An error occurred while resetting data. Please try again.');
@@ -435,108 +446,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
             </div>
           </div>
 
-          {/* Button Components Showcase */}
-          <div className="mt-6">
-            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
-                  <Sparkles className="h-5 w-5 text-[#2063F0]" />
-                </div>
-                <h3 className="text-xl font-bold">Button Components</h3>
-              </div>
-              <div className="space-y-6">
-                {/* Variants Section */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Variants (Priority Order)</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="default" (1st Priority)</p>
-                      <Button variant="default">Default Button</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="accent" (2nd Priority)</p>
-                      <Button variant="accent">Accent Button</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="secondary" (3rd Priority)</p>
-                      <Button variant="secondary">Secondary Button</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="destructive"</p>
-                      <Button variant="destructive">Destructive Button</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="ghost"</p>
-                      <Button variant="ghost">Ghost Button</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">variant="link"</p>
-                      <Button variant="link">Link Button</Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sizes Section */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Sizes</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">size="default"</p>
-                      <Button variant="default" size="default">Default Size</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">size="sm"</p>
-                      <Button variant="default" size="sm">Small Size</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">size="lg"</p>
-                      <Button variant="default" size="lg">Large Size</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">size="icon"</p>
-                      <Button variant="default" size="icon">
-                        <Bell className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Variant + Size Combinations */}
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3">Common Combinations</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">default + sm</p>
-                      <Button variant="default" size="sm">Small Default</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">accent + sm</p>
-                      <Button variant="accent" size="sm">Small Accent</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">secondary + sm</p>
-                      <Button variant="secondary" size="sm">Small Secondary</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">ghost + sm</p>
-                      <Button variant="ghost" size="sm">Small Ghost</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">destructive + sm</p>
-                      <Button variant="destructive" size="sm">Small Destructive</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-mono text-muted-foreground">default + icon</p>
-                      <Button variant="default" size="icon">
-                        <Bell className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Simple Onboarding Section */}
           <div className="mt-6">
             <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
@@ -620,11 +529,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                   This will permanently delete <strong>all data created during onboarding</strong>:
                   <br /><br />
                   • All scopes<br />
-                  • All routines<br />
                   • All teams<br />
                   • All team and member assignments<br />
                   • All onboarding progress<br /><br />
-                  <strong>User accounts will be preserved, but their assignments will be cleared.</strong>
+                  <strong>Routines and user accounts will be preserved, but their assignments will be cleared.</strong>
                   <br /><br />
                   This action cannot be undone. Are you sure you want to continue?
                 </>
@@ -633,15 +541,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                   This is your final confirmation. Clicking "Confirm Reset" will:
                   <br /><br />
                   • Delete all scopes<br />
-                  • Delete all routines<br />
                   • Delete all routine folders<br />
                   • Delete all teams<br />
                   • Clear all member assignments<br />
+                  • Delete all routines<br />
                   • Clear all scope assignments<br />
                   • Reset all onboarding progress<br /><br />
                   <strong>User accounts will be preserved, but all their assignments will be cleared.</strong>
                   <br /><br />
-                  The page will reload automatically after reset.
+                  You will remain on this page after reset.
                 </>
               )}
             </DialogDescription>

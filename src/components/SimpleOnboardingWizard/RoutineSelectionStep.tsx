@@ -28,11 +28,13 @@ import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './AddRoutinesModal';
 import { RecommendedRoutinesModal } from './RecommendedRoutinesModal';
 import { CreateRoutineFullPageWizard } from '../CreateRoutineFullPageWizard';
-import { getRoutines } from '@/lib/routines';
+import { getRoutines, getRoutine, type PelicoViewPage } from '@/lib/routines';
 import { Substep4_1_RecommendedRoutines } from './RoutineSelectionStep/Substep4_1_RecommendedRoutines';
 import { Substep4_2_RoutinePreview } from './RoutineSelectionStep/Substep4_2_RoutinePreview';
 import { RoutineChip } from '../ui/routine-chip';
+import { RoutinePreviewModal, mapPelicoViewToPage } from './RoutinePreviewModal';
 import type { ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import { getCurrentScopeId } from '@/lib/scopes';
 
 export type RoutineSelectionSubstep = 
   | 'team-selection'           // Sélection finale (vue actuelle)
@@ -91,6 +93,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
   const [tempSelectedRoutineIds, setTempSelectedRoutineIds] = useState<string[]>([]);
   const [tempSelectedRecommendedRoutineIds, setTempSelectedRecommendedRoutineIds] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh when routines are created
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewingRoutine, setPreviewingRoutine] = useState<{ id: string; name: string; pelicoViewPage: PelicoViewPage } | null>(null);
   
   // State for new substeps flow
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
@@ -442,13 +446,43 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
     }
   }, [currentTeamIndex, teams, onSubstepChange]);
 
-  // Handle back from preview
+  // Handle back from preview - return to team-selection (RoutineSelectionStep)
   const handleBackFromPreview = useCallback(() => {
     setPreviewingRoutineId(null);
     if (onSubstepChange) {
-      onSubstepChange('recommended-routines');
+      onSubstepChange('team-selection');
     }
   }, [onSubstepChange]);
+
+  // Handle remove routine from preview
+  const handleRemoveRoutineFromPreview = useCallback(() => {
+    if (!previewingRoutineId || !currentTeamForSubstep) return;
+    
+    // Remove routine from team
+    const updatedTeams = teams.map(t => {
+      if (t.id === currentTeamForSubstep.id) {
+        const routineIds = t.assignedRoutineIds || [];
+        return {
+          ...t,
+          assignedRoutineIds: routineIds.filter(id => id !== previewingRoutineId),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return t;
+    });
+    onTeamsUpdate(updatedTeams);
+
+    // Return to team-selection (RoutineSelectionStep)
+    setPreviewingRoutineId(null);
+    if (onSubstepChange) {
+      onSubstepChange('team-selection');
+    }
+  }, [previewingRoutineId, currentTeamForSubstep, teams, onTeamsUpdate, onSubstepChange]);
+
+  // Wrapper for footer button to remove routine
+  const handleRemoveRoutineFromPreviewWrapper = useCallback(() => {
+    handleRemoveRoutineFromPreview();
+  }, [handleRemoveRoutineFromPreview]);
 
   // Expose handlers to parent via refs
   useEffect(() => {
@@ -460,9 +494,10 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
 
   useEffect(() => {
     if (onAddRoutineFromPreviewRef) {
-      onAddRoutineFromPreviewRef.current = handleAddRoutineFromPreviewWrapper;
+      // Use remove handler instead of add handler when in preview mode
+      onAddRoutineFromPreviewRef.current = handleRemoveRoutineFromPreviewWrapper;
     }
-  }, [handleAddRoutineFromPreviewWrapper, onAddRoutineFromPreviewRef]);
+  }, [handleRemoveRoutineFromPreviewWrapper, onAddRoutineFromPreviewRef]);
 
   useEffect(() => {
     if (onBackFromPreviewRef) {
@@ -833,7 +868,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                         selected={true}
                                         isSuggested={isSuggested}
                                         onPreview={() => {
-                                          // Preview functionality can be added here if needed
+                                          handlePreviewRoutine(routine.id);
                                         }}
                                         onToggle={() => handleRoutineToggle(team.id, routine.id)}
                                         addLabel="View"
@@ -912,6 +947,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
               setTempSelectedRoutineIds([]);
             }}
             alreadyAssignedRoutineIds={alreadyAssignedIds}
+            teamId={openAddRoutinesModal || undefined}
           />
         );
       })()}
@@ -973,6 +1009,20 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
         );
       })()}
 
+      {/* Routine Preview Modal */}
+      {previewingRoutine && (
+        <RoutinePreviewModal
+          open={previewModalOpen}
+          onClose={() => {
+            setPreviewModalOpen(false);
+            setPreviewingRoutine(null);
+          }}
+          routineId={previewingRoutine.id}
+          routineName={previewingRoutine.name}
+          pelicoViewPage={previewingRoutine.pelicoViewPage}
+          scopeId={getCurrentScopeId()}
+        />
+      )}
     </div>
   );
 };

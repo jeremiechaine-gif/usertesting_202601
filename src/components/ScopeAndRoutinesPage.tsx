@@ -102,6 +102,10 @@ export const ScopeAndRoutinesPage: React.FC<{
   const [teams, setTeams] = useState<Team[]>([]);
   const [routineSharePopoverOpen, setRoutineSharePopoverOpen] = useState<string | null>(null);
   const [removedRoutineIds, setRemovedRoutineIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [routineToDelete, setRoutineToDelete] = useState<Routine | null>(null);
+  const [routineToRemove, setRoutineToRemove] = useState<Routine | null>(null);
 
   useEffect(() => {
     loadScopes();
@@ -293,16 +297,48 @@ export const ScopeAndRoutinesPage: React.FC<{
   };
 
   const handleDeleteRoutine = (routineId: string) => {
-    if (confirm('Are you sure you want to delete this routine?')) {
-      deleteRoutine(routineId);
-      refreshRoutines(); // Notify all components that routines have changed
-      loadRoutines();
+    const routine = routines.find(r => r.id === routineId);
+    if (routine) {
+      setRoutineToDelete(routine);
+      setDeleteConfirmOpen(true);
     }
   };
 
+  const handleDeleteConfirm = () => {
+    if (routineToDelete) {
+      deleteRoutine(routineToDelete.id);
+      refreshRoutines(); // Notify all components that routines have changed
+      loadRoutines();
+      setDeleteConfirmOpen(false);
+      setRoutineToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmOpen(false);
+    setRoutineToDelete(null);
+  };
+
   const handleRemoveRoutine = (routineId: string) => {
-    // Remove from current view only (don't delete from database)
-    setRemovedRoutineIds(prev => new Set(prev).add(routineId));
+    const routine = routines.find(r => r.id === routineId);
+    if (routine) {
+      setRoutineToRemove(routine);
+      setRemoveConfirmOpen(true);
+    }
+  };
+
+  const handleRemoveConfirm = () => {
+    if (routineToRemove) {
+      // Remove from current view only (don't delete from database)
+      setRemovedRoutineIds(prev => new Set(prev).add(routineToRemove.id));
+      setRemoveConfirmOpen(false);
+      setRoutineToRemove(null);
+    }
+  };
+
+  const handleRemoveCancel = () => {
+    setRemoveConfirmOpen(false);
+    setRoutineToRemove(null);
   };
 
   const handleShareRoutine = (routine: Routine) => {
@@ -939,6 +975,66 @@ export const ScopeAndRoutinesPage: React.FC<{
           onRoutineCreated={handleRoutineCreated}
         />
       )}
+
+      {/* Delete Routine Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleDeleteCancel();
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Routine</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{routineToDelete?.name}"? This action cannot be undone and will permanently remove the routine.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={handleDeleteCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Routine Confirmation Dialog */}
+      <Dialog open={removeConfirmOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleRemoveCancel();
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Routine</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove "{routineToRemove?.name}" from this view? The routine will remain in the library and can be added again later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={handleRemoveCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRemoveConfirm}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
