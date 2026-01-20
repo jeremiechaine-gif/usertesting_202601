@@ -628,9 +628,9 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                 <AlertCircle className="h-5 w-5 text-[#31C7AD]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium mb-1">Create teams and assign routines</p>
+                <p className="text-sm font-medium mb-1">Créez des équipes et assignez des routines</p>
                 <p className="text-xs text-muted-foreground">
-                  Teams have been created from your selected roles. Assign routines to each team. Routines are automatically suggested based on personas.
+                  Les équipes ont été créées à partir de vos rôles sélectionnés. Assignez des routines à chaque équipe. Les routines sont automatiquement suggérées en fonction des personas.
                 </p>
               </div>
             </div>
@@ -638,7 +638,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
               <div className="shrink-0 w-full sm:w-auto">
                 <div className="px-2.5 py-1 rounded-full bg-[#2063F0]/10 border border-[#2063F0]/20 inline-block">
                   <span className="text-xs font-semibold text-[#2063F0]">
-                    {teams.length} team{teams.length !== 1 ? 's' : ''}
+                    {teams.length} équipe{teams.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
@@ -691,11 +691,11 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                             size="sm"
                             onClick={() => handleClearRoutines(team.id)}
                             className="h-8 gap-1.5 text-xs whitespace-nowrap"
-                            title="Clear all routines"
+                            title="Effacer toutes les routines"
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Clear routines</span>
-                            <span className="sm:hidden">Clear</span>
+                            <span className="hidden sm:inline">Effacer les routines</span>
+                            <span className="sm:hidden">Effacer</span>
                           </Button>
                         )}
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -706,7 +706,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                               // TODO: Implement edit team
                             }}
                             className="h-8 w-8 p-0"
-                            title="Edit team"
+                            title="Modifier l'équipe"
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>
@@ -717,7 +717,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                               onTeamsUpdate(teams.filter(t => t.id !== team.id));
                             }}
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            title="Delete team"
+                            title="Supprimer l'équipe"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -750,8 +750,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
                                 <Sparkles className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">View recommended</span>
-                                <span className="sm:hidden">Recommended</span>
+                                <span className="hidden sm:inline">Voir les recommandées</span>
+                                <span className="sm:hidden">Recommandées</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -764,8 +764,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
                                 <Sparkles className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">Add suggested</span>
-                                <span className="sm:hidden">Add all</span>
+                                <span className="hidden sm:inline">Ajouter les suggérées</span>
+                                <span className="sm:hidden">Ajouter tout</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -780,8 +780,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
                                 <Plus className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">Add manually</span>
-                                <span className="sm:hidden">Add</span>
+                                <span className="hidden sm:inline">Ajouter manuellement</span>
+                                <span className="sm:hidden">Ajouter</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -795,8 +795,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
                                 <Plus className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">Create Routine</span>
-                                <span className="sm:hidden">Create</span>
+                                <span className="hidden sm:inline">Créer une routine</span>
+                                <span className="sm:hidden">Créer</span>
                               </Button>
                             </>
                           ) : (
@@ -814,8 +814,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 disabled={availableRoutinesForTeam.length === 0}
                               >
                                 <Plus className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">Add manually</span>
-                                <span className="sm:hidden">Add</span>
+                                <span className="hidden sm:inline">Ajouter manuellement</span>
+                                <span className="sm:hidden">Ajouter</span>
                               </Button>
                               <Button
                                 variant="secondary"
@@ -829,8 +829,8 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                                 className="h-7 gap-1.5 text-xs whitespace-nowrap"
                               >
                                 <Plus className="h-3 w-3 shrink-0" />
-                                <span className="hidden sm:inline">Create Routine</span>
-                                <span className="sm:hidden">Create</span>
+                                <span className="hidden sm:inline">Créer une routine</span>
+                                <span className="sm:hidden">Créer</span>
                               </Button>
                             </>
                           )}
@@ -840,7 +840,7 @@ export const RoutineSelectionStep: React.FC<RoutineSelectionStepProps> = ({
                       {/* Assigned Routines Display */}
                       {teamRoutinesCount === 0 ? (
                         <div className="flex items-center justify-center py-4 px-4 rounded-lg border-2 border-dashed border-border bg-muted/30">
-                          <p className="text-xs text-muted-foreground">No routines assigned</p>
+                          <p className="text-xs text-muted-foreground">Aucune routine assignée</p>
                         </div>
                       ) : (
                         <div className="space-y-4">

@@ -191,9 +191,9 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
 
   // Step labels matching SimpleOnboardingWizard
   const stepLabels: Record<number, string> = {
-    0: 'Welcome & Create Teams',
-    1: 'Add Members',
-    2: 'Create Scopes',
+    0: 'Bienvenue & Création d\'équipes',
+    1: 'Ajouter des membres',
+    2: 'Créer des périmètres',
     3: 'Routines',
   };
 
@@ -206,7 +206,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
-                Set-up your workspace
+                Configurer votre espace de travail
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Complete these steps to configure your workspace
+            Complétez ces étapes pour configurer votre espace de travail
           </p>
         </div>
 
@@ -275,7 +275,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                           !isActive && !isCompleted && 'text-foreground'
                         )}
                       >
-                        Step {stepIndex + 1}
+                        Étape {stepIndex + 1}
                       </div>
                       <div
                         className={cn(
@@ -287,7 +287,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                       </div>
                       {isCompleted && (
                         <div className="mt-1 text-xs text-[#31C7AD] font-medium">
-                          Completed
+                          Terminé
                         </div>
                       )}
                     </div>
@@ -297,12 +297,12 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                   {showRoutineSubsteps && (
                     <div className="ml-6 space-y-2 border-l-2 border-[#2063F0]/20 pl-4 mt-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                        Create routine
+                        Créer une routine
                       </div>
                       {(['choose-view', 'configure'] as const).map((substep, substepIndex) => {
                         const substepLabels = {
-                          'choose-view': 'Choose view',
-                          'configure': 'Configure',
+                          'choose-view': 'Choisir la vue',
+                          'configure': 'Configurer',
                         };
                         const isSubstepActive = currentStep === substep;
                         const isSubstepCompleted = ['choose-view', 'configure'].indexOf(currentStep) > substepIndex;
@@ -351,7 +351,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
         <div className="py-4 shrink-0">
           <div className="px-4 text-xs text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
-              <span>Progress</span>
+              <span>Progression</span>
               <span className="font-semibold text-foreground">
                 4 / 4
               </span>
@@ -375,10 +375,10 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-sm text-muted-foreground mb-1">
-                  Routines / Create Routine / {currentStep === 'choose-view' ? 'Choose view' : 'Configure'}
+                  Routines / Créer une routine / {currentStep === 'choose-view' ? 'Choisir la vue' : 'Configurer'}
                 </div>
                 <h1 className="text-xl sm:text-2xl page-title">
-                  Create Routine
+                  Créer une routine
                 </h1>
               </div>
               <Button
@@ -457,6 +457,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                   onShowCustomObjectiveInputChange={setShowCustomObjectiveInput}
                 />
               )}
+
             </div>
           </div>
         </div>
@@ -475,14 +476,14 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                 className="w-full sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
+                Précédent
               </Button>
             )}
           </div>
           
           <div className="flex items-center gap-2 order-1 sm:order-2 justify-end sm:justify-start">
             <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto">
-              Cancel
+              Annuler
             </Button>
             
             {currentStep === 'configure' && (
@@ -492,7 +493,7 @@ export const CreateRoutineFullPageWizard: React.FC<CreateRoutineFullPageWizardPr
                 disabled={!canProceedFromConfigure}
                 className="w-full sm:w-auto"
               >
-                Create
+                Créer la routine
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             )}

@@ -32,6 +32,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   onUserCreated,
   defaultTeamId,
 }) => {
+  const [firstName, setFirstName] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (open) {
+      setFirstName('');
       setName('');
       setEmail('');
       setError(null);
@@ -53,41 +55,48 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       return;
     }
 
-    if (name.trim() && email.trim()) {
+    if (firstName.trim() && name.trim() && email.trim()) {
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
-        setError('Please enter a valid email address');
+        setError('Veuillez saisir une adresse email valide');
         return;
       }
       setError(null);
     } else {
       setError(null);
     }
-  }, [name, email, open]);
+  }, [firstName, name, email, open]);
 
   const handleSubmit = async () => {
+    if (!firstName.trim()) {
+      setError('Le prénom est requis');
+      return;
+    }
+
     if (!name.trim()) {
-      setError('Name is required');
+      setError('Le nom est requis');
       return;
     }
 
     if (!email.trim()) {
-      setError('Email is required');
+      setError('L\'email est requis');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setError('Please enter a valid email address');
+      setError('Veuillez saisir une adresse email valide');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Combine firstName and name for the full name
+      const fullName = `${firstName.trim()} ${name.trim()}`.trim();
       const newUser = createUser({
-        name: name.trim(),
+        name: fullName,
         email: email.trim(),
         role: 'user',
         teamId: defaultTeamId || null,
@@ -95,7 +104,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       onUserCreated(newUser.id);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error creating user');
+      setError(err instanceof Error ? err.message : 'Erreur lors de la création de l\'utilisateur');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,13 +113,13 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      if (!error && name.trim() && email.trim()) {
+      if (!error && firstName.trim() && name.trim() && email.trim()) {
         handleSubmit();
       }
     }
   };
 
-  const canSubmit = name.trim().length > 0 && email.trim().length > 0 && !error && !isSubmitting;
+  const canSubmit = firstName.trim().length > 0 && name.trim().length > 0 && email.trim().length > 0 && !error && !isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -118,27 +127,42 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-[#2063F0]" />
-            Create new user
+            Créer un nouvel utilisateur
           </DialogTitle>
           <DialogDescription>
-            Add a new user to the system. They will be available to assign to teams.
+            Ajoutez un nouvel utilisateur au système. Il sera disponible pour être assigné aux équipes.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* First Name (Required) */}
+          <div className="space-y-2">
+            <Label htmlFor="user-firstname" className="text-sm font-semibold">
+              Prénom <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="user-firstname"
+              placeholder="Ex: Jean"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={cn(error && 'border-destructive')}
+              autoFocus
+            />
+          </div>
+
           {/* Name (Required) */}
           <div className="space-y-2">
             <Label htmlFor="user-name" className="text-sm font-semibold">
-              Name <span className="text-destructive">*</span>
+              Nom <span className="text-destructive">*</span>
             </Label>
             <Input
               id="user-name"
-              placeholder="Ex: John Doe"
+              placeholder="Ex: Dupont"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
               className={cn(error && 'border-destructive')}
-              autoFocus
             />
           </div>
 
@@ -150,7 +174,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             <Input
               id="user-email"
               type="email"
-              placeholder="Ex: john.doe@example.com"
+              placeholder="Ex: jean.dupont@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -171,14 +195,14 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancel
+            Annuler
           </Button>
           <Button
+            variant="default"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white"
           >
-            {isSubmitting ? 'Creating...' : 'Create user'}
+            {isSubmitting ? 'Création...' : 'Créer l\'utilisateur'}
           </Button>
         </DialogFooter>
       </DialogContent>

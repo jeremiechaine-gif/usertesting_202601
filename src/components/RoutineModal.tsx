@@ -217,7 +217,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
   const filteredPersonas = availablePersonas.filter(persona => {
     if (!personaSearchQuery.trim()) return true;
     const roleInfo = getRoleProfileInfo(persona);
-    const displayName = roleInfo ? roleInfo.english : persona;
+    const displayName = roleInfo ? roleInfo.french : persona;
     const searchLower = personaSearchQuery.toLowerCase();
     return persona.toLowerCase().includes(searchLower) || 
            displayName.toLowerCase().includes(searchLower) ||
@@ -235,14 +235,14 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
 
     if (!validation.isValid) {
       // Show first error (could be enhanced to show all errors)
-      alert(validation.errors[0] || 'Invalid routine data');
+      alert(validation.errors[0] || 'Données de routine invalides');
       return;
     }
 
     // Validate Pelico View is selected when creating a new routine
     // If currentPelicoView is provided, it's already set, so no need to check
     if (!routine && !selectedPelicoView && !currentPelicoView) {
-      alert('Please select a Pelico View');
+      alert('Veuillez sélectionner une vue Pelico');
       return;
     }
     
@@ -311,13 +311,13 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                {routine ? 'Edit Routine' : 'Create New Routine'}
+                {routine ? 'Modifier la routine' : 'Créer une nouvelle routine'}
               </DialogTitle>
             </div>
             <DialogDescription className="text-sm text-muted-foreground">
               {routine 
-                ? 'Update routine configuration' 
-                : 'Save current view configuration as a reusable routine'}
+                ? 'Mettre à jour la configuration de la routine' 
+                : 'Enregistrer la configuration de la vue actuelle comme routine réutilisable'}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -327,13 +327,13 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
             {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="routine-name" className="text-sm font-semibold">
-                Name <span className="text-destructive">*</span>
+                Nom <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="routine-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter routine name..."
+                placeholder="Saisir le nom de la routine..."
                 className="h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
               />
             </div>
@@ -341,7 +341,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="routine-description" className="text-sm font-semibold">
-                Description <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+                Description <span className="text-xs text-muted-foreground font-normal">(optionnel)</span>
               </Label>
               <Textarea
                 id="routine-description"
@@ -472,13 +472,13 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                   <ScrollArea className="h-[300px]">
                     <div className="p-2 space-y-1">
                       {filteredPersonas.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">No Role profiles found</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">Aucun profil de rôle trouvé</p>
                       ) : (
                         filteredPersonas.map((persona) => {
                           const isSelected = selectedPersonas.includes(persona);
                           const roleInfo = getRoleProfileInfo(persona);
-                          let displayName = roleInfo ? roleInfo.english : persona;
-                          let description = roleInfo ? roleInfo.description : 'Custom role profile';
+                          let displayName = roleInfo ? roleInfo.french : persona;
+                          let description = roleInfo ? roleInfo.description : 'Profil de rôle personnalisé';
 
                           if (!roleInfo) {
                             const customPersonas = getCustomPersonas();
@@ -539,7 +539,7 @@ export const RoutineModal: React.FC<RoutineModalProps> = ({
                 <div className="flex flex-wrap gap-2 mt-2">
                   {selectedPersonas.map((persona) => {
                     const roleInfo = getRoleProfileInfo(persona);
-                    const displayName = roleInfo ? roleInfo.english : persona;
+                    const displayName = roleInfo ? roleInfo.french : persona;
                     return (
                       <Badge
                         key={persona}

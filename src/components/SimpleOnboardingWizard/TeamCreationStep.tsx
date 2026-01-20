@@ -33,62 +33,62 @@ const ROLE_PROFILES: RoleProfileInfo[] = [
   {
     french: 'Approvisionneur',
     english: 'Supply Planner',
-    description: 'Manages supplier orders and inventory levels to ensure production continuity'
+    description: 'Gère les commandes fournisseurs et les niveaux de stock pour assurer la continuité de production'
   },
   {
     french: 'Acheteur',
     english: 'Buyer',
-    description: 'Handles purchasing negotiations and supplier relationships'
+    description: 'Gère les négociations d\'achat et les relations avec les fournisseurs'
   },
   {
     french: 'Manager Appro',
     english: 'Procurement Manager',
-    description: 'Oversees procurement strategy and team performance'
+    description: 'Supervise la stratégie d\'approvisionnement et la performance de l\'équipe'
   },
   {
     french: 'Ordonnanceur Assemblage',
     english: 'Assembly Scheduler',
-    description: 'Plans and schedules assembly operations and production sequences'
+    description: 'Planifie et ordonnance les opérations d\'assemblage et les séquences de production'
   },
   {
     french: 'Ordonnanceur',
     english: 'Scheduler',
-    description: 'Coordinates production schedules and resource allocation'
+    description: 'Coordonne les plannings de production et l\'allocation des ressources'
   },
   {
     french: 'Master Planner',
     english: 'Master Planner',
-    description: 'Develops strategic production plans and manages customer commitments'
+    description: 'Développe les plans stratégiques de production et gère les engagements clients'
   },
   {
     french: 'Support Logistique',
     english: 'Logistics Support',
-    description: 'Manages customer deliveries and shipping coordination'
+    description: 'Gère les livraisons clients et la coordination des expéditions'
   },
   {
     french: 'Recette',
     english: 'Quality Control',
-    description: 'Ensures product quality and compliance with standards'
+    description: 'Assure la qualité des produits et la conformité aux standards'
   },
   {
     french: 'Responsable Supply Chain',
     english: 'Supply Chain Manager',
-    description: 'Leads supply chain operations and strategic planning'
+    description: 'Dirige les opérations de supply chain et la planification stratégique'
   },
   {
     french: 'Directeur Supply Chain',
     english: 'Supply Chain Director',
-    description: 'Defines supply chain strategy and executive oversight'
+    description: 'Définit la stratégie de supply chain et le suivi exécutif'
   },
   {
     french: 'Responsable Ordo & Support log',
     english: 'Scheduling & Logistics Manager',
-    description: 'Manages both production scheduling and logistics operations'
+    description: 'Gère à la fois l\'ordonnancement de production et les opérations logistiques'
   },
   {
     french: 'Autre / Mixte',
     english: 'Other / Mixed',
-    description: 'Combines multiple roles or custom responsibilities'
+    description: 'Combine plusieurs rôles ou responsabilités personnalisées'
   },
 ];
 
@@ -233,7 +233,12 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
   const handleCreateFromPersonas = () => {
     if (selectedPersonas.length === 0) return;
 
-    const personasWithTeams = getPersonasWithTeams();
+    // Use current teams prop to get the most up-to-date list
+    const currentTeams = teams;
+    const personasWithTeams = currentTeams
+      .filter(team => team.persona)
+      .map(team => team.persona!);
+    
     // Only create teams for Role profiles that don't already have teams
     const personasToCreate = selectedPersonas.filter(persona => !personasWithTeams.includes(persona));
 
@@ -242,8 +247,8 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     const newTeams: SimpleTeamConfig[] = personasToCreate.map(persona => {
       return {
         id: generateTeamId(),
-        name: `${persona} Team`,
-        description: `Team for ${persona}`,
+        name: `Équipe ${persona}`,
+        description: `Équipe pour ${persona}`,
         persona,
         assignedRoutineIds: [], // No routines assigned by default - user must click to add
         memberIds: [],
@@ -252,7 +257,8 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
       };
     });
 
-    onTeamsUpdate([...teams, ...newTeams]);
+    // Use functional update to ensure we have the latest teams
+    onTeamsUpdate([...currentTeams, ...newTeams]);
     // Keep Role profiles with existing teams selected, remove only newly created ones
     setSelectedPersonas(prev => prev.filter(persona => personasWithTeams.includes(persona)));
     setCreationMode(null);
@@ -350,24 +356,22 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
   // Handle continue from substep - exposed to parent
   const handleSubstepContinue = () => {
-    // If teams already exist, always allow proceeding (user can have created teams and be on any substep)
-    if (teams.length > 0) {
-      return true;
-    }
-
-    // Otherwise, check substep-specific validation
+    // Check substep-specific validation
     if (currentSubstep === 'welcome') {
       // Welcome screen now shows mode selection directly, so check if teams exist
-      return false;
+      return teams.length > 0;
     } else if (currentSubstep === 'mode-selection') {
       // If teams already exist, can proceed
-      return false;
+      return teams.length > 0;
     } else if (currentSubstep === 'persona-selection') {
       if (selectedPersonas.length === 0) {
         return false;
       }
+      // Always try to create teams from selected personas, even if teams already exist
+      // This allows adding more teams when returning to step 0
       handleCreateFromPersonas();
-      return true; // Teams created, can proceed
+      // After creating, check if we have teams (either existing or newly created)
+      return true; // Teams created or already exist, can proceed
     } else if (currentSubstep === 'manual-creation') {
       if (manualTeamName.trim().length === 0) {
         return false;
@@ -375,7 +379,8 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
       handleCreateManualTeam();
       return true; // Team created, can proceed
     }
-    return false;
+    // If teams already exist, allow proceeding (user can have created teams and be on any substep)
+    return teams.length > 0;
   };
 
   // Keep ref updated
@@ -388,7 +393,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
     if (onStep0ContinueRef.current) {
       onStep0ContinueRef.current(handleSubstepContinue);
     }
-  }, [currentSubstep, selectedPersonas, manualTeamName, teams.length]);
+  }, [currentSubstep, selectedPersonas, manualTeamName, teams]);
 
   // Notify parent about validation state
   useEffect(() => {
@@ -440,10 +445,10 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
               {/* Welcome Message - Subtle and integrated */}
               <div className="text-center mb-8">
                 <h2 className="text-2xl page-title bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
-                  Welcome, {getUserDisplayName()}!
+                  Bienvenue, {getUserDisplayName()} !
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Create your teams to start configuring your workspace
+                  Créez vos équipes pour commencer à configurer votre espace de travail
                 </p>
               </div>
 
@@ -454,10 +459,10 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium mb-1">
-                    Choose how to create teams
+                    Choisissez comment créer les équipes
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Select how you'd like to create your teams
+                    Sélectionnez la méthode de création de vos équipes
                   </p>
                 </div>
               </div>
@@ -474,12 +479,12 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                     </div>
                     <Badge className="bg-gradient-to-r from-[#31C7AD] to-[#2063F0] text-white border-0 shadow-sm">
                       <Sparkles className="h-3 w-3 mr-1" />
-                      Recommended
+                      Recommandé
                     </Badge>
                   </div>
-                  <h3 className="text-lg font-bold mb-2">Create teams from Role profiles</h3>
+                  <h3 className="text-lg font-bold mb-2">Créer des équipes à partir de profils de rôles</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Select one or more Role profiles to automatically create teams with suggested routines
+                    Sélectionnez un ou plusieurs profils de rôles pour créer automatiquement des équipes avec des routines suggérées
                   </p>
                 </button>
 
@@ -490,9 +495,9 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   <div className="p-3 rounded-lg mb-4 transition-all bg-muted group-hover:bg-[#31C7AD]/10">
                     <Settings className="h-6 w-6 text-muted-foreground group-hover:text-[#31C7AD]" />
                   </div>
-                  <h3 className="text-lg font-bold mb-2">Manual setup</h3>
+                  <h3 className="text-lg font-bold mb-2">Configuration manuelle</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Create teams manually with custom names and descriptions
+                    Créez des équipes manuellement avec des noms et descriptions personnalisés
                   </p>
                 </button>
               </div>
@@ -501,21 +506,22 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
           {/* Info Banner - For other substeps */}
           {currentSubstep !== 'welcome' && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 mb-6">
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 mb-6">
               <div className="p-2 rounded-lg bg-[#31C7AD]/10">
                 <Users className="h-5 w-5 text-[#31C7AD]" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium mb-1">
-                  {currentSubstep === 'mode-selection' && 'Choose how to create teams'}
-                  {currentSubstep === 'persona-selection' && 'Select Role profiles for your teams'}
-                  {currentSubstep === 'manual-creation' && 'Create team manually'}
+                <p className="text-sm font-medium">
+                  {currentSubstep === 'mode-selection' && 'Choisissez comment créer les équipes'}
+                  {currentSubstep === 'persona-selection' && 'Sélectionnez un ou plusieurs profils de rôles pour créer automatiquement des équipes'}
+                  {currentSubstep === 'manual-creation' && 'Créer une équipe manuellement'}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {currentSubstep === 'mode-selection' && 'Select how you\'d like to create your teams'}
-                  {currentSubstep === 'persona-selection' && 'Select one or more Role profiles to automatically create teams'}
-                  {currentSubstep === 'manual-creation' && 'Enter team details to create a custom team'}
-                </p>
+                {currentSubstep !== 'persona-selection' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {currentSubstep === 'mode-selection' && 'Sélectionnez la méthode de création de vos équipes'}
+                    {currentSubstep === 'manual-creation' && 'Saisissez les détails de l\'équipe pour créer une équipe personnalisée'}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -536,9 +542,9 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                     Recommended
                   </Badge>
                 </div>
-                <h3 className="text-lg font-bold mb-2">Create teams from personas</h3>
+                <h3 className="text-lg font-bold mb-2">Créer des équipes à partir de profils de rôles</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Select one or more personas to automatically create teams with suggested routines
+                  Sélectionnez un ou plusieurs profils de rôles pour créer automatiquement des équipes avec des routines suggérées
                 </p>
               </button>
 
@@ -549,9 +555,9 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                 <div className="p-3 rounded-lg mb-4 transition-all bg-muted group-hover:bg-[#31C7AD]/10">
                   <Settings className="h-6 w-6 text-muted-foreground group-hover:text-[#31C7AD]" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">Manual setup</h3>
+                <h3 className="text-lg font-bold mb-2">Configuration manuelle</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Create teams manually with custom names and descriptions
+                  Créez des équipes manuellement avec des noms et descriptions personnalisés
                 </p>
               </button>
             </div>
@@ -564,7 +570,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
-                    {availablePersonas.length} Role profile{availablePersonas.length !== 1 ? 's' : ''} available
+                    {availablePersonas.length} profil{availablePersonas.length !== 1 ? 's' : ''} de rôle disponible{availablePersonas.length !== 1 ? 's' : ''}
                   </p>
                 </div>
                 <Button
@@ -574,7 +580,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   className="h-7 gap-1.5 text-xs"
                 >
                   <Plus className="h-3 w-3" />
-                  Create new Role profile
+                  Créer un nouveau profil de rôle
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -586,8 +592,8 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                   
                   // Get role profile info (for predefined roles) or use custom role name
                   const roleInfo = getRoleProfileInfo(persona);
-                  let displayName = roleInfo ? roleInfo.english : persona;
-                  let description = roleInfo ? roleInfo.description : 'Custom role profile';
+                  let displayName = roleInfo ? roleInfo.french : persona;
+                  let description = roleInfo ? roleInfo.description : 'Profil de rôle personnalisé';
                   
                   // If it's a custom role profile, try to get its description
                   if (!roleInfo) {
@@ -644,7 +650,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                             </span>
                             {hasExistingTeam && (
                               <Badge className="text-xs h-4 px-1.5 bg-[#31C7AD]/20 text-[#31C7AD] border-[#31C7AD]/30 shrink-0">
-                                Team exists
+                                Équipe existante
                               </Badge>
                             )}
                           </div>
@@ -683,11 +689,11 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">
-                      Created Teams ({teams.filter(t => !t.persona).length})
+                      Équipes créées ({teams.filter(t => !t.persona).length})
                     </h3>
                     <Badge variant="secondary" className="bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                      {teams.filter(t => !t.persona).length} team{teams.filter(t => !t.persona).length !== 1 ? 's' : ''}
+                      {teams.filter(t => !t.persona).length} équipe{teams.filter(t => !t.persona).length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -740,7 +746,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
 
                 <div className="p-6 rounded-xl border-2 border-dashed border-border bg-muted/20 space-y-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Team name *</label>
+                    <label className="text-sm font-medium mb-2 block">Nom de l'équipe *</label>
                     <Input
                       value={manualTeamName}
                       onChange={(e) => setManualTeamName(e.target.value)}
@@ -897,7 +903,7 @@ export const TeamCreationStep: React.FC<TeamCreationStepProps> = ({
                     </Button>
                     {manualTeamName.trim() && (
                       <span className="text-xs text-muted-foreground">
-                        Team will be added to your list above
+                        L'équipe sera ajoutée à votre liste ci-dessus
                       </span>
                     )}
                   </div>

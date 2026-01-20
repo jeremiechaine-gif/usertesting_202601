@@ -88,48 +88,82 @@ const TicketsIndicator: React.FC<{ count: number }> = ({ count }) => {
   );
 };
 
-// Material Coverage indicator (percentage / icon)
-const MaterialCoverageIndicator: React.FC<{ coverage: number }> = ({ coverage }) => {
-  const getColor = (coverage: number) => {
-    if (coverage >= 100) return '#10B981';
-    if (coverage >= 80) return '#FB8C00';
-    return '#F4511E';
+// Material Coverage indicator (Covered, Cond.Covered, Blocked)
+const MaterialCoverageIndicator: React.FC<{ coverage: string }> = ({ coverage }) => {
+  const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+    'Covered': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120' },
+    'Cond.Covered': { bg: '#FFF3E0', text: '#FB8C00', border: '#FB8C0020' },
+    'Blocked': { bg: '#FEE2E2', text: '#F4511E', border: '#F4511E20' },
   };
+  const config = statusConfig[coverage] || statusConfig['Blocked'];
   
   return (
-    <div className="flex items-center gap-1">
-      <div
-        className="w-3 h-3 rounded-full"
-        style={{ backgroundColor: getColor(coverage) }}
-        title={`${coverage}%`}
-      />
-      <span className="text-sm">{formatPercentage(coverage)}</span>
-    </div>
+    <Badge 
+      className="text-xs font-medium break-words"
+      style={{
+        backgroundColor: config.bg,
+        color: config.text,
+        border: `1px solid ${config.border}`,
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        display: 'inline-block',
+        maxWidth: '100%',
+      }}
+    >
+      {coverage}
+    </Badge>
   );
 };
 
-// Quality Notes indicator (icon)
-const QualityNotesIndicator: React.FC<{ hasNotes: boolean }> = ({ hasNotes }) => {
-  if (!hasNotes) return null;
-  
-  return (
-    <AlertCircle className="w-4 h-4 text-[#FB8C00]" title="Quality notes available" />
-  );
-};
-
-// WO Status indicator
+// WO Status indicator (Released, Planned)
 const WOStatusIndicator: React.FC<{ status: string }> = ({ status }) => {
-  const statusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
-    'completed': { color: '#10B981', icon: <CheckCircle2 className="w-4 h-4" /> },
-    'in-progress': { color: '#0EA5E9', icon: <AlertCircle className="w-4 h-4" /> },
-    'blocked': { color: '#F4511E', icon: <XCircle className="w-4 h-4" /> },
+  const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+    'Released': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120' },
+    'Planned': { bg: '#F0F9FF', text: '#0EA5E9', border: '#0EA5E920' },
   };
-  const config = statusConfig[status] || statusConfig['in-progress'];
+  const config = statusConfig[status] || statusConfig['Planned'];
   
   return (
-    <div className="flex items-center" style={{ color: config.color }}>
-      {config.icon}
-    </div>
+    <Badge 
+      className="text-xs font-medium break-words"
+      style={{
+        backgroundColor: config.bg,
+        color: config.text,
+        border: `1px solid ${config.border}`,
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        display: 'inline-block',
+        maxWidth: '100%',
+      }}
+    >
+      {status}
+    </Badge>
+  );
+};
+
+// Firm Status indicator (Firm, Not firm)
+const FirmStatusIndicator: React.FC<{ status: string }> = ({ status }) => {
+  const statusConfig: Record<string, { bg: string; text: string; border: string }> = {
+    'Firm': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120' },
+    'Not firm': { bg: '#FEE2E2', text: '#F4511E', border: '#F4511E20' },
+  };
+  const config = statusConfig[status] || statusConfig['Not firm'];
+  
+  return (
+    <Badge 
+      className="text-xs font-medium break-words"
+      style={{
+        backgroundColor: config.bg,
+        color: config.text,
+        border: `1px solid ${config.border}`,
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        display: 'inline-block',
+        maxWidth: '100%',
+      }}
+    >
+      {status}
+    </Badge>
   );
 };
 
@@ -242,17 +276,9 @@ export const columns: ColumnDef<WorkOrderRow, any>[] = [
     columns: [
       columnHelper.accessor('materialCoverage', {
         id: 'materialCoverage',
-        header: '% Material Coverage',
+        header: 'Material coverage',
         cell: (info) => <MaterialCoverageIndicator coverage={info.getValue()} />,
         size: 140,
-        filterFn: customFilterFn,
-        enableResizing: true,
-      }),
-      columnHelper.accessor('qualityNotes', {
-        id: 'qualityNotes',
-        header: 'Quality Notes',
-        cell: (info) => <QualityNotesIndicator hasNotes={info.getValue()} />,
-        size: 100,
         filterFn: customFilterFn,
         enableResizing: true,
       }),
@@ -260,7 +286,15 @@ export const columns: ColumnDef<WorkOrderRow, any>[] = [
         id: 'woStatus',
         header: 'WO status',
         cell: (info) => <WOStatusIndicator status={info.getValue()} />,
-        size: 100,
+        size: 120,
+        filterFn: customFilterFn,
+        enableResizing: true,
+      }),
+      columnHelper.accessor('firmStatus', {
+        id: 'firmStatus',
+        header: 'Firm status',
+        cell: (info) => <FirmStatusIndicator status={info.getValue()} />,
+        size: 120,
         filterFn: customFilterFn,
         enableResizing: true,
       }),

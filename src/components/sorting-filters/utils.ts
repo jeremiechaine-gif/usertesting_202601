@@ -106,6 +106,7 @@ export function getColumnIdFromFilterId(filterId: string): string | null {
     'inventory-value': 'inventoryValue',
     'consumed-part-buyer-codes': 'consumedPartBuyerCodes',
     'produced-part-buyer-codes': 'producedPartBuyerCodes',
+    'mrp-code': 'mrpCode',
   };
   return mapping[filterId] || null;
 }

@@ -70,6 +70,21 @@ export const getScopes = (): Scope[] => {
   return validScopes;
 };
 
+/**
+ * Clear all scopes from storage
+ * Used to reset the scope list to empty by default
+ */
+export const clearAllScopes = (): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    safeRemoveItem(STORAGE_KEY);
+    // Also clear the current scope
+    safeRemoveItem(CURRENT_SCOPE_KEY);
+  } catch (error) {
+    console.error('Failed to clear scopes:', error);
+  }
+};
+
 export const saveScopes = (scopes: Scope[]): void => {
   const success = safeSetItem(STORAGE_KEY, scopes);
   if (!success) {

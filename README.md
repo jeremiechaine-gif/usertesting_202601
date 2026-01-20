@@ -130,6 +130,18 @@ The app includes a realistic mock data generator (`src/lib/mockData.ts`) that cr
 - Keyboard shortcuts
 - Accessibility improvements
 
+## Deployment & Sharing
+
+To share your prototype with a public link, see [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+
+**Quick start with Vercel (recommended):**
+1. Install Vercel CLI: `npm i -g vercel`
+2. Run: `vercel`
+3. Follow the prompts
+4. Your prototype will be available at a public URL like `https://your-project.vercel.app`
+
+Or use the web interface at [vercel.com](https://vercel.com) - just connect your Git repository and Vercel will auto-detect and deploy.
+
 ## License
 
 This is a prototype for demonstration purposes.

@@ -36,9 +36,11 @@ interface ScopeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   scope?: Scope | null;
-  onSave: () => void;
+  onSave: (createdScopeId?: string) => void; // Optional: pass the created scope ID
   title?: string; // Custom title for the modal (default: "Define Your Scope" or "Edit Scope")
   saveButtonText?: string; // Custom text for the save button (default: "Create Scope" or "Update Scope")
+  isTemplateScope?: boolean; // Whether this modal is opened from the template-scope substep
+  memberName?: string; // Name of the member when creating a scope from a member card
 }
 
 export const ScopeModal: React.FC<ScopeModalProps> = ({
@@ -48,6 +50,8 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   onSave,
   title,
   saveButtonText,
+  isTemplateScope = false,
+  memberName,
 }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -78,7 +82,12 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
       setDescription(scope.description || '');
       setFilters(scope.filters);
     } else {
-      setName('');
+      // If creating a new scope and memberName is provided, set default name
+      if (memberName) {
+        setName(`Périmètre de ${memberName}`);
+      } else {
+        setName('');
+      }
       setDescription('');
       setFilters([]);
     }
@@ -88,7 +97,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
     setConfiguringFilterDef(null);
     // Reset info section visibility - hide by default to avoid showing tooltip in modal
     setShowScopeInfo(false);
-  }, [scope, open]);
+  }, [scope, open, memberName]);
 
   const handleSave = () => {
     // Validate scope data
@@ -100,7 +109,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
 
     if (!validation.isValid) {
       // Show first error (could be enhanced to show all errors)
-      alert(validation.errors[0] || 'Invalid scope data');
+      alert(validation.errors[0] || 'Données de périmètre invalides');
       return;
     }
 
@@ -121,12 +130,13 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
       } else {
         // Creating a new scope - check if it's from a template (scopeToDuplicate scenario)
         // If scope has templateId, it means we're creating an instance
+        // If memberName is provided, create a personal scope (not an instance, not a template)
         const scopeData: Omit<Scope, 'id' | 'createdAt' | 'updatedAt'> = {
           name: name.trim(),
           description: description.trim() || undefined,
           filters,
-          isGlobal: !scope?.templateId, // Only templates are global, instances are not
-          templateId: scope?.templateId, // Preserve templateId if creating from template
+          isGlobal: memberName ? false : !scope?.templateId, // Personal scopes are not global
+          templateId: memberName ? undefined : scope?.templateId, // Personal scopes don't have templateId
         };
         const createdScope = createScope(scopeData);
         console.log('[ScopeModal] Scope created:', { 
@@ -135,12 +145,15 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
           isGlobal: createdScope.isGlobal,
           templateId: createdScope.templateId 
         });
+        // Pass the created scope ID to onSave callback
+        onSave(createdScope.id);
+        return;
       }
 
       onSave();
     } catch (error) {
       console.error('Error saving scope:', error);
-      alert('Failed to save scope. Please try again.');
+      alert('Échec de l\'enregistrement du périmètre. Veuillez réessayer.');
     }
   };
 
@@ -287,7 +300,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
   }, [currentLayer, configuringFilterDef, debouncedLayer3SearchQuery, layer3DisplaySelectedOnly, layer3SelectedValues]);
 
   // Determine modal title - Unified style for all cases
-  const modalTitle = title || (scope ? 'Edit Scope' : 'Define Your Scope');
+  const modalTitle = title || (scope ? 'Edit Scope' : (memberName ? `Périmètre de ${memberName}` : 'Define Your Scope'));
   
   // Determine subtitle based on current layer
   const getSubtitle = () => {
@@ -374,6 +387,25 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
             </div>
           </div>
           
+          {/* Template Scope Info Banner */}
+          {isTemplateScope && !scope && (
+            <div className="bg-gradient-to-r from-[#2063F0]/10 via-[#31C7AD]/10 to-[#2063F0]/10 border-b border-[#2063F0]/20 px-6 py-4 shrink-0">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[#2063F0] to-[#31C7AD] flex items-center justify-center mt-0.5">
+                  <Info className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground mb-1.5">
+                    Pourquoi créer un modèle de périmètre ?
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Les modèles vous font gagner du temps lors de la création de périmètres. <strong className="text-foreground">Notre conseil :</strong> créez un périmètre d'équipe que vous pourrez personnaliser pour chaque membre, plutôt que d'en créer un nouveau à chaque fois.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Step navigation bar for Layer 2 and 3 */}
           {(currentLayer === 2 || currentLayer === 3) && (
             <div className="px-6 py-3 border-b bg-muted/30">
@@ -388,9 +420,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                 </Button>
                 <span className="text-sm font-semibold text-foreground">
                   {currentLayer === 2 
-                    ? 'Add Filter' 
+                    ? 'Ajouter un filtre' 
                     : currentLayer === 3 && configuringFilterDef 
-                      ? `Configure ${configuringFilterDef.label}` 
+                      ? `Configurer ${configuringFilterDef.label}` 
                       : ''}
                 </span>
               </div>
@@ -424,12 +456,12 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm leading-relaxed text-foreground">
                           {scope ? (
-                            'Update scope details and filters'
+                            'Mettre à jour les détails et filtres du périmètre'
                           ) : (
                             <>
-                              A scope is your <strong className="text-foreground font-semibold">personal data perimeter</strong>. 
-                              It filters what you see by default, showing only the plants, parts, or suppliers 
-                              that are relevant to your daily work.
+                              Un périmètre est votre <strong className="text-foreground font-semibold">périmètre de données personnel</strong>. 
+                              Il filtre ce que vous voyez par défaut, en affichant uniquement les usines, pièces ou fournisseurs 
+                              qui sont pertinents pour votre travail quotidien.
                             </>
                           )}
                         </p>
@@ -441,16 +473,16 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="scope-name" className="text-sm font-semibold">
-                    Scope Name <span className="text-destructive">*</span>
+                    Nom du périmètre <span className="text-destructive">*</span>
                   </Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Give your scope a memorable name that clearly describes its purpose
+                    Donnez un nom mémorable à votre périmètre qui décrit clairement son objectif
                   </p>
                   <Input
                     id="scope-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder='e.g., "My Lyon Plant" or "Strategic Suppliers"'
+                    placeholder='Ex: "Mon usine de Lyon" ou "Fournisseurs stratégiques"'
                     className="h-10"
                   />
                 </div>
@@ -461,13 +493,13 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                     Description
                   </Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Add details about what this scope covers and when to use it
+                    Ajoutez des détails sur ce que couvre ce périmètre et quand l'utiliser
                   </p>
                   <Textarea
                     id="scope-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder='e.g., "All parts and suppliers for Lyon manufacturing plant"'
+                    placeholder={`Ex: "Toutes les pièces et fournisseurs pour l'usine de fabrication de Lyon"`}
                     rows={3}
                   />
                 </div>
@@ -477,10 +509,10 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm font-semibold">
-                        Filters <span className="text-destructive">*</span>
+                        Filtres <span className="text-destructive">*</span>
                       </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Define which data you want to see (plants, suppliers, part types, etc.)
+                        Définissez les données que vous souhaitez voir (usines, fournisseurs, types de pièces, etc.)
                       </p>
                     </div>
                     <Button
@@ -490,7 +522,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                       className="shrink-0"
                     >
                       <X className="mr-2 h-4 w-4 rotate-45" />
-                      Add Filter
+                      Ajouter un filtre
                     </Button>
                   </div>
                   
@@ -499,9 +531,9 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
                       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#31C7AD]/10 mb-3">
                         <Target className="h-6 w-6 text-[#31C7AD]" />
                       </div>
-                      <p className="text-sm font-medium mb-1">No filters yet</p>
+                      <p className="text-sm font-medium mb-1">Aucun filtre pour le moment</p>
                       <p className="text-xs text-muted-foreground">
-                        Start by adding filters to define your data perimeter
+                        Commencez par ajouter des filtres pour définir votre périmètre de données
                       </p>
                     </div>
                   ) : (
@@ -565,7 +597,7 @@ export const ScopeModal: React.FC<ScopeModalProps> = ({
             {/* Layer 2: Filter List */}
             {currentLayer === 2 && (
               <div className="border rounded-lg p-4 bg-muted/50">
-                <Suspense fallback={<div className="h-32 flex items-center justify-center">Loading...</div>}>
+                <Suspense fallback={<div className="h-32 flex items-center justify-center">Chargement...</div>}>
                   <AddFilterView
                     filterSearch={filterSearch}
                     onFilterSearchChange={setFilterSearch}

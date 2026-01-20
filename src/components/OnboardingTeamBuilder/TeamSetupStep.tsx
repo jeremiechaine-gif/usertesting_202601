@@ -109,8 +109,8 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
       const personas = getPersonasFromRoutineWizard();
       if (personas.length > 0) {
         const autoTeams: TeamConfig[] = personas.map(persona => ({
-          name: `${persona} Team`,
-          description: `Team for ${persona} role`,
+          name: `Équipe ${persona}`,
+          description: `Équipe pour le rôle ${persona}`,
           persona,
           memberIds: [],
           routineIds: [],

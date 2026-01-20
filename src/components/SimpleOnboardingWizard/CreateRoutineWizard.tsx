@@ -176,10 +176,10 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
           <div className="relative px-6 pt-6 pb-4">
             <DialogHeader>
               <DialogTitle className="text-2xl page-title">
-                Create Routine
+                Créer une routine
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Create a new routine step by step
+                Créer une nouvelle routine étape par étape
               </DialogDescription>
             </DialogHeader>
             
@@ -293,14 +293,14 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
                   }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  Précédent
                 </Button>
               )}
             </div>
             
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => onOpenChange(false)}>
-                Cancel
+                Annuler
               </Button>
               
               {currentStep === 'choose-view' && (
@@ -314,14 +314,14 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
               
               {currentStep === 'explain-view' && (
                 <Button onClick={handleNextFromExplain}>
-                  Continue
+                  Continuer
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               )}
               
               {currentStep === 'configure' && (
                 <Button onClick={handleNextFromConfigure}>
-                  Continue
+                  Continuer
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               )}
@@ -332,7 +332,7 @@ export const CreateRoutineWizard: React.FC<CreateRoutineWizardProps> = ({
                   onClick={handleSave}
                   disabled={!canProceedFromSave}
                 >
-                  Create Routine
+                  Créer la routine
                 </Button>
               )}
             </div>

@@ -5,7 +5,9 @@
  */
 
 export type SimOutcome = 'approved' | 'pending' | 'rejected';
-export type WOStatus = 'completed' | 'in-progress' | 'blocked';
+export type MaterialCoverage = 'Covered' | 'Cond.Covered' | 'Blocked';
+export type WOStatus = 'Released' | 'Planned';
+export type FirmStatus = 'Firm' | 'Not firm';
 export type SubcontractInfo = 'yes' | 'no';
 
 export interface WorkOrderRow {
@@ -17,9 +19,9 @@ export interface WorkOrderRow {
   workOrderNumber: string;
   subcontractInfo: SubcontractInfo;
   // Status
-  materialCoverage: number; // percentage
-  qualityNotes: boolean;
+  materialCoverage: MaterialCoverage;
   woStatus: WOStatus;
+  firmStatus: FirmStatus;
   // Part
   ticketsOnPart: number;
   partNumber: string;
@@ -97,9 +99,9 @@ export function generateMockData(count: number = 377): WorkOrderRow[] {
       ticketsOnWO: randomInt(0, 5),
       workOrderNumber: generateWorkOrderNumber(),
       subcontractInfo: randomElement<SubcontractInfo>(['yes', 'no']),
-      materialCoverage: randomInt(0, 100),
-      qualityNotes: Math.random() > 0.7,
-      woStatus: randomElement<WOStatus>(['completed', 'in-progress', 'blocked']),
+      materialCoverage: randomElement<MaterialCoverage>(['Covered', 'Cond.Covered', 'Blocked']),
+      woStatus: randomElement<WOStatus>(['Released', 'Planned']),
+      firmStatus: randomElement<FirmStatus>(['Firm', 'Not firm']),
       ticketsOnPart: randomInt(0, 3),
       partNumber: generatePartNumber(),
       partName: randomElement(partNames),

@@ -23,8 +23,10 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { filterDefinitions } from '@/lib/filterDefinitions';
-import { columns } from '@/lib/columns';
-import { mockData } from '@/lib/mockData';
+import { columns as poBookColumns } from '@/lib/columns';
+import { mockData as poBookMockData } from '@/lib/mockData';
+import { columns as woBookColumns } from '@/lib/woBookColumns';
+import { mockData as woBookMockData } from '@/lib/woBookMockData';
 import { tableStateToDraftSorting, tableStateToDraftFilters, draftSortingToTableState, draftFiltersToTableState } from '@/components/sorting-filters/stateAdapters';
 import { getSortableColumns, getColumnIdFromFilterId, groupFilterDefinitions, filterSearchResults } from '@/components/sorting-filters/utils';
 import type { SortConfig, FilterConfig, FilterDefinition } from '@/components/SortingAndFiltersPopover';
@@ -81,6 +83,15 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
 }) => {
   // Scope context for scope filters
   const { getScopeFilters, currentScope } = useScope();
+  
+  // Load columns and data based on selected view
+  const { columns, mockData } = useMemo(() => {
+    if (view.pelicoViewPage === 'wo-book') {
+      return { columns: woBookColumns, mockData: woBookMockData };
+    }
+    // Default to PO Book columns for other views
+    return { columns: poBookColumns, mockData: poBookMockData };
+  }, [view.pelicoViewPage]);
   
   // Scope filters (read-only, applied to table)
   const scopeFilters = useMemo(() => getScopeFilters(), [getScopeFilters]);
@@ -140,6 +151,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
   const table = useReactTable({
     data: mockData,
     columns,
+    getRowId: (row: any) => row.id,
     state: {
       sorting,
       columnFilters,
@@ -268,69 +280,208 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
   };
 
   const handleOpenFilterModal = (columnId: string) => {
+    // Debug: Log the columnId received
+    console.log('[Step3ConfigureRoutine] handleOpenFilterModal called with columnId:', columnId);
+    console.log('[Step3ConfigureRoutine] mockData length:', mockData?.length);
+    console.log('[Step3ConfigureRoutine] columns:', columns);
+    
     const filterDef = filterDefinitionsWithFavorites.find(def => {
       const defColumnId = getColumnIdFromFilterId(def.id);
       return defColumnId === columnId;
     });
     
-    if (filterDef) {
-      const column = columns.find((c: any) => c.id === columnId || c.accessorKey === columnId);
-      const columnLabel = column?.header?.toString() || filterDef.label;
-      const options = filterDef.options || [];
-      const existingFilter = draftFilters.find(f => {
-        const fColumnId = getColumnIdFromFilterId(f.filterId);
-        return fColumnId === columnId;
-      });
-      
-      setFilterModalColumnId(columnId);
-      setFilterModalColumnLabel(columnLabel);
-      setFilterModalOptions(options);
-      setFilterModalSelectedValues(existingFilter?.values || []);
-      setFilterModalCondition('is');
-      setFilterModalOpen(true);
-    } else {
-      // If no filter definition found, still open modal with basic info
-      const column = columns.find((c: any) => c.id === columnId || c.accessorKey === columnId);
-      const columnLabel = column?.header?.toString() || columnId;
-      
-      setFilterModalColumnId(columnId);
-      setFilterModalColumnLabel(columnLabel);
-      setFilterModalOptions([]);
-      setFilterModalSelectedValues([]);
-      setFilterModalCondition('is');
-      setFilterModalOpen(true);
+    // Find column by id or accessorKey (including nested columns)
+    // TanStack Table columns can be in different formats:
+    // 1. Direct column definition: { id: 'materialCoverage', accessorKey: 'materialCoverage', ... }
+    // 2. Nested in group: { id: 'status', columns: [{ id: 'materialCoverage', ... }] }
+    // 3. TanStack Table header structure: { columnDef: { id: 'materialCoverage', ... } }
+    const findColumn = (cols: any[]): any => {
+      for (const col of cols) {
+        // Check if this column matches by id
+        if (col.id === columnId) {
+          return col;
+        }
+        // Check accessorKey if it exists (for columnHelper.accessor columns)
+        if (col.accessorKey === columnId) {
+          return col;
+        }
+        // Check columnDef for accessorKey (TanStack Table header structure)
+        if (col.columnDef) {
+          if (col.columnDef.id === columnId || col.columnDef.accessorKey === columnId) {
+            return col.columnDef;
+          }
+        }
+        // Recursively search nested columns (for grouped columns)
+        if ('columns' in col && Array.isArray(col.columns)) {
+          const found = findColumn(col.columns);
+          if (found) return found;
+        }
+        // Also check columnDef.columns for nested structure
+        if (col.columnDef && col.columnDef.columns && Array.isArray(col.columnDef.columns)) {
+          const found = findColumn(col.columnDef.columns);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    // Try to find column in the columns array
+    const column = findColumn(columns);
+    console.log('[Step3ConfigureRoutine] Found column:', column);
+    console.log('[Step3ConfigureRoutine] Column accessorKey:', column?.accessorKey);
+    console.log('[Step3ConfigureRoutine] Column id:', column?.id);
+    console.log('[Step3ConfigureRoutine] Column structure:', JSON.stringify(column, null, 2));
+    
+    // Also try to get column from table if available (TanStack Table structure)
+    // This is a fallback in case the column structure is different
+    let tableColumn = null;
+    try {
+      // Access table instance if available (might not be in scope here)
+      // For now, we'll rely on findColumn
+    } catch (e) {
+      console.warn('[Step3ConfigureRoutine] Could not access table:', e);
     }
+    
+    const columnLabel = column?.header?.toString() || filterDef?.label || columnId;
+    
+    // Extract options from filter definition if available, otherwise extract from mock data
+    let options: Array<{ label: string; value: string | number }> = [];
+    if (filterDef && filterDef.options) {
+      console.log('[Step3ConfigureRoutine] Using filter definition options:', filterDef.options);
+      options = filterDef.options;
+    } else {
+      // Extract unique values from mock data for this column
+      // Determine the data key to use: prefer accessorKey, then id, then columnId
+      let dataKey: string | undefined = undefined;
+      
+      // Try to get accessorKey from column definition
+      if (column) {
+        // For TanStack Table columns created with columnHelper.accessor, accessorKey is the first parameter
+        // This is the key used to access data in the row object
+        dataKey = column.accessorKey || column.id;
+        // Also check columnDef if it exists (TanStack Table structure)
+        if (!dataKey && column.columnDef) {
+          dataKey = column.columnDef.accessorKey || column.columnDef.id;
+        }
+      }
+      // If still not found, use columnId as fallback (it should match the data key)
+      // In woBookColumns, columnHelper.accessor('materialCoverage', { id: 'materialCoverage' })
+      // means both accessorKey and id are 'materialCoverage', which matches the data key
+      if (!dataKey) {
+        dataKey = columnId;
+      }
+      
+      // Final fallback: if columnId is the same as what we'd expect for the data key, use it directly
+      // This handles the case where columnId is already the correct data key (e.g., 'materialCoverage')
+      
+      console.log('[Step3ConfigureRoutine] Using dataKey:', dataKey);
+      
+      const values = new Set<string | number>();
+      if (Array.isArray(mockData) && mockData.length > 0) {
+        console.log('[Step3ConfigureRoutine] Processing', mockData.length, 'rows');
+        let foundCount = 0;
+        let notFoundCount = 0;
+        
+        mockData.forEach((row: any, index: number) => {
+          // Try to get value using the determined dataKey
+          let value = dataKey ? row[dataKey] : undefined;
+          
+          // If not found, try columnId directly as additional fallback
+          if (value === undefined && dataKey !== columnId) {
+            value = row[columnId];
+          }
+          
+          // If still not found, try camelCase conversion (e.g., "Material coverage" -> "materialCoverage")
+          if (value === undefined && columnId.includes(' ')) {
+            const camelCaseKey = columnId
+              .split(' ')
+              .map((word, index) => index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join('');
+            value = row[camelCaseKey];
+          }
+          
+          // Additional fallback: try to find the key by matching the columnId (case-insensitive)
+          if (value === undefined) {
+            const rowKeys = Object.keys(row);
+            const matchingKey = rowKeys.find(key => 
+              key.toLowerCase() === columnId.toLowerCase() || 
+              key.toLowerCase().replace(/\s+/g, '') === columnId.toLowerCase().replace(/\s+/g, '')
+            );
+            if (matchingKey) {
+              value = row[matchingKey];
+            }
+          }
+          
+          if (value !== undefined && value !== null) {
+            values.add(value);
+            foundCount++;
+            if (index < 3) {
+              console.log(`[Step3ConfigureRoutine] Row ${index}: found value "${value}" using key "${dataKey}"`);
+            }
+          } else {
+            notFoundCount++;
+            if (index < 3) {
+              console.log(`[Step3ConfigureRoutine] Row ${index}: value not found. Row keys:`, Object.keys(row));
+            }
+          }
+        });
+        
+        console.log('[Step3ConfigureRoutine] Found values:', foundCount, 'Not found:', notFoundCount);
+        console.log('[Step3ConfigureRoutine] Unique values:', Array.from(values));
+        
+        if (values.size > 0) {
+          options = Array.from(values)
+            .map((value) => ({
+              label: String(value),
+              value,
+            }))
+            .sort((a, b) => String(a.value).localeCompare(String(b.value)));
+        } else {
+          console.warn('[Step3ConfigureRoutine] No values found! Sample row keys:', Object.keys(mockData[0] || {}));
+        }
+      } else {
+        console.warn('[Step3ConfigureRoutine] mockData is not an array or is empty:', mockData);
+      }
+    }
+    
+    const existingFilter = draftFilters.find(f => {
+      const fColumnId = getColumnIdFromFilterId(f.filterId);
+      return fColumnId === columnId;
+    });
+    
+    setFilterModalColumnId(columnId);
+    setFilterModalColumnLabel(columnLabel);
+    setFilterModalOptions(options);
+    setFilterModalSelectedValues(existingFilter?.values || []);
+    setFilterModalCondition('is');
+    setFilterModalOpen(true);
   };
 
   const handleFilterModalApply = (values: (string | number)[], condition: string) => {
     if (!filterModalColumnId) return;
     
+    // Try to find filterDef first (for columns with predefined filter definitions)
     const filterDef = filterDefinitionsWithFavorites.find(def => {
       const defColumnId = getColumnIdFromFilterId(def.id);
       return defColumnId === filterModalColumnId;
     });
     
-    if (filterDef && values.length > 0) {
-      const existingFilter = draftFilters.find(f => {
-        const fColumnId = getColumnIdFromFilterId(f.filterId);
-        return fColumnId === filterModalColumnId;
+    // Create filter directly with columnId if no filterDef exists (for dynamic columns like Material coverage)
+    if (values.length > 0) {
+      // Remove existing filter for this column
+      const newUserFilters = userFilters.filter(f => f.id !== filterModalColumnId);
+      
+      // Add new filter
+      newUserFilters.push({
+        id: filterModalColumnId,
+        value: values.length === 1 ? values[0] : values,
       });
       
-      let newDraftFilters: FilterConfig[];
-      if (existingFilter) {
-        newDraftFilters = draftFilters.map(f =>
-          f.id === existingFilter.id ? { ...f, values } : f
-        );
-      } else {
-        newDraftFilters = [...draftFilters, {
-          id: `filter-${Date.now()}`,
-          filterId: filterDef.id,
-          values,
-        }];
-      }
-      
-      const newFilters = draftFiltersToTableState(newDraftFilters);
-      onFiltersChange(newFilters);
+      onFiltersChange(newUserFilters);
+    } else {
+      // Remove filter if no values selected
+      const newUserFilters = userFilters.filter(f => f.id !== filterModalColumnId);
+      onFiltersChange(newUserFilters);
     }
     
     setFilterModalOpen(false);
@@ -356,12 +507,12 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
           {/* Routine Name with Pelico View Badge */}
           <div className="space-y-2">
             <Label htmlFor="routine-name" className="text-sm font-semibold">
-              Routine Name <span className="text-destructive">*</span>
+              Nom de la routine <span className="text-destructive">*</span>
             </Label>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <Input
                 id="routine-name"
-                placeholder="e.g., Critical supplier follow-ups"
+                placeholder="Ex: Suivi critique des fournisseurs"
                 value={routineName}
                 onChange={(e) => onRoutineNameChange?.(e.target.value)}
                 className="flex-1 min-w-0"
@@ -372,11 +523,11 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
           {/* Routine Description */}
           <div className="space-y-2">
             <Label htmlFor="routine-description" className="text-sm font-semibold">
-              Description <span className="text-muted-foreground text-xs">(Optional)</span>
+              Description <span className="text-muted-foreground text-xs">(Optionnel)</span>
             </Label>
             <Textarea
               id="routine-description"
-              placeholder="e.g., Use this routine during daily standups to prioritize supplier actions"
+              placeholder="Ex: Utilisez cette routine lors des points quotidiens pour prioriser les actions fournisseurs"
               value={routineDescription}
               onChange={(e) => onRoutineDescriptionChange?.(e.target.value)}
               rows={2}
@@ -388,7 +539,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
           {(onObjectiveChange || onCustomObjectiveChange) && (
             <div className="space-y-2">
               <Label htmlFor="routine-objective" className="text-sm font-semibold">
-                Objective <span className="text-muted-foreground text-xs">(Optional)</span>
+                Objectif <span className="text-muted-foreground text-xs">(Optionnel)</span>
               </Label>
               {!showCustomObjectiveInput ? (
                 <Select
@@ -403,24 +554,33 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                   }}
                 >
                   <SelectTrigger id="routine-objective" className="w-full">
-                    <SelectValue placeholder="Select objective" />
+                    <SelectValue placeholder="Sélectionner un objectif" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['Anticipate', 'Monitor', 'Correct', 'Prioritize', 'Report'] as Objective[]).map((obj) => (
-                      <SelectItem key={obj} value={obj}>
-                        {obj}
-                      </SelectItem>
-                    ))}
+                    {(['Anticipate', 'Monitor', 'Correct', 'Prioritize', 'Report'] as Objective[]).map((obj) => {
+                      const objectiveLabels: Record<Objective, string> = {
+                        'Anticipate': 'Anticiper',
+                        'Monitor': 'Surveiller',
+                        'Correct': 'Corriger',
+                        'Prioritize': 'Prioriser',
+                        'Report': 'Rapporter',
+                      };
+                      return (
+                        <SelectItem key={obj} value={obj}>
+                          {objectiveLabels[obj] || obj}
+                        </SelectItem>
+                      );
+                    })}
                     <SelectItem value="__custom__" className="text-[#2063F0] font-medium">
                       <Plus className="h-3 w-3 inline mr-1" />
-                      Create new
+                      Créer un nouvel objectif
                     </SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
                 <div className="flex items-center gap-2">
                   <Input
-                    placeholder="Enter custom objective"
+                    placeholder="Saisir un objectif personnalisé"
                     value={customObjective}
                     onChange={(e) => onCustomObjectiveChange?.(e.target.value)}
                     className="flex-1"
@@ -482,19 +642,19 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
         <div className="flex flex-col sm:flex-row items-start gap-3 p-4 sm:p-5 rounded-lg border border-[#2063F0]/20 dark:border-[#2063F0]/30 bg-gradient-to-br from-[#2063F0]/5 dark:from-[#2063F0]/10 to-transparent w-full max-w-full overflow-x-hidden">
           <Info className="h-4 w-4 sm:h-5 sm:w-5 text-[#2063F0] dark:text-[#60A5FA] mt-0.5 shrink-0" />
           <div className="flex-1 space-y-2 min-w-0">
-            <p className="text-xs sm:text-sm font-semibold text-foreground">Configure your routine view</p>
+            <p className="text-xs sm:text-sm font-semibold text-foreground">Configurez la vue de votre routine</p>
             <div className="space-y-1.5 text-xs text-muted-foreground">
               <p className="flex items-start gap-2">
                 <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
-                <span className="min-w-0">Use the <strong className="text-foreground">Sorting & Filters</strong> sections below to add filters and sorting rules</span>
+                <span className="min-w-0">Utilisez les sections <strong className="text-foreground">Tri & Filtres</strong> ci-dessous pour ajouter des filtres et des règles de tri</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
-                <span className="min-w-0">Click on column headers in the preview table to sort or filter directly</span>
+                <span className="min-w-0">Cliquez sur les en-têtes de colonnes dans la table d'aperçu pour trier ou filtrer directement</span>
               </p>
               <p className="flex items-start gap-2">
                 <span className="font-medium text-[#2063F0] dark:text-[#60A5FA] shrink-0">•</span>
-                <span className="min-w-0">The table preview updates in real-time as you configure your routine</span>
+                <span className="min-w-0">L'aperçu de la table se met à jour en temps réel pendant que vous configurez votre routine</span>
               </p>
             </div>
           </div>
@@ -603,10 +763,7 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
                                 routineFilters={[]} // No routine selected during creation
                                 onSortingChange={handleSortingChange}
                                 onColumnFiltersChange={handleColumnFiltersChange}
-                                onFilterClick={(columnId) => {
-                                  setFilterModalColumnId(columnId);
-                                  setFilterModalOpen(true);
-                                }}
+                                onFilterClick={handleOpenFilterModal}
                               >
                                 {flexRender(header.column.columnDef.header, header.getContext())}
                               </ColumnHeader>
@@ -718,8 +875,8 @@ export const Step3ConfigureRoutine: React.FC<Step3ConfigureRoutineProps> = ({
       {!showAddFilterView && (
         <div className="p-4 rounded-lg border border-border bg-muted/30">
           <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground dark:text-foreground">Note:</strong> You can always edit filters, sorting, and other settings after creating the routine. 
-            Multiple routines can exist per view, so you can create different configurations for different needs.
+            <strong className="text-foreground dark:text-foreground">Note :</strong> Vous pouvez toujours modifier les filtres, le tri et les autres paramètres après avoir créé la routine. 
+            Plusieurs routines peuvent exister par vue, vous pouvez donc créer différentes configurations pour différents besoins.
           </p>
         </div>
       )}

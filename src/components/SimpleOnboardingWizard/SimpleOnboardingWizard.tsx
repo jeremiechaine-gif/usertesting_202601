@@ -14,7 +14,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TeamCreationStep } from './TeamCreationStep';
 import { RoutineSelectionStep } from './RoutineSelectionStep';
 import { MemberAssignmentStep } from './MemberAssignmentStep';
-import { ScopeAssignmentStep } from './ScopeAssignmentStep';
+import { ScopeAssignmentStep, type ScopeAssignmentSubstep } from './ScopeAssignmentStep';
+import { SummaryStep } from './SummaryStep';
 import { createTeam, updateTeam, getTeam } from '@/lib/teams';
 import { updateUser, getUser } from '@/lib/users';
 import { cn } from '@/lib/utils';
@@ -66,10 +67,11 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   onComplete,
   userData,
 }) => {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [teams, setTeams] = useState<SimpleTeamConfig[]>([]);
   const [currentSubstep, setCurrentSubstep] = useState<{
     step0?: TeamCreationSubstep;
+    step2?: ScopeAssignmentSubstep;
     step3?: RoutineSelectionSubstep | string;
   }>({
     step0: 'welcome',
@@ -124,10 +126,35 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     }
   }, [open]);
 
+  // Reload teams from localStorage when returning to step 0 to ensure we have the latest state
+  useEffect(() => {
+    if (open && step === 0) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const state: SimpleOnboardingState = JSON.parse(stored);
+          if (state.teams) {
+            // Only update if the stored teams are different to avoid unnecessary re-renders
+            setTeams(prevTeams => {
+              const prevIds = new Set(prevTeams.map(t => t.id));
+              const newIds = new Set(state.teams.map(t => t.id));
+              if (prevIds.size !== newIds.size || ![...prevIds].every(id => newIds.has(id))) {
+                return state.teams;
+              }
+              return prevTeams;
+            });
+          }
+        } catch {
+          // Invalid stored state, ignore
+        }
+      }
+    }
+  }, [open, step]);
+
   // Save state to localStorage
-  const saveState = () => {
+  const saveState = (teamsToSave?: SimpleTeamConfig[]) => {
     const state: SimpleOnboardingState = {
-      teams,
+      teams: teamsToSave !== undefined ? teamsToSave : teams,
       currentStep: step,
       currentSubstep,
     };
@@ -137,7 +164,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   // Handle team creation/update
   const handleTeamsUpdate = (updatedTeams: SimpleTeamConfig[]) => {
     setTeams(updatedTeams);
-    saveState();
+    // Save state with the updated teams immediately to avoid async state issues
+    saveState(updatedTeams);
   };
 
   // Handle back navigation
@@ -155,8 +183,27 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         saveState();
       }
       // If on welcome, don't go back (first screen)
+    } else if (step === 2) {
+      // Handle substeps within step 2 (Scope Assignment)
+      const currentStep2Substep = currentSubstep.step2 || 'template-scope';
+      if (currentStep2Substep === 'assign-scopes') {
+        // Go back to template-scope substep
+        setCurrentSubstep({ ...currentSubstep, step2: 'template-scope' });
+        saveState();
+      } else {
+        // Go back to previous step
+        setStep(1);
+        saveState();
+      }
+    } else if (step === 4) {
+      // Go back from summary to routines
+      setStep(3);
+      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+      saveState();
     } else if (step > 0) {
-      setStep((step - 1) as 0 | 1 | 2 | 3);
+      const newStep = (step - 1) as 0 | 1 | 2 | 3 | 4;
+      setStep(newStep);
+      // When going back to step 0, ensure we save the current state
       saveState();
     }
   };
@@ -184,11 +231,24 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         return;
       }
       setStep(2); // Go to Scopes step
+      // Initialize step 2 with first substep
+      setCurrentSubstep({ ...currentSubstep, step2: 'template-scope' });
     } else if (step === 2) {
-      // Step 2: Scopes are optional, can proceed
-      setStep(3); // Go to Routines step
-      // Always start with team-selection view to show all team cards
-      setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+      // Step 2: Handle substeps
+      const currentStep2Substep = currentSubstep.step2 || 'template-scope';
+      if (currentStep2Substep === 'template-scope') {
+        // Move to assign-scopes substep
+        setCurrentSubstep({ ...currentSubstep, step2: 'assign-scopes' });
+        saveState();
+      } else {
+        // On assign-scopes substep, proceed to Routines step
+        setStep(3);
+        // Always start with team-selection view to show all team cards
+        setCurrentSubstep({ ...currentSubstep, step3: 'team-selection' });
+      }
+    } else if (step === 3) {
+      // Step 3: Routines - proceed to Summary step
+      setStep(4);
     }
     saveState();
   };
@@ -200,6 +260,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
     setStep(0);
     setCurrentSubstep({
       step0: 'welcome',
+      step2: 'template-scope',
       step3: 'team-selection',
     });
     setStep0CanProceed(false);
@@ -227,6 +288,10 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         return true; // Always allow navigation within substeps
       }
       return teams.every(team => team.assignedRoutineIds.length > 0);
+    }
+    if (step === 4) {
+      // Summary step - always allow proceeding
+      return true;
     }
     return false;
   };
@@ -289,16 +354,17 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
       onComplete();
     } catch (error) {
       console.error('Error completing Simple onboarding:', error);
-      alert('An error occurred while saving. Please try again.');
+      alert('Une erreur s\'est produite lors de l\'enregistrement. Veuillez réessayer.');
     }
   };
 
   // Step labels for progress indicator
   const stepLabels: Record<number, string> = {
-    0: 'Welcome & Create Teams',
-    1: 'Add Members',
-    2: 'Create Scopes',
+    0: 'Bienvenue & Créer les équipes',
+    1: 'Ajouter des membres',
+    2: 'Créer les périmètres',
     3: 'Routines',
+    4: 'Récapitulatif',
   };
 
   if (!open) return null;
@@ -312,7 +378,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <h1 className="text-xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent">
-                Set-up your workspace
+                Configuration de votre espace de travail
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -332,20 +398,21 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Complete these steps to configure your workspace
+            Complétez ces étapes pour configurer votre espace de travail
           </p>
         </div>
 
         {/* Steps Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-4">
           <div className="space-y-2">
-            {[0, 1, 2, 3].map((stepIndex) => {
+            {[0, 1, 2, 3, 4].map((stepIndex) => {
               const isActive = step === stepIndex;
               const isCompleted = step > stepIndex;
               // Allow navigation to completed steps, current step, and next accessible step
               const isAccessible = stepIndex === 0 || step >= stepIndex - 1;
               const canNavigate = isAccessible || isCompleted;
               const showRoutineSubsteps = stepIndex === 3 && isActive && routineCreationStep !== null;
+              const showScopeSubsteps = stepIndex === 2 && isActive;
 
               return (
                 <React.Fragment key={stepIndex}>
@@ -397,7 +464,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                           !isActive && !isCompleted && 'text-foreground'
                         )}
                       >
-                        Step {stepIndex + 1}
+                        Étape {stepIndex + 1}
                       </div>
                       <div
                         className={cn(
@@ -409,22 +476,71 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                       </div>
                       {isCompleted && (
                         <div className="mt-1 text-xs text-[#31C7AD] font-medium">
-                          Completed
+                          Terminé
                         </div>
                       )}
                     </div>
                   </button>
                   
+                  {/* Scope Assignment Substeps - Only show when Step 3 is active */}
+                  {showScopeSubsteps && (
+                    <div className="ml-6 space-y-2 border-l-2 border-[#2063F0]/20 pl-4 mt-2">
+                      {(['template-scope', 'assign-scopes'] as const).map((substep, substepIndex) => {
+                        const substepLabels = {
+                          'template-scope': 'Template scope',
+                          'assign-scopes': 'Assigner les périmètres',
+                        };
+                        const currentStep2Substep = currentSubstep.step2 || 'template-scope';
+                        const isSubstepActive = currentStep2Substep === substep;
+                        const isSubstepCompleted = currentStep2Substep && 
+                          ['template-scope', 'assign-scopes'].indexOf(currentStep2Substep) > substepIndex;
+                        const canNavigateToSubstep = isSubstepCompleted || isSubstepActive;
+
+                        return (
+                          <button
+                            key={substep}
+                            onClick={() => {
+                              if (canNavigateToSubstep) {
+                                setCurrentSubstep({ ...currentSubstep, step2: substep });
+                                saveState();
+                              }
+                            }}
+                            disabled={!canNavigateToSubstep}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-2 rounded-md transition-all text-left text-xs',
+                              isSubstepActive
+                                ? 'bg-[#2063F0]/10 text-[#2063F0] font-medium'
+                                : isSubstepCompleted
+                                ? 'text-[#31C7AD] hover:bg-[#31C7AD]/5 cursor-pointer'
+                                : 'text-muted-foreground opacity-50 cursor-not-allowed'
+                            )}
+                          >
+                            <div className="flex-shrink-0">
+                              {isSubstepCompleted ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-[#31C7AD]" />
+                              ) : isSubstepActive ? (
+                                <div className="w-3.5 h-3.5 rounded-full bg-[#2063F0]" />
+                              ) : (
+                                <Circle className="h-3.5 w-3.5 text-muted-foreground/30" />
+                              )}
+                            </div>
+                            <span>{substepLabels[substep]}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
                   {/* Routine Creation Substeps - Only show when Step 4 is active and creating a routine */}
                   {showRoutineSubsteps && (
                     <div className="ml-6 space-y-2 border-l-2 border-[#2063F0]/20 pl-4 mt-2">
                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                        Create routine
+                        Créer une routine
                       </div>
                       {(['choose-view', 'configure-table'] as const).map((substep, substepIndex) => {
                         const substepLabels = {
-                          'choose-view': 'Choose View',
-                          'configure-table': 'Configure',
+                          'choose-view': 'Choisir la vue',
+                          'configure-table': 'Configurer',
                         };
                         const isSubstepActive = routineCreationStep === substep;
                         const isSubstepCompleted = routineCreationStep && 
@@ -474,15 +590,15 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
         <div className="py-4 shrink-0">
           <div className="px-4 text-xs text-muted-foreground space-y-1">
             <div className="flex items-center justify-between">
-              <span>Progress</span>
+              <span>Progression</span>
               <span className="font-semibold text-foreground">
-                {step + 1} / 4
+                {step + 1} / 5
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#2063F0] to-[#31C7AD] transition-all duration-300"
-                style={{ width: `${((step + 1) / 4) * 100}%` }}
+                style={{ width: `${((step + 1) / 5) * 100}%` }}
               />
             </div>
           </div>
@@ -497,14 +613,6 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl sm:text-2xl page-title break-words">{stepLabels[step]}</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
-                  {step === 0 && 'Welcome and create teams from Role profiles or manually'}
-                  {step === 1 && 'Add members to each team'}
-                  {step === 2 && 'Assign scopes to team members'}
-                  {step === 3 && currentSubstep.step3 === 'recommended-routines' 
-                    ? 'Configure routines per team'
-                    : 'Assign routines to each team'}
-                </p>
               </div>
             </div>
           </div>
@@ -547,6 +655,11 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onNext={handleNext}
               onBack={handleBack}
               onClearAll={handleClearAll}
+              currentSubstep={currentSubstep.step2 || 'template-scope'}
+              onSubstepChange={(substep) => {
+                setCurrentSubstep({ ...currentSubstep, step2: substep });
+                saveState();
+              }}
             />
           )}
           {step === 3 && (
@@ -578,6 +691,13 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
               onBackFromPreviewRef={backFromPreviewRef}
             />
           )}
+          {step === 4 && (
+            <SummaryStep
+              teams={teams}
+              onBack={handleBack}
+              onComplete={handleComplete}
+            />
+          )}
         </div>
 
         {/* Fixed Footer - Hide when creating a routine (substep) */}
@@ -604,7 +724,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   className="gap-2 flex-1 sm:flex-initial"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">Back</span>
+                  <span className="hidden sm:inline">Précédent</span>
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -612,8 +732,8 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   onClick={handleClearAll}
                   className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5 flex-1 sm:flex-initial"
                 >
-                  <span className="hidden sm:inline">Clear All</span>
-                  <span className="sm:hidden">Clear</span>
+                  <span className="hidden sm:inline">Tout effacer</span>
+                  <span className="sm:hidden">Effacer</span>
                 </Button>
               </div>
               <Button
@@ -651,14 +771,18 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                       saveState();
                     }
                   } else if (step === 3) {
-                    handleComplete();
+                    handleNext(); // Go to summary step
+                  } else if (step === 4) {
+                    handleComplete(); // Finalize from summary
                   } else {
                     handleNext();
                   }
                 }}
                 disabled={
-                  // Don't disable button for substeps navigation
-                  step === 3 && (currentSubstep.step3 === 'recommended-routines' || currentSubstep.step3 === 'routine-preview')
+                  // Don't disable button for substeps navigation or summary step
+                  (step === 3 && (currentSubstep.step3 === 'recommended-routines' || currentSubstep.step3 === 'routine-preview'))
+                    ? false
+                    : step === 4
                     ? false
                     : !canProceed()
                 }
@@ -670,13 +794,15 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                       const teamsWithPersona = teams.filter(t => t.persona);
                       // We can't easily access currentTeamIndex here, so use a generic message
                       // The actual logic is handled in RoutineSelectionStep
-                      return 'Next';
+                      return 'Suivant';
                     })()
                   : step === 3 && currentSubstep.step3 === 'routine-preview'
-                  ? 'Remove routine'
+                  ? 'Retirer la routine'
                   : step === 3 
-                  ? 'Complete Setup' 
-                  : 'Next'}
+                  ? 'Voir le récapitulatif' 
+                  : step === 4
+                  ? 'Finaliser'
+                  : 'Suivant'}
                 {!(step === 3 && currentSubstep.step3 === 'routine-preview') && (
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -706,7 +832,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     className="gap-2"
                   >
                     <ArrowLeft className="h-4 w-4" />
-                    Back
+                    Précédent
                   </Button>
                 )}
                 <Button 
@@ -721,7 +847,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   }}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  Cancel
+                  Annuler
                 </Button>
               </div>
               {routineCreationStep === 'configure-table' && (
@@ -737,7 +863,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                   disabled={!routineNameForValidation.trim()}
                   className="gap-2"
                 >
-                  Create
+                  Créer
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

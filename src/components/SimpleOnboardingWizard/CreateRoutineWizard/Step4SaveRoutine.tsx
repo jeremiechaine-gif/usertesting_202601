@@ -84,9 +84,9 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Save Your Routine</h3>
+        <h3 className="text-lg font-semibold">Enregistrer votre routine</h3>
         <p className="text-sm text-muted-foreground">
-          Give your routine a name and optionally describe when you'll use it.
+          Donnez un nom à votre routine et décrivez optionnellement quand vous l'utiliserez.
         </p>
       </div>
 
@@ -94,7 +94,7 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
       <div className="p-4 rounded-lg border border-border bg-muted/30">
         <div className="flex items-center gap-2 mb-2">
           <Target className="h-4 w-4 text-[#2063F0]" />
-          <span className="text-sm font-medium">Based on: {view.name}</span>
+          <span className="text-sm font-medium">Basé sur : {view.name}</span>
         </div>
         <p className="text-xs text-muted-foreground line-clamp-2">
           {view.shortDescription}
@@ -104,35 +104,35 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
       {/* Routine Name */}
       <div className="space-y-2">
         <Label htmlFor="routine-name" className="text-sm font-semibold">
-          Routine Name <span className="text-destructive">*</span>
+          Nom de la routine <span className="text-destructive">*</span>
         </Label>
         <Input
           id="routine-name"
-          placeholder="e.g., Critical supplier follow-ups"
+          placeholder="Ex: Suivi critique des fournisseurs"
           value={routineName}
           onChange={(e) => onNameChange(e.target.value)}
           className="w-full"
         />
         <p className="text-xs text-muted-foreground">
-          Choose a name that clearly describes what this routine helps you do.
+          Choisissez un nom qui décrit clairement ce que cette routine vous aide à faire.
         </p>
       </div>
 
       {/* Routine Description */}
       <div className="space-y-2">
         <Label htmlFor="routine-description" className="text-sm font-semibold">
-          Description <span className="text-muted-foreground text-xs">(Optional)</span>
+          Description <span className="text-muted-foreground text-xs">(Optionnel)</span>
         </Label>
         <Textarea
           id="routine-description"
-          placeholder="e.g., Use this routine during daily standups to prioritize supplier actions"
+          placeholder="Ex: Utilisez cette routine lors des points quotidiens pour prioriser les actions fournisseurs"
           value={routineDescription}
           onChange={(e) => onDescriptionChange(e.target.value)}
           rows={3}
           className="resize-none"
         />
         <p className="text-xs text-muted-foreground">
-          Describe when and how you'll use this routine. This helps you and your team understand its purpose.
+          Décrivez quand et comment vous utiliserez cette routine. Cela aide vous et votre équipe à comprendre son objectif.
         </p>
       </div>
 
@@ -140,10 +140,10 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
       <div className="space-y-2">
         <Label className="text-sm font-semibold flex items-center gap-2">
           <Users className="h-4 w-4" />
-          Recommended for Personas <span className="text-muted-foreground text-xs font-normal">(Optional)</span>
+          Recommandé pour les personas <span className="text-muted-foreground text-xs font-normal">(Optionnel)</span>
         </Label>
         <p className="text-xs text-muted-foreground">
-          Select personas for which this routine should be suggested. This helps others discover your routine.
+          Sélectionnez les personas pour lesquelles cette routine devrait être suggérée. Cela aide les autres à découvrir votre routine.
         </p>
         <div className="p-4 rounded-lg border border-border bg-muted/30">
           <ScrollArea className="h-[200px]">
@@ -174,7 +174,7 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
                     </Label>
                     {isRecommended && (
                       <Badge variant="secondary" className="text-xs h-5 px-1.5 bg-[#31C7AD]/10 text-[#31C7AD] border-[#31C7AD]/30">
-                        Recommended
+                        Recommandé
                       </Badge>
                     )}
                   </div>
@@ -203,12 +203,12 @@ export const Step4SaveRoutine: React.FC<Step4SaveRoutineProps> = ({
         <div className="flex items-start gap-3">
           <Info className="h-4 w-4 text-[#31C7AD] mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <p className="text-sm font-medium">You can edit this anytime</p>
+            <p className="text-sm font-medium">Vous pouvez modifier cela à tout moment</p>
             <p className="text-xs text-muted-foreground">
-              Routines can be modified after creation. You can change filters, sorting, name, and description whenever needed.
+              Les routines peuvent être modifiées après leur création. Vous pouvez changer les filtres, le tri, le nom et la description quand vous en avez besoin.
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              Multiple routines can exist per view, so you can create different configurations for different scenarios.
+              Plusieurs routines peuvent exister par vue, vous pouvez donc créer différentes configurations pour différents scénarios.
             </p>
           </div>
         </div>

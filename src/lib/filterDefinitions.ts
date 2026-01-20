@@ -144,6 +144,23 @@ export const filterDefinitions: FilterDefinition[] = [
     ],
   },
   {
+    id: 'mrp-code',
+    label: 'MRP code',
+    category: 'produced-parts',
+    type: 'multi-select',
+    options: [
+      { label: 'MRP-1000', value: 'MRP-1000' },
+      { label: 'MRP-2000', value: 'MRP-2000' },
+      { label: 'MRP-3000', value: 'MRP-3000' },
+      { label: 'MRP-4000', value: 'MRP-4000' },
+      { label: 'MRP-5000', value: 'MRP-5000' },
+      { label: 'MRP-6000', value: 'MRP-6000' },
+      { label: 'MRP-7000', value: 'MRP-7000' },
+      { label: 'MRP-8000', value: 'MRP-8000' },
+      { label: 'MRP-9000', value: 'MRP-9000' },
+    ],
+  },
+  {
     id: 'supplier',
     label: 'Supplier',
     category: 'produced-parts',

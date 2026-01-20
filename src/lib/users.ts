@@ -125,3 +125,30 @@ export const getUsersByTeam = (teamId: string): User[] => {
   return users.filter(u => u.teamId === teamId);
 };
 
+
+/**
+ * Clear all users except the admin user
+ * Used to reset the user list to empty (only admin remains)
+ */
+export const clearAllUsersExceptAdmin = (): void => {
+  const adminId = MOCK_CURRENT_USER_ID;
+  const users = getUsers();
+  const adminUser = users.find(u => u.id === adminId);
+  
+  // Keep only the admin user, or create it if it doesn't exist
+  if (adminUser) {
+    saveUsers([adminUser]);
+  } else {
+    // Initialize with default admin user if it doesn't exist
+    const defaultUser: User = {
+      id: MOCK_CURRENT_USER_ID,
+      name: 'Admin Pelico',
+      email: 'admin@pelico.com',
+      role: 'manager',
+      teamId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saveUsers([defaultUser]);
+  }
+};

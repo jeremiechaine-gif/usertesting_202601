@@ -10,6 +10,7 @@ import { type Scope, getScopes } from '@/lib/scopes';
 import { createRoutinesFromLibraryEntries } from '@/lib/onboarding/routineConverter';
 import { resetScopesAndRoutines } from '@/lib/resetData';
 import { useRoutine } from '@/contexts/RoutineContext';
+import { getCurrentUser } from '@/lib/users';
 import { 
   Bell, 
   Menu, 
@@ -19,7 +20,14 @@ import {
   Sparkles,
   TrendingUp,
   RotateCcw,
-  AlertTriangle
+  AlertTriangle,
+  Package,
+  Clock,
+  TrendingDown,
+  Users,
+  BarChart3,
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -75,12 +83,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   // Get routine refresh function to update sidebar after reset
   const { refreshRoutines } = useRoutine();
   
+  // Check if current user is a manager
+  const currentUser = getCurrentUser();
+  const isManager = currentUser?.role === 'manager';
+  
   // Initialize tasks with default values
   const getInitialTasks = (): OnboardingTask[] => [
     {
       id: 'define-scope',
-      label: 'Define scope',
-      action: 'Define scope',
+      label: 'Définir le périmètre',
+      action: 'Définir le périmètre',
       completed: false,
       onClick: () => {
         setEditingScope(null);
@@ -89,15 +101,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
     },
     {
       id: 'create-routine',
-      label: 'Create routine',
-      action: 'Create routine',
+      label: 'Créer une routine',
+      action: 'Créer une routine',
       completed: false,
       onClick: () => setRoutineBuilderOpen(true),
     },
     {
       id: 'manage-team',
-      label: 'Manage team',
-      action: 'Manage team',
+      label: 'Gérer l\'équipe',
+      action: 'Gérer l\'équipe',
       completed: false,
       onClick: () => {
         // Open team builder wizard
@@ -211,26 +223,26 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   const academyResources: AcademyResource[] = [
     {
       id: 'getting-started',
-      title: 'Getting started with Pelico',
+      title: 'Démarrer avec Pelico',
       icon: Sparkles,
       isNew: true,
       onClick: () => console.log('Getting started'),
     },
     {
       id: 'video-tutorials',
-      title: 'Video tutorials',
+      title: 'Tutoriels vidéo',
       icon: Video,
       onClick: () => console.log('Video tutorials'),
     },
     {
       id: 'best-practices',
-      title: 'Best practices guide',
+      title: 'Guide des bonnes pratiques',
       icon: FileText,
       onClick: () => console.log('Best practices'),
     },
     {
       id: 'advanced-features',
-      title: 'Advanced features',
+      title: 'Fonctionnalités avancées',
       icon: TrendingUp,
       onClick: () => console.log('Advanced features'),
     },
@@ -265,7 +277,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         // Note: We stay on the home page - no page reload needed
       } catch (error) {
         console.error('Error resetting data:', error);
-        alert('An error occurred while resetting data. Please try again.');
+        alert('Une erreur s\'est produite lors de la réinitialisation des données. Veuillez réessayer.');
       }
     }
   };
@@ -276,7 +288,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
   };
 
   return (
-    <div className="flex h-screen bg-[var(--color-bg-primary)]">
+    <div className="flex h-screen bg-[var(--color-bg-primary)] relative">
       <Sidebar
         activeItem="home"
         isCollapsed={sidebarCollapsed}
@@ -327,9 +339,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                     <div className="flex items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <h2 className="text-3xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text mb-2">
-                          Hello {userName},
+                          Bonjour {userName},
                         </h2>
-                        <p className="text-muted-foreground text-base">Here's what we have for you today</p>
+                        <p className="text-muted-foreground text-base">Voici ce que nous avons pour vous aujourd'hui</p>
                       </div>
                       {/* Notifications - aligned with Hello */}
                       <div className="flex items-center gap-3 shrink-0">
@@ -346,156 +358,517 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
 
           {/* Main Content */}
           <div className="flex-1 overflow-auto px-6 py-6">
-          {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Pelico Onboarding Card */}
-            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
-                  <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
-                </div>
-                <h3 className="text-xl font-bold">Pelico onboarding</h3>
-              </div>
-              <div className="space-y-3">
-                {onboardingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-lg transition-all border",
-                      task.completed 
-                        ? "bg-[#31C7AD]/10 border-[#31C7AD]/20" 
-                        : "bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm"
-                    )}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {task.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-[#31C7AD] shrink-0" />
-                      ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
-                      )}
-                      <span className={cn(
-                        "text-sm font-medium",
-                        task.completed && "text-muted-foreground line-through"
-                      )}>
-                        {task.label}
-                      </span>
+          {isManager ? (
+            /* Manager Dashboard - Metrics First, Then Academy and Onboarding */
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Key Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* OTD Rate */}
+                <div className="bg-gradient-to-br from-background to-[#31C7AD]/5 border-2 border-[#31C7AD]/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10">
+                      <Clock className="h-5 w-5 text-[#31C7AD]" />
                     </div>
-                    {!task.completed && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
-                        onClick={() => handleTaskAction(task)}
-                      >
-                        {task.action}
-                      </Button>
-                    )}
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cette semaine</span>
                   </div>
-                ))}
-                
-                {/* Reset Data Button */}
-                <div className="pt-3 mt-3 border-t">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleResetClick}
-                    className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset data
-                  </Button>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Taux de livraison OTD</p>
+                    <p className="text-3xl font-bold text-foreground">87.3%</p>
+                    <div className="flex items-center gap-1 text-xs text-[#31C7AD] font-medium">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                      <span>+2.4% vs semaine dernière</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Pelico Academy Card */}
-            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
-                    <Sparkles className="h-5 w-5 text-[#2063F0]" />
+                {/* Late Orders */}
+                <div className="bg-gradient-to-br from-background to-red-500/5 border-2 border-red-500/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500/20 to-red-500/10">
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aujourd'hui</span>
                   </div>
-                  <h3 className="text-xl font-bold">Pelico Academy</h3>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Commandes en retard</p>
+                    <p className="text-3xl font-bold text-foreground">23</p>
+                    <div className="flex items-center gap-1 text-xs text-red-500 font-medium">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>5 critiques</span>
+                    </div>
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-sm h-auto font-medium hover:bg-[#2063F0]/10 hover:text-[#2063F0]">
-                  Help Center
-                </Button>
+
+                {/* Active Teams */}
+                <div className="bg-gradient-to-br from-background to-[#2063F0]/5 border-2 border-[#2063F0]/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10">
+                      <Users className="h-5 w-5 text-[#2063F0]" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actif</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Équipes actives</p>
+                    <p className="text-3xl font-bold text-foreground">12</p>
+                    <div className="flex items-center gap-1 text-xs text-[#2063F0] font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>48 membres au total</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                {academyResources.map((resource) => {
-                  const Icon = resource.icon;
-                  return (
-                    <button
-                      key={resource.id}
-                      onClick={resource.onClick}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 hover:border-[#2063F0]/20 transition-all text-left border border-transparent"
-                    >
-                      <div className="p-1.5 rounded-md bg-gradient-to-br from-muted/50 to-muted/30">
-                        <Icon className="h-4 w-4 text-foreground shrink-0" />
+
+              {/* Supply Chain Status Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Stock Alerts */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-500/10">
+                      <Package className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-foreground">Alertes stock</h4>
+                      <p className="text-xs text-muted-foreground">Surveillance en temps réel</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span className="text-sm font-medium">Ruptures de stock</span>
                       </div>
-                      <span className="text-sm font-medium flex-1">{resource.title}</span>
-                      {resource.isNew && (
-                        <Badge className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20">
-                          New
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Simple Onboarding Section */}
-          <div className="mt-6">
-            <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
-                  <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
-                </div>
-                <h3 className="text-xl font-bold">Simple onboarding</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 rounded-lg transition-all border bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
-                    onClick={() => setSimpleOnboardingOpen(true)}
-                  >
-                    Set-up your workspace
-                  </Button>
-                  
-                  {/* Progress Bar */}
-                  <div className="flex flex-col gap-1.5 min-w-[200px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Progress</span>
-                      <span className="text-xs font-medium">{simpleOnboardingProgress.completed} / {simpleOnboardingProgress.total}</span>
+                      <span className="text-lg font-bold text-red-500">7</span>
                     </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#2063F0] to-[#31C7AD] transition-all duration-300"
-                        style={{ width: `${(simpleOnboardingProgress.completed / simpleOnboardingProgress.total) * 100}%` }}
-                      />
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        <span className="text-sm font-medium">Stock critique</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-500">15</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#31C7AD]/10 border border-[#31C7AD]/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#31C7AD]"></div>
+                        <span className="text-sm font-medium">Stock optimal</span>
+                      </div>
+                      <span className="text-lg font-bold text-[#31C7AD]">156</span>
                     </div>
                   </div>
                 </div>
-                
-                {/* Reset Data Button */}
-                <div className="pt-3 mt-3 border-t">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleResetClick}
-                    className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset data
-                  </Button>
+
+                {/* Production Overview */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10">
+                      <BarChart3 className="h-5 w-5 text-[#2063F0]" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-foreground">Vue production</h4>
+                      <p className="text-xs text-muted-foreground">Performances du mois</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Taux d'utilisation</span>
+                      <span className="text-base font-bold text-foreground">92%</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Ordres complétés</span>
+                      <span className="text-base font-bold text-foreground">342</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Taux de rebut</span>
+                      <span className="text-base font-bold text-foreground">1.8%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two Column Layout for Onboarding and Academy - At the Bottom */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Onboarding Card - Enhanced - Left Side */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-[#31C7AD]/20 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-[#31C7AD] to-[#31C7AD]/80 shadow-lg">
+                      <CheckCircle2 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-foreground">Onboarding</h3>
+                      <p className="text-sm text-muted-foreground mt-1">Configuration rapide de votre espace</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="p-5 rounded-xl bg-gradient-to-br from-[#31C7AD]/10 via-[#2063F0]/5 to-[#31C7AD]/10 border-2 border-[#31C7AD]/20">
+                      <div className="flex items-center justify-between mb-4">
+                        <Button
+                          variant="default"
+                          size="lg"
+                          onClick={() => setSimpleOnboardingOpen(true)}
+                        >
+                          Configurer votre espace de travail
+                        </Button>
+                      </div>
+                      
+                      {/* Enhanced Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">Progression</span>
+                          <span className="text-sm font-bold text-[#31C7AD]">{simpleOnboardingProgress.completed} / {simpleOnboardingProgress.total}</span>
+                        </div>
+                        <div className="w-full h-3 bg-muted/50 rounded-full overflow-hidden shadow-inner">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-[#2063F0] via-[#31C7AD] to-[#2063F0] transition-all duration-500 shadow-lg"
+                            style={{ width: `${(simpleOnboardingProgress.completed / simpleOnboardingProgress.total) * 100}%` }}
+                          />
+                        </div>
+                        {simpleOnboardingProgress.completed === simpleOnboardingProgress.total && (
+                          <p className="text-xs text-[#31C7AD] font-medium text-center mt-2">
+                            ✓ Configuration terminée
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Reset Data Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetClick}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-border/50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Réinitialiser les données
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Académie Pelico Card - Enhanced - Right Side */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-[#2063F0]/20 rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-[#2063F0] to-[#2063F0]/80 shadow-lg">
+                        <Sparkles className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-foreground">Académie Pelico</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Ressources et formations</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-sm h-auto font-medium hover:bg-[#2063F0]/10 hover:text-[#2063F0]">
+                      Centre d'aide
+                    </Button>
+                  </div>
+                  <div className="space-y-2.5">
+                    {academyResources.map((resource) => {
+                      const Icon = resource.icon;
+                      return (
+                        <button
+                          key={resource.id}
+                          onClick={resource.onClick}
+                          className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-[#2063F0]/10 hover:to-[#31C7AD]/5 hover:border-[#2063F0]/30 transition-all text-left border-2 border-transparent hover:shadow-md group"
+                        >
+                          <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0]/10 to-[#31C7AD]/10 group-hover:from-[#2063F0]/20 group-hover:to-[#31C7AD]/20 transition-all">
+                            <Icon className="h-5 w-5 text-[#2063F0] group-hover:text-[#2063F0] shrink-0" />
+                          </div>
+                          <span className="text-base font-semibold flex-1 group-hover:text-[#2063F0] transition-colors">{resource.title}</span>
+                          {resource.isNew && (
+                            <Badge className="text-xs bg-gradient-to-r from-[#2063F0] to-[#31C7AD] text-white border-0 shadow-sm">
+                              Nouveau
+                            </Badge>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Metrics Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                {/* OTD Rate */}
+                <div className="bg-gradient-to-br from-background to-[#31C7AD]/5 border-2 border-[#31C7AD]/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10">
+                      <Clock className="h-5 w-5 text-[#31C7AD]" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cette semaine</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Taux de livraison OTD</p>
+                    <p className="text-3xl font-bold text-foreground">87.3%</p>
+                    <div className="flex items-center gap-1 text-xs text-[#31C7AD] font-medium">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                      <span>+2.4% vs semaine dernière</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Late Orders */}
+                <div className="bg-gradient-to-br from-background to-red-500/5 border-2 border-red-500/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-red-500/20 to-red-500/10">
+                      <AlertCircle className="h-5 w-5 text-red-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aujourd'hui</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Commandes en retard</p>
+                    <p className="text-3xl font-bold text-foreground">23</p>
+                    <div className="flex items-center gap-1 text-xs text-red-500 font-medium">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>5 critiques</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Teams */}
+                <div className="bg-gradient-to-br from-background to-[#2063F0]/5 border-2 border-[#2063F0]/20 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10">
+                      <Users className="h-5 w-5 text-[#2063F0]" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actif</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Équipes actives</p>
+                    <p className="text-3xl font-bold text-foreground">12</p>
+                    <div className="flex items-center gap-1 text-xs text-[#2063F0] font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>48 membres au total</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supply Chain Status Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                {/* Stock Alerts */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-500/10">
+                      <Package className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-foreground">Alertes stock</h4>
+                      <p className="text-xs text-muted-foreground">Surveillance en temps réel</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span className="text-sm font-medium">Ruptures de stock</span>
+                      </div>
+                      <span className="text-lg font-bold text-red-500">7</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        <span className="text-sm font-medium">Stock critique</span>
+                      </div>
+                      <span className="text-lg font-bold text-orange-500">15</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#31C7AD]/10 border border-[#31C7AD]/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#31C7AD]"></div>
+                        <span className="text-sm font-medium">Stock optimal</span>
+                      </div>
+                      <span className="text-lg font-bold text-[#31C7AD]">156</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Production Overview */}
+                <div className="bg-gradient-to-br from-background to-muted/20 border-2 border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10">
+                      <BarChart3 className="h-5 w-5 text-[#2063F0]" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-foreground">Vue production</h4>
+                      <p className="text-xs text-muted-foreground">Performances du mois</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Taux d'utilisation</span>
+                      <span className="text-base font-bold text-foreground">92%</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Ordres complétés</span>
+                      <span className="text-base font-bold text-foreground">342</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-sm font-medium text-muted-foreground">Taux de rebut</span>
+                      <span className="text-base font-bold text-foreground">1.8%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* Regular User Dashboard - Original Layout */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Pelico Onboarding Card */}
+              <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                    <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
+                  </div>
+                  <h3 className="text-xl font-bold">Intégration Pelico</h3>
+                </div>
+                <div className="space-y-3">
+                  {onboardingTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-lg transition-all border",
+                        task.completed 
+                          ? "bg-[#31C7AD]/10 border-[#31C7AD]/20" 
+                          : "bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {task.completed ? (
+                          <CheckCircle2 className="h-5 w-5 text-[#31C7AD] shrink-0" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />
+                        )}
+                        <span className={cn(
+                          "text-sm font-medium",
+                          task.completed && "text-muted-foreground line-through"
+                        )}>
+                          {task.label}
+                        </span>
+                      </div>
+                      {!task.completed && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
+                          onClick={() => handleTaskAction(task)}
+                        >
+                          {task.action}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Reset Data Button */}
+                  <div className="pt-3 mt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetClick}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Réinitialiser les données
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pelico Academy Card */}
+              <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 border border-[#2063F0]/20">
+                      <Sparkles className="h-5 w-5 text-[#2063F0]" />
+                    </div>
+                    <h3 className="text-xl font-bold">Académie Pelico</h3>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-sm h-auto font-medium hover:bg-[#2063F0]/10 hover:text-[#2063F0]">
+                    Centre d'aide
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {academyResources.map((resource) => {
+                    const Icon = resource.icon;
+                    return (
+                      <button
+                        key={resource.id}
+                        onClick={resource.onClick}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 hover:border-[#2063F0]/20 transition-all text-left border border-transparent"
+                      >
+                        <div className="p-1.5 rounded-md bg-gradient-to-br from-muted/50 to-muted/30">
+                          <Icon className="h-4 w-4 text-foreground shrink-0" />
+                        </div>
+                        <span className="text-sm font-medium flex-1">{resource.title}</span>
+                        {resource.isNew && (
+                          <Badge className="text-xs bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/20">
+                            Nouveau
+                          </Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Floating "Ask Pelicia" Button */}
+          <Button
+            onClick={() => console.log('Ask Pelicia clicked')}
+            className="fixed bottom-8 right-8 h-14 px-6 rounded-full shadow-2xl bg-white text-[#2063F0] hover:bg-gradient-to-r hover:from-[#2063F0] hover:to-[#31C7AD] hover:text-white border-2 border-[#2063F0] hover:border-transparent transition-all duration-300 z-50 group"
+          >
+            <MessageCircle className="h-5 w-5 mr-2 group-hover:animate-pulse" />
+            <span className="font-semibold">Ask Pelicia</span>
+          </Button>
+
+          {/* Simple Onboarding Section - Only for non-managers */}
+          {!isManager && (
+            <div className="mt-6">
+              <div className="bg-background border border-border/60 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-[#31C7AD]/20 to-[#31C7AD]/10 border border-[#31C7AD]/20">
+                    <CheckCircle2 className="h-5 w-5 text-[#31C7AD]" />
+                  </div>
+                  <h3 className="text-xl font-bold">Intégration simplifiée</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 rounded-lg transition-all border bg-muted/30 border-border/60 hover:bg-muted/50 hover:border-[#2063F0]/30 hover:shadow-sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-sm h-auto py-1.5 px-3 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10 font-medium"
+                      onClick={() => setSimpleOnboardingOpen(true)}
+                    >
+                      Configurer votre espace de travail
+                    </Button>
+                    
+                    {/* Progress Bar */}
+                    <div className="flex flex-col gap-1.5 min-w-[200px]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Progression</span>
+                        <span className="text-xs font-medium">{simpleOnboardingProgress.completed} / {simpleOnboardingProgress.total}</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#2063F0] to-[#31C7AD] transition-all duration-300"
+                          style={{ width: `${(simpleOnboardingProgress.completed / simpleOnboardingProgress.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Reset Data Button */}
+                  <div className="pt-3 mt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetClick}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Réinitialiser les données
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         </div>
       </div>
@@ -520,36 +893,36 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <DialogTitle className="text-xl">
-                {resetConfirmStep === 'first' ? 'Reset Onboarding Data?' : 'Are you absolutely sure?'}
+                {resetConfirmStep === 'first' ? 'Réinitialiser les données d\'intégration ?' : 'Êtes-vous absolument sûr ?'}
               </DialogTitle>
             </div>
             <DialogDescription className="text-base pt-2">
               {resetConfirmStep === 'first' ? (
                 <>
-                  This will permanently delete <strong>all data created during onboarding</strong>:
+                  Cette action supprimera définitivement <strong>toutes les données créées lors de l'intégration</strong> :
                   <br /><br />
-                  • All scopes<br />
-                  • All teams<br />
-                  • All team and member assignments<br />
-                  • All onboarding progress<br /><br />
-                  <strong>Routines and user accounts will be preserved, but their assignments will be cleared.</strong>
+                  • Tous les périmètres<br />
+                  • Toutes les équipes<br />
+                  • Toutes les affectations d'équipes et de membres<br />
+                  • Toute la progression d'intégration<br /><br />
+                  <strong>Les routines et les comptes utilisateurs seront conservés, mais leurs affectations seront effacées.</strong>
                   <br /><br />
-                  This action cannot be undone. Are you sure you want to continue?
+                  Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?
                 </>
               ) : (
                 <>
-                  This is your final confirmation. Clicking "Confirm Reset" will:
+                  Ceci est votre confirmation finale. Cliquer sur "Confirmer la réinitialisation" va :
                   <br /><br />
-                  • Delete all scopes<br />
-                  • Delete all routine folders<br />
-                  • Delete all teams<br />
-                  • Clear all member assignments<br />
-                  • Delete all routines<br />
-                  • Clear all scope assignments<br />
-                  • Reset all onboarding progress<br /><br />
-                  <strong>User accounts will be preserved, but all their assignments will be cleared.</strong>
+                  • Supprimer tous les périmètres<br />
+                  • Supprimer tous les dossiers de routines<br />
+                  • Supprimer toutes les équipes<br />
+                  • Effacer toutes les affectations de membres<br />
+                  • Supprimer toutes les routines<br />
+                  • Effacer toutes les affectations de périmètres<br />
+                  • Réinitialiser toute la progression d'intégration<br /><br />
+                  <strong>Les comptes utilisateurs seront conservés, mais toutes leurs affectations seront effacées.</strong>
                   <br /><br />
-                  You will remain on this page after reset.
+                  Vous resterez sur cette page après la réinitialisation.
                 </>
               )}
             </DialogDescription>
@@ -559,13 +932,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
               variant="secondary"
               onClick={handleResetCancel}
             >
-              Cancel
+              Annuler
             </Button>
             <Button
               variant="destructive"
               onClick={handleResetConfirm}
             >
-              {resetConfirmStep === 'first' ? 'Continue' : 'Confirm Reset'}
+              {resetConfirmStep === 'first' ? 'Continuer' : 'Confirmer la réinitialisation'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -576,7 +949,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onLogout }) => {
         open={scopeModalOpen}
         onOpenChange={setScopeModalOpen}
         scope={editingScope}
-        title={editingScope ? 'Edit Scope' : 'Define Your Scope'}
+        title={editingScope ? 'Modifier le périmètre' : 'Définir votre périmètre'}
         onSave={() => {
           setScopeModalOpen(false);
           setEditingScope(null);

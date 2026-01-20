@@ -7,7 +7,7 @@
 export type SimOutcome = 'approved' | 'pending' | 'rejected';
 export type SupplyEventType = 'PO' | 'PR' | 'STO';
 export type DeliveryStatus = 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
-export type OTDStatus = 'on-time' | 'at-risk' | 'late';
+export type OTDStatus = 'on-time' | 'late' | 'missing-information';
 export type SuggestedAction = 'pull-in' | 'push-out' | 'no-change';
 
 export interface PurchaseOrderRow {
@@ -28,6 +28,7 @@ export interface PurchaseOrderRow {
   partNumber: string;
   partName: string;
   plant: string;
+  mrpCode: string;
   // General Information
   openQuantity: number;
   price: number;
@@ -119,8 +120,10 @@ function determineOTDStatus(deliveryDate: string, otdDate: string): OTDStatus {
   const otd = new Date(otdDate);
   const diffDays = Math.floor((delivery.getTime() - otd.getTime()) / (1000 * 60 * 60 * 24));
   
+  // Randomly assign missing information status (10% chance)
+  if (Math.random() < 0.1) return 'missing-information';
+  
   if (diffDays <= 0) return 'on-time';
-  if (diffDays <= 7) return 'at-risk';
   return 'late';
 }
 
@@ -152,6 +155,7 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
       partNumber: generatePartNumber(),
       partName: randomElement(partNames),
       plant: randomElement(plants),
+      mrpCode: `MRP-${randomInt(1000, 9999)}`,
       openQuantity: openQty,
       price,
       inventoryValue: randomFloat(5000, 50000),

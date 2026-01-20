@@ -2,8 +2,9 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/ui/toast';
 import { createTeam, getTeamByName, updateTeam } from './lib/teams';
-import { createUser, getUsers, getCurrentUserId } from './lib/users';
+import { getCurrentUserId, clearAllUsersExceptAdmin } from './lib/users';
 import { getRoutines, createRoutine, updateRoutine } from './lib/routines';
+import { clearAllScopes } from './lib/scopes';
 import { safeGetItem, safeSetItem, safeRemoveItem } from './lib/utils/storage';
 import './index.css';
 
@@ -30,12 +31,18 @@ const SimpleOnboardingWizard = lazy(() => import('./components/SimpleOnboardingW
 // Loading fallback component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="text-muted-foreground">Loading...</div>
+    <div className="text-muted-foreground">Chargement...</div>
   </div>
 );
 
 // Initialize teams and users if they don't exist
 const initializeTeamsAndUsers = () => {
+  // Clear all users except admin - list starts empty by default
+  clearAllUsersExceptAdmin();
+  
+  // Clear all scopes - list starts empty by default
+  clearAllScopes();
+  
   // Check if teams already exist
   const procurementTeam = getTeamByName('Procurement manager');
   const supplyPlannerTeam = getTeamByName('Supply planner');
@@ -60,50 +67,8 @@ const initializeTeamsAndUsers = () => {
     supplyPlannerTeamId = newTeam.id;
   }
 
-  // Check if users already exist
-  const existingUsers = getUsers();
-  const lucasExists = existingUsers.find(u => u.name === 'Lucas Belbeoch');
-  const reginaExists = existingUsers.find(u => u.name === 'Regina Bulatova');
-  const julienExists = existingUsers.find(u => u.name === 'Julien Calviac');
-  const jeremieExists = existingUsers.find(u => u.name === 'Jeremie Chaine');
-
-  // Create admin user if doesn't exist
-  if (!lucasExists) {
-    createUser({
-      name: 'Lucas Belbeoch',
-      email: 'lucas.belbeoch@pelico.com',
-      role: 'manager',
-      teamId: null,
-    });
-  }
-
-  // Create users if they don't exist
-  if (!reginaExists && procurementTeamId) {
-    createUser({
-      name: 'Regina Bulatova',
-      email: 'regina.bulatova@pelico.com',
-      role: 'user',
-      teamId: procurementTeamId,
-    });
-  }
-
-  if (!julienExists && supplyPlannerTeamId) {
-    createUser({
-      name: 'Julien Calviac',
-      email: 'julien.calviac@pelico.com',
-      role: 'user',
-      teamId: supplyPlannerTeamId,
-    });
-  }
-
-  if (!jeremieExists && supplyPlannerTeamId) {
-    createUser({
-      name: 'Jeremie Chaine',
-      email: 'jeremie.chaine@pelico.com',
-      role: 'user',
-      teamId: supplyPlannerTeamId,
-    });
-  }
+  // Users are not created by default - list starts empty
+  // Users will be created manually through the UI
 
   // Initialize routines and assign them to teams
   const currentUserId = getCurrentUserId();

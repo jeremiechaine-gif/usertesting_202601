@@ -120,11 +120,11 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
       {/* Header */}
       <div className="space-y-2">
         <h3 className="text-xl font-semibold">
-          Recommended routines for {teamName}
+          Routines recommandées pour {teamName}
         </h3>
         {teamPersona && englishPersona && (
           <p className="text-sm text-muted-foreground">
-            Based on the <span className="font-medium">{englishPersona}</span> role, these routines will help optimize your daily workflow.
+            Basées sur le rôle <span className="font-medium">{englishPersona}</span>, ces routines vous aideront à optimiser votre flux de travail quotidien.
           </p>
         )}
       </div>
@@ -140,7 +140,7 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
               className="gap-2"
             >
               <FilePlus className="h-4 w-4" />
-              <span className="font-medium">Create routine</span>
+              <span className="font-medium">Créer une routine</span>
             </Button>
           )}
           {suggestedRoutines.length > 0 && remainingCount > 0 && (
@@ -152,7 +152,7 @@ export const Substep4_1_RecommendedRoutines: React.FC<Substep4_1_RecommendedRout
                 className="gap-2 border-[#31C7AD]/40 hover:bg-[#31C7AD]/10 hover:border-[#31C7AD] transition-all"
               >
                 <Sparkles className="h-4 w-4 text-[#31C7AD]" />
-                <span className="font-medium">Add {remainingCount} remaining</span>
+                <span className="font-medium">Ajouter les {remainingCount} restantes</span>
               </Button>
             </div>
           )}

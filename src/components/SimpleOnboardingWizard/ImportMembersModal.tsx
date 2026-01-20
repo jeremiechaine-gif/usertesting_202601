@@ -13,9 +13,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUser } from '@/lib/users';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Upload, FileSpreadsheet, X, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, FileSpreadsheet, X, CheckCircle2, Loader2, Search } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface ImportMembersModalProps {
@@ -28,8 +31,10 @@ interface ImportMembersModalProps {
 interface ParsedMember {
   name: string;
   firstName: string;
+  lastName: string;
   email: string;
   rowNumber: number;
+  selected: boolean;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -51,6 +56,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -60,6 +66,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
     setError(null);
     setIsProcessing(false);
     setIsImporting(false);
+    setSearchQuery('');
   }, []);
 
   // Reset when modal opens/closes
@@ -70,9 +77,9 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
   }, [open, resetState]);
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 Octets';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ['Octets', 'Ko', 'Mo', 'Go'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
@@ -104,30 +111,93 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
           
           if (jsonData.length < 2) {
-            reject(new Error('File must contain at least a header row and one data row'));
+            reject(new Error('Le fichier doit contenir au moins une ligne d\'en-tête et une ligne de données'));
             return;
           }
 
           // Find column indices (case-insensitive, flexible matching)
+          // Prioriser les termes français pour une meilleure détection
           const headerRow = jsonData[0].map((cell: any) => String(cell || '').toLowerCase().trim());
           
+          // Chercher d'abord "prénom"/"prenom" exactement (priorité haute)
+          let firstNameIndex = headerRow.findIndex((h: string) => 
+            h === 'prénom' || h === 'prenom'
+          );
+          // Si pas trouvé, chercher les variantes anglaises exactes
+          if (firstNameIndex === -1) {
+            firstNameIndex = headerRow.findIndex((h: string) => 
+              h === 'firstname' || h === 'first name'
+            );
+          }
+          // Dernier recours : includes mais exclure "nom" pour éviter confusion
+          if (firstNameIndex === -1) {
+            firstNameIndex = headerRow.findIndex((h: string) => 
+              (h.includes('prénom') || h.includes('prenom') || h.includes('first')) 
+              && h !== 'nom' && !h.includes('nom')
+            );
+          }
+          
+          // Chercher "nom" exactement (PAS "prénom" ou "prenom")
+          // IMPORTANT: Chercher "nom" seulement si ce n'est PAS "prénom" ou "prenom"
+          let lastNameIndex = -1;
+          // D'abord, chercher "nom" exact
+          const nomExactIndex = headerRow.findIndex((h: string) => h === 'nom');
+          if (nomExactIndex !== -1) {
+            // Vérifier que ce n'est pas "prénom" ou "prenom" (ne devrait pas arriver mais sécurité)
+            const headerValue = String(jsonData[0][nomExactIndex] || '').toLowerCase().trim();
+            if (headerValue === 'nom' && headerValue !== 'prénom' && headerValue !== 'prenom') {
+              lastNameIndex = nomExactIndex;
+            }
+          }
+          
+          // Si pas trouvé, chercher les variantes anglaises exactes
+          if (lastNameIndex === -1) {
+            lastNameIndex = headerRow.findIndex((h: string) => 
+              h === 'lastname' || h === 'last name' || h === 'surname'
+            );
+          }
+          
+          // Dernier recours : includes mais exclure explicitement "prénom" et "prenom"
+          if (lastNameIndex === -1) {
+            // Parcourir manuellement pour éviter toute confusion avec "prenom"
+            for (let idx = 0; idx < headerRow.length; idx++) {
+              const headerValue = headerRow[idx];
+              const originalValue = String(jsonData[0][idx] || '').toLowerCase().trim();
+              
+              // Ne JAMAIS matcher "prénom" ou "prenom"
+              if (originalValue === 'prénom' || originalValue === 'prenom') continue;
+              
+              // Chercher "nom" exact ou "nom" au début/fin (mais pas dans "prenom")
+              // Ou chercher "last"/"surname"
+              const isNomExact = headerValue === 'nom';
+              const isNomAtStart = headerValue.startsWith('nom') && headerValue !== 'prenom';
+              const isNomAtEnd = headerValue.endsWith('nom') && !headerValue.includes('prenom');
+              const hasLast = headerValue.includes('last') || headerValue.includes('surname');
+              
+              if ((isNomExact || isNomAtStart || isNomAtEnd || hasLast) 
+                && !headerValue.includes('prénom') && !headerValue.includes('prenom') && !headerValue.includes('first')) {
+                lastNameIndex = idx;
+                break;
+              }
+            }
+          }
+          
+          // Colonne "name" complète (si pas de séparation prénom/nom)
           const nameIndex = headerRow.findIndex((h: string) => 
-            h.includes('name') && !h.includes('first') && !h.includes('last')
+            h === 'name' && !h.includes('first') && !h.includes('last') && !h.includes('prénom') && !h.includes('prenom') && h !== 'nom'
           );
-          const firstNameIndex = headerRow.findIndex((h: string) => 
-            h.includes('first') || h.includes('prénom') || h.includes('prenom')
-          );
+          
           const emailIndex = headerRow.findIndex((h: string) => 
-            h.includes('email') || h.includes('mail')
+            h.includes('email') || h.includes('mail') || h.includes('e-mail')
           );
 
-          if (nameIndex === -1 && firstNameIndex === -1) {
-            reject(new Error('File must contain a "Name" or "First name" column'));
+          if (firstNameIndex === -1 && lastNameIndex === -1 && nameIndex === -1) {
+            reject(new Error('Le fichier doit contenir une colonne "Prénom" et/ou "Nom"'));
             return;
           }
 
           if (emailIndex === -1) {
-            reject(new Error('File must contain an "Email" column'));
+            reject(new Error('Le fichier doit contenir une colonne "Email"'));
             return;
           }
 
@@ -137,10 +207,11 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
             const row = jsonData[i];
             const name = nameIndex !== -1 ? String(row[nameIndex] || '').trim() : '';
             const firstName = firstNameIndex !== -1 ? String(row[firstNameIndex] || '').trim() : '';
+            const lastName = lastNameIndex !== -1 ? String(row[lastNameIndex] || '').trim() : '';
             const email = String(row[emailIndex] || '').trim().toLowerCase();
 
             // Skip empty rows
-            if (!name && !firstName && !email) {
+            if (!name && !firstName && !lastName && !email) {
               continue;
             }
 
@@ -150,31 +221,53 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
               continue; // Skip invalid emails
             }
 
-            // Combine name and firstName if both exist, otherwise use whichever is available
-            const fullName = name || firstName || email.split('@')[0];
-            const finalFirstName = firstName || name.split(' ')[0] || email.split('@')[0];
+            // Utiliser directement les valeurs trouvées dans les colonnes
+            let finalFirstName = firstName || '';
+            let finalLastName = lastName || '';
+            
+            // Si on a une colonne "name" complète mais pas de prénom/nom séparés, essayer de la diviser
+            if (name && !firstName && !lastName) {
+              const nameParts = name.split(' ').filter(p => p.trim());
+              if (nameParts.length >= 2) {
+                finalFirstName = nameParts[0];
+                finalLastName = nameParts.slice(1).join(' ');
+              } else {
+                finalFirstName = nameParts[0] || email.split('@')[0];
+                finalLastName = '';
+              }
+            } 
+            // Si on n'a que le prénom ou que le nom, utiliser ce qu'on a
+            else if (!firstName && !lastName) {
+              finalFirstName = email.split('@')[0];
+              finalLastName = '';
+            }
+
+            // Construire le nom complet : Prénom + Nom
+            const fullName = `${finalFirstName} ${finalLastName}`.trim() || name || email.split('@')[0];
 
             members.push({
               name: fullName,
               firstName: finalFirstName,
+              lastName: finalLastName,
               email,
               rowNumber: i + 1,
+              selected: true, // Par défaut, tous les membres sont sélectionnés
             });
           }
 
           if (members.length === 0) {
-            reject(new Error('No valid members found in the file. Please check the format and ensure columns are named correctly.'));
+            reject(new Error('Aucun membre valide trouvé dans le fichier. Veuillez vérifier le format et vous assurer que les colonnes sont nommées correctement.'));
             return;
           }
 
           resolve(members);
         } catch (err) {
-          reject(err instanceof Error ? err : new Error('Failed to parse Excel file'));
+          reject(err instanceof Error ? err : new Error('Échec de l\'analyse du fichier Excel'));
         }
       };
 
       reader.onerror = () => {
-        reject(new Error('Failed to read file'));
+        reject(new Error('Échec de la lecture du fichier'));
       };
 
       reader.readAsBinaryString(file);
@@ -192,14 +285,14 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
       selectedFile.name.endsWith('.csv');
 
     if (!isValidType) {
-      setError('Please select an Excel file (.xlsx, .xls) or CSV file');
+      setError('Veuillez sélectionner un fichier Excel (.xlsx, .xls) ou CSV');
       setIsProcessing(false);
       return;
     }
 
     // Validate file size
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setError(`File size exceeds the maximum limit of ${formatFileSize(MAX_FILE_SIZE)}`);
+      setError(`La taille du fichier dépasse la limite maximale de ${formatFileSize(MAX_FILE_SIZE)}`);
       setIsProcessing(false);
       return;
     }
@@ -210,7 +303,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
       const members = await parseExcelFile(selectedFile);
       setParsedMembers(members);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to parse file');
+      setError(err instanceof Error ? err.message : 'Échec de l\'analyse du fichier');
       setFile(null);
       setParsedMembers([]);
     } finally {
@@ -249,8 +342,9 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
   };
 
   const handleImport = async () => {
-    if (parsedMembers.length === 0) {
-      setError('No members to import');
+    const selectedMembers = parsedMembers.filter(m => m.selected);
+    if (selectedMembers.length === 0) {
+      setError('Aucun membre sélectionné pour l\'importation');
       return;
     }
 
@@ -261,7 +355,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
       const userIds: string[] = [];
       const errors: string[] = [];
 
-      for (const member of parsedMembers) {
+      for (const member of selectedMembers) {
         try {
           const newUser = createUser({
             name: member.name,
@@ -271,45 +365,75 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           });
           userIds.push(newUser.id);
         } catch (err) {
-          errors.push(`Row ${member.rowNumber}: ${err instanceof Error ? err.message : 'Failed to create user'}`);
+          errors.push(`Ligne ${member.rowNumber}: ${err instanceof Error ? err.message : 'Échec de la création de l\'utilisateur'}`);
         }
       }
 
       if (userIds.length === 0) {
-        setError('Failed to import any members. ' + (errors[0] || ''));
+        setError('Échec de l\'importation des membres. ' + (errors[0] || ''));
         setIsImporting(false);
         return;
       }
 
       if (errors.length > 0) {
-        setError(`Imported ${userIds.length} members. ${errors.length} failed: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`);
+        setError(`${userIds.length} membre${userIds.length > 1 ? 's' : ''} importé${userIds.length > 1 ? 's' : ''}. ${errors.length} échec${errors.length > 1 ? 's' : ''}: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`);
       }
 
       onMembersImported(userIds);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import members');
+      setError(err instanceof Error ? err.message : 'Échec de l\'importation des membres');
     } finally {
       setIsImporting(false);
     }
   };
 
-  const canImport = parsedMembers.length > 0 && !isProcessing && !isImporting;
+  const selectedMembersCount = parsedMembers.filter(m => m.selected).length;
+  const canImport = selectedMembersCount > 0 && !isProcessing && !isImporting;
+
+  // Filter members based on search query
+  const filteredMembers = parsedMembers.filter(member => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      member.firstName.toLowerCase().includes(query) ||
+      member.lastName.toLowerCase().includes(query) ||
+      member.name.toLowerCase().includes(query) ||
+      member.email.toLowerCase().includes(query)
+    );
+  });
+
+  const handleToggleMember = (index: number) => {
+    const updatedMembers = [...parsedMembers];
+    updatedMembers[index].selected = !updatedMembers[index].selected;
+    setParsedMembers(updatedMembers);
+  };
+
+  const handleSelectAll = () => {
+    const updatedMembers = parsedMembers.map(m => ({ ...m, selected: true }));
+    setParsedMembers(updatedMembers);
+  };
+
+  const handleDeselectAll = () => {
+    const updatedMembers = parsedMembers.map(m => ({ ...m, selected: false }));
+    setParsedMembers(updatedMembers);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-w-[95vw] w-full max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b border-border">
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-[#2063F0]" />
-            Import members from Excel
+            Importer des membres depuis Excel
           </DialogTitle>
           <DialogDescription>
-            Upload an Excel file (.xlsx, .xls) or CSV file with columns: Name (or First name), Email
+            Téléversez un fichier Excel (.xlsx, .xls) ou CSV avec les colonnes : Nom, Prénom, Email
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6">
+          <div className="space-y-4 py-4">
           {/* Drag and Drop Zone */}
           <div
             onDragOver={handleDragOver}
@@ -338,16 +462,16 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm font-medium">
-                    Drag and drop your file here, or{' '}
+                    Glissez-déposez votre fichier ici, ou{' '}
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="text-[#2063F0] hover:underline font-semibold"
                     >
-                      browse
+                      parcourir
                     </button>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Supported formats: Excel (.xlsx, .xls) or CSV
+                    Formats supportés : Excel (.xlsx, .xls) ou CSV
                   </p>
                 </div>
               </div>
@@ -356,7 +480,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                 {isProcessing ? (
                   <>
                     <Loader2 className="h-8 w-8 text-[#2063F0] animate-spin" />
-                    <p className="text-sm font-medium">Processing file...</p>
+                    <p className="text-sm font-medium">Traitement du fichier...</p>
                   </>
                 ) : parsedMembers.length > 0 ? (
                   <>
@@ -389,7 +513,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                         </button>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Found <span className="font-semibold text-foreground">{parsedMembers.length}</span> member{parsedMembers.length !== 1 ? 's' : ''} ready to import
+                        <span className="font-semibold text-foreground">{parsedMembers.length}</span> membre{parsedMembers.length !== 1 ? 's' : ''} trouvé{parsedMembers.length !== 1 ? 's' : ''} prêt{parsedMembers.length !== 1 ? 's' : ''} à importer
                       </p>
                     </div>
                   </>
@@ -406,29 +530,6 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
             )}
           </div>
 
-          {/* File Information */}
-          {file && parsedMembers.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                File Information
-              </p>
-              <div className="p-3 bg-muted/50 rounded-lg space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">File type:</span>
-                  <span className="font-medium">{getFileType(file)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">File size:</span>
-                  <span className="font-medium">{formatFileSize(file.size)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Members found:</span>
-                  <span className="font-medium">{parsedMembers.length}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="flex items-start gap-2 p-3 rounded-lg border border-destructive/50 bg-destructive/10">
@@ -437,40 +538,99 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
             </div>
           )}
 
-          {/* Preview (first 5 members) */}
+          {/* Members List with Search and Selection */}
           {parsedMembers.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Preview ({Math.min(5, parsedMembers.length)} of {parsedMembers.length})
-              </p>
-              <div className="max-h-48 overflow-y-auto border border-border rounded-lg">
-                <div className="divide-y divide-border">
-                  {parsedMembers.slice(0, 5).map((member, index) => (
-                    <div key={index} className="p-3 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{member.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground ml-2 shrink-0">
-                          Row {member.rowNumber}
-                        </span>
-                      </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Membres à importer ({selectedMembersCount} sur {parsedMembers.length})
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="text-xs h-7"
+                  >
+                    Tout sélectionner
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDeselectAll}
+                    className="text-xs h-7"
+                  >
+                    Tout désélectionner
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, prénom ou email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 text-sm"
+                />
+              </div>
+
+              {/* Members List */}
+              <div className="border border-border rounded-lg">
+                <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                  {filteredMembers.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Aucun membre trouvé pour "{searchQuery}"
                     </div>
-                  ))}
+                  ) : (
+                    filteredMembers.map((member, index) => {
+                      // Find the original index in parsedMembers
+                      const originalIndex = parsedMembers.findIndex(m => m.rowNumber === member.rowNumber);
+                      return (
+                        <div
+                          key={member.rowNumber}
+                          className="p-3 hover:bg-muted/50 transition-colors flex items-start gap-3"
+                        >
+                          <Checkbox
+                            checked={member.selected}
+                            onCheckedChange={() => handleToggleMember(originalIndex)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Nom</p>
+                                <p className="font-medium truncate">{member.lastName || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Prénom</p>
+                                <p className="font-medium truncate">{member.firstName || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Email</p>
+                                <p className="font-medium truncate">{member.email}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
           )}
+          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 pb-6 pt-4 shrink-0 border-t border-border bg-background">
           <Button
             variant="secondary"
             onClick={() => onOpenChange(false)}
             disabled={isProcessing || isImporting}
           >
-            Cancel
+            Annuler
           </Button>
           <Button
             variant="default"
@@ -480,10 +640,10 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
             {isImporting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Importing...
+                Importation...
               </>
             ) : (
-              `Import ${parsedMembers.length} member${parsedMembers.length !== 1 ? 's' : ''}`
+              `Importer ${selectedMembersCount} membre${selectedMembersCount !== 1 ? 's' : ''}`
             )}
           </Button>
         </DialogFooter>

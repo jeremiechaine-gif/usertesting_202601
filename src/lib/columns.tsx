@@ -103,22 +103,36 @@ const EscalationIndicator: React.FC<{ level: number }> = ({ level }) => {
   );
 };
 
-// OTD Status indicator
-// Coherent color system: aligned with escalation severity scale
+// OTD Status indicator with badge (like Delivery status)
 const OTDStatusIndicator: React.FC<{ status: string }> = ({ status }) => {
-  const statusConfig = {
-    'on-time': { color: '#10B981', label: 'On Time' }, // Emerald green (success, complements teal)
-    'at-risk': { color: '#FB8C00', label: 'At Risk' }, // Warm amber (caution)
-    'late': { color: '#F4511E', label: 'Late' }, // Coral (warning)
+  // Normalize status values (handle both 'on-time' and 'On time')
+  const normalizedStatus = status.toLowerCase().replace(/\s+/g, '-');
+  
+  const statusConfig: Record<string, { bg: string; text: string; border: string; label: string }> = {
+    'on-time': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120', label: 'On time' }, // Success green
+    'on time': { bg: '#ECFDF5', text: '#10B981', border: '#10B98120', label: 'On time' }, // Success green
+    'late': { bg: '#FEF2F2', text: '#EF4444', border: '#EF444420', label: 'Late' }, // Red (error)
+    'missing-information': { bg: '#FFF3E0', text: '#FB8C00', border: '#FB8C0020', label: 'Missing information' }, // Warm amber (caution)
+    'missing information': { bg: '#FFF3E0', text: '#FB8C00', border: '#FB8C0020', label: 'Missing information' }, // Warm amber (caution)
   };
-  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['on-time'];
+  
+  const config = statusConfig[normalizedStatus] || statusConfig['on-time'];
   
   return (
-    <div
-      className="w-5 h-5 rounded-full border-2 border-white shadow-sm"
-      style={{ backgroundColor: config.color }}
-      title={config.label}
-    />
+    <Badge 
+      className="text-xs font-medium break-words"
+      style={{
+        backgroundColor: config.bg,
+        color: config.text,
+        border: `1px solid ${config.border}`,
+        whiteSpace: 'normal',
+        wordWrap: 'break-word',
+        display: 'inline-block',
+        maxWidth: '100%',
+      }}
+    >
+      {config.label}
+    </Badge>
   );
 };
 
@@ -342,6 +356,15 @@ export const columns: ColumnDef<PurchaseOrderRow, any>[] = [
         header: 'Buyer Code',
         cell: (info) => <span className="text-sm break-words">{info.getValue()}</span>,
         size: 120,
+        filterFn: customFilterFn,
+        enableResizing: true,
+      }),
+      columnHelper.accessor('mrpCode', {
+        id: 'mrpCode',
+        header: 'MRP code',
+        cell: (info) => <span className="text-sm break-words">{info.getValue()}</span>,
+        size: 120,
+        enableSorting: true,
         filterFn: customFilterFn,
         enableResizing: true,
       }),

@@ -40,10 +40,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <div className="bg-background border border-border rounded-2xl shadow-xl p-8">
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-[#2063F0] to-[#31C7AD] bg-clip-text text-transparent mb-2">
-              Login to Pelico
+              Connexion à Pelico
             </h1>
             <p className="text-sm text-muted-foreground">
-              Log in to access your workspace
+              Connectez-vous pour accéder à votre espace de travail
             </p>
           </div>
 
@@ -51,28 +51,28 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-sm font-medium">
-                  First Name
+                  Prénom
                 </Label>
                 <Input
                   id="firstName"
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
+                  placeholder="Prénom"
                   className="h-11"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-sm font-medium">
-                  Last Name
+                  Nom
                 </Label>
                 <Input
                   id="lastName"
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
+                  placeholder="Nom"
                   className="h-11"
                 />
               </div>
@@ -80,7 +80,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
-                Email / Login
+                Email / Identifiant
               </Label>
               <Input
                 id="email"
@@ -94,7 +94,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium">
-                  Password
+                  Mot de passe
                 </Label>
                 <Input
                   id="password"
@@ -111,14 +111,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               variant="default"
               className="w-full h-11 mt-6 font-medium"
             >
-              Log in
+              Se connecter
             </Button>
           </form>
         </div>
 
         {/* Footer note */}
         <p className="text-xs text-center text-muted-foreground mt-6">
-          Prototype - No authentication verification
+          Prototype - Aucune vérification d'authentification
         </p>
       </div>
     </div>

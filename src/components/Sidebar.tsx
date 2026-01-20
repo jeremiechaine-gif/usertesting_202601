@@ -78,8 +78,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   const menuItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'simulation', label: 'Simulation Basket', icon: ShoppingCart },
+    { id: 'home', label: 'Accueil', icon: Home },
+    { id: 'simulation', label: 'Panier de simulation', icon: ShoppingCart },
   ];
 
   // Items that should always be visible
@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Toggle button */}
         <button
           onClick={onToggle}
-          aria-label="Collapse sidebar"
+          aria-label="Réduire la barre latérale"
           className="shrink-0 ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -132,7 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search..."
+            placeholder="Rechercher..."
             onClick={() => setSearchModalOpen(true)}
             readOnly
             className="pl-9 pr-20 cursor-pointer"

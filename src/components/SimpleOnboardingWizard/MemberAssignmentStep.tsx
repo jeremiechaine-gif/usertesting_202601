@@ -11,7 +11,6 @@ import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap, Up
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { getUsers, getCurrentUserId, type User } from '@/lib/users';
-import { createMockUsersForTeams } from '@/lib/onboarding/teamWizardUtils';
 import {
   Popover,
   PopoverContent,
@@ -50,20 +49,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   // Load available users
   useEffect(() => {
     const loadUsers = () => {
-      const teamNames = teams.map(t => t.name);
-      const mockUsers = createMockUsersForTeams(teamNames);
+      // By default, the list is empty - only load real users (no mock users)
       const allUsers = getUsers();
       const adminId = getCurrentUserId();
       
-      // Combine mock users and real users, filter out admin
-      const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
+      // Filter out admin only
+      const filteredUsers = allUsers.filter(u => u.id !== adminId);
       
-      // Remove duplicates by email (keep first occurrence)
-      const uniqueUsers = combinedUsers.filter((user, index, self) =>
-        index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
-      );
-      
-      setAvailableUsers(uniqueUsers);
+      setAvailableUsers(filteredUsers);
     };
     
     loadUsers();
@@ -73,17 +66,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   useEffect(() => {
     if (!createUserModalOpen) {
       const loadUsers = () => {
-        const teamNames = teams.map(t => t.name);
-        const mockUsers = createMockUsersForTeams(teamNames);
+        // By default, the list is empty - only load real users (no mock users)
         const allUsers = getUsers();
         const adminId = getCurrentUserId();
         
-        const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
-        const uniqueUsers = combinedUsers.filter((user, index, self) =>
-          index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
-        );
+        // Filter out admin only
+        const filteredUsers = allUsers.filter(u => u.id !== adminId);
         
-        setAvailableUsers(uniqueUsers);
+        setAvailableUsers(filteredUsers);
       };
       
       loadUsers();
@@ -91,18 +81,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   }, [createUserModalOpen, teams]);
 
   const handleUserCreated = (userId: string) => {
-    // Refresh users list
-    const teamNames = teams.map(t => t.name);
-    const mockUsers = createMockUsersForTeams(teamNames);
+    // Refresh users list - only load real users (no mock users)
     const allUsers = getUsers();
     const adminId = getCurrentUserId();
     
-    const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
-    const uniqueUsers = combinedUsers.filter((user, index, self) =>
-      index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
-    );
+    // Filter out admin only
+    const filteredUsers = allUsers.filter(u => u.id !== adminId);
     
-    setAvailableUsers(uniqueUsers);
+    setAvailableUsers(filteredUsers);
     
     // If a team ID was specified, automatically add the new user to that team
     if (createUserModalTeamId) {
@@ -116,18 +102,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   };
 
   const handleMembersImported = (userIds: string[]) => {
-    // Refresh users list
-    const teamNames = teams.map(t => t.name);
-    const mockUsers = createMockUsersForTeams(teamNames);
+    // Refresh users list - only load real users (no mock users)
     const allUsers = getUsers();
     const adminId = getCurrentUserId();
     
-    const combinedUsers = [...mockUsers, ...allUsers].filter(u => u.id !== adminId);
-    const uniqueUsers = combinedUsers.filter((user, index, self) =>
-      index === self.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase())
-    );
+    // Filter out admin only
+    const filteredUsers = allUsers.filter(u => u.id !== adminId);
     
-    setAvailableUsers(uniqueUsers);
+    setAvailableUsers(filteredUsers);
     
     // If a team ID was specified, automatically add all imported users to that team
     if (importMembersModalTeamId) {
@@ -307,22 +289,21 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-8 pt-4 space-y-6 pb-0">
           {/* Info Banner */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
-            <div className="p-2 rounded-lg bg-[#31C7AD]/10">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5">
+            <div className="p-2 rounded-lg bg-[#31C7AD]/10 shrink-0">
               <Users className="h-5 w-5 text-[#31C7AD]" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium mb-1">Add members to teams</p>
-              <p className="text-xs text-muted-foreground">
-                Assign team members to each team. Members can belong to multiple teams.
-              </p>
+              <p className="text-sm font-medium">Les membres peuvent appartenir à plusieurs équipes.</p>
             </div>
           </div>
 
           {/* Teams Grid */}
           <div className={cn(
-            "grid gap-6",
-            teams.length === 1 ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
+            "grid gap-4 sm:gap-6",
+            teams.length === 1 
+              ? "grid-cols-1 max-w-2xl mx-auto" 
+              : "grid-cols-1 md:grid-cols-2 xl:grid-cols-2"
           )}>
             {teams.map((team, teamIndex) => {
               const teamMembers = getTeamMembers(team.id);
@@ -334,57 +315,54 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
               return (
                 <div
                   key={team.id}
-                  className="rounded-xl border-2 border-border bg-background hover:shadow-lg transition-all overflow-hidden flex flex-col"
+                  className="rounded-xl border-2 border-border bg-background hover:shadow-lg transition-all overflow-hidden flex flex-col h-full"
                 >
                   {/* Team Header */}
-                  <div className="p-4 sm:p-5 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5 border-b border-border">
+                  <div className="p-4 sm:p-5 lg:p-6 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5 border-b border-border shrink-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-base sm:text-lg break-words mb-1.5">{team.name}</h3>
-                        {team.description && (
-                          <p className="text-xs sm:text-sm text-muted-foreground break-words">{team.description}</p>
-                        )}
+                        <h3 className="font-semibold text-base sm:text-lg lg:text-xl break-words">{team.name}</h3>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => {
-                          if (window.confirm(`Are you sure you want to delete the team "${team.name}"? This will remove all assigned members and make them available again.`)) {
+                          if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'équipe "${team.name}" ? Cela supprimera tous les membres assignés et les rendra disponibles à nouveau.`)) {
                             const updatedTeams = teams.filter(t => t.id !== team.id);
                             onTeamsUpdate(updatedTeams);
                           }
                         }}
-                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Delete team"
+                        className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Supprimer l'équipe"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
                     </div>
                   </div>
 
                   {/* Team Content */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                  <div className="p-4 sm:p-5 lg:p-6 flex-1 flex flex-col min-h-0">
                     {/* Members Section */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-[#2063F0]" />
-                          <span className="text-sm font-medium">
-                            Team Members ({teamMembers.length})
+                      <div className="flex flex-col sm:flex-col 2xl:flex-row 2xl:items-center 2xl:justify-between gap-3">
+                        <div className="flex items-center gap-2 shrink-0 order-1">
+                          <Users className="h-4 w-4 text-[#2063F0] shrink-0" />
+                          <span className="text-sm font-medium whitespace-nowrap">
+                            Membres de l'équipe ({teamMembers.length})
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap order-2 2xl:order-2">
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-7 gap-1.5 text-xs"
+                            className="h-7 sm:h-8 gap-1.5 text-xs sm:text-sm flex-1 sm:flex-initial min-w-0"
                             onClick={() => {
                               setImportMembersModalTeamId(team.id);
                               setImportMembersModalOpen(true);
                             }}
                           >
-                            <Upload className="h-3 w-3" />
-                            Import member
+                            <Upload className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                            <span className="truncate">Importer un membre</span>
                           </Button>
                           <Popover 
                           open={openMemberPopover === team.id}
@@ -399,14 +377,14 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                             <Button
                               variant="secondary"
                               size="sm"
-                              className="h-7 gap-1.5 text-xs"
+                              className="h-7 sm:h-8 gap-1.5 text-xs sm:text-sm flex-1 sm:flex-initial min-w-0"
                             >
-                              <Plus className="h-3 w-3" />
-                              Add Member
+                              <Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                              <span className="truncate">Ajouter un membre</span>
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent 
-                            className="w-96 p-0 flex flex-col overflow-hidden" 
+                            className="w-[calc(100vw-2rem)] sm:w-96 p-0 flex flex-col overflow-hidden" 
                             style={{ height: '500px', maxHeight: '500px' }}
                             align={popoverSide}
                             side={isLeftColumn ? 'right' : 'left'}
@@ -419,7 +397,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               <div className="relative">
                                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="Search members..."
+                                  placeholder="Rechercher des membres..."
                                   value={memberSearchQuery[team.id] || ''}
                                   onChange={(e) => setMemberSearchQuery({ ...memberSearchQuery, [team.id]: e.target.value })}
                                   className="pl-8 h-9 text-sm"
@@ -430,8 +408,8 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-muted-foreground">
                                   {availableMembers.length === availableUsers.length 
-                                    ? `${availableUsers.length} ${availableUsers.length === 1 ? 'user' : 'users'} available`
-                                    : `${availableMembers.length} of ${availableUsers.length} ${availableUsers.length === 1 ? 'user' : 'users'}`}
+                                    ? `${availableUsers.length} ${availableUsers.length === 1 ? 'utilisateur' : 'utilisateurs'} disponible${availableUsers.length === 1 ? '' : 's'}`
+                                    : `${availableMembers.length} sur ${availableUsers.length} ${availableUsers.length === 1 ? 'utilisateur' : 'utilisateurs'}`}
                                 </span>
                               </div>
                               
@@ -451,7 +429,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                     )}
                                   >
-                                    Not assigned
+                                    Non assigné
                                   </button>
                                 </div>
                                 {availableMembers.length > 0 && (
@@ -461,7 +439,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                       className="text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center gap-1"
                                     >
                                       <CheckSquare className="h-3 w-3" />
-                                      Select all
+                                      Tout sélectionner
                                     </button>
                                     <span className="text-muted-foreground">•</span>
                                     <button
@@ -469,7 +447,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                       className="text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center gap-1"
                                     >
                                       <Square className="h-3 w-3" />
-                                      Unselect all
+                                      Tout désélectionner
                                     </button>
                                   </div>
                                 )}
@@ -482,10 +460,10 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                   <div className="text-center py-8 text-sm text-muted-foreground space-y-3">
                                     <p>
                                       {memberSearchQuery[team.id] 
-                                        ? 'No members found' 
+                                        ? 'Aucun membre trouvé' 
                                         : (memberFilter[team.id] === 'not-assigned' 
-                                          ? 'All members are assigned to teams' 
-                                          : 'All members assigned to this team')}
+                                          ? 'Tous les membres sont assignés à des équipes' 
+                                          : 'Tous les membres sont assignés à cette équipe')}
                                     </p>
                                     {memberSearchQuery[team.id] && (
                                       <Button
@@ -498,7 +476,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                         className="text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
                                       >
                                         <Plus className="h-3 w-3 mr-1" />
-                                        Create "{memberSearchQuery[team.id]}"
+                                        Créer "{memberSearchQuery[team.id]}"
                                       </Button>
                                     )}
                                   </div>
@@ -529,12 +507,12 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                               </div>
                                               {isNotAssigned && (
                                                 <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-green-500/10 text-green-600 border-green-500/30">
-                                                  Not assigned
+                                                  Non assigné
                                                 </Badge>
                                               )}
                                               {!isNotAssigned && userTeams.length > 0 && (
                                                 <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
-                                                  Assigned
+                                                  Assigné
                                                 </Badge>
                                               )}
                                             </div>
@@ -571,7 +549,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                                 className="w-full justify-start gap-2 text-[#2063F0] hover:text-[#1a54d8] hover:bg-[#2063F0]/10"
                               >
                                 <Plus className="h-4 w-4" />
-                                Create new user
+                                Créer un nouvel utilisateur
                               </Button>
                             </div>
                           </PopoverContent>
@@ -594,36 +572,36 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                               });
                               onTeamsUpdate(updatedTeams);
                             }}
-                            className="h-7 gap-1.5 text-xs"
+                            className="h-7 sm:h-8 gap-1.5 text-xs sm:text-sm"
                           >
-                            <X className="h-3 w-3" />
-                            Clear
+                            <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                            Effacer
                           </Button>
                         </div>
                       )}
 
                       {/* Selected Members */}
                       {teamMembers.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 sm:gap-3">
                           {teamMembers.map((member) => (
                             <div
                               key={member.id}
-                              className="group relative flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-br from-[#2063F0]/10 to-[#31C7AD]/5 border border-[#2063F0]/20 hover:border-[#2063F0]/40 transition-all"
+                              className="group relative flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gradient-to-br from-[#2063F0]/10 to-[#31C7AD]/5 border border-[#2063F0]/20 hover:border-[#2063F0]/40 transition-all flex-1 sm:flex-initial min-w-0 sm:min-w-[200px]"
                             >
-                              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-[#2063F0] to-[#31C7AD] flex items-center justify-center text-white text-xs font-semibold">
+                              <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-[#2063F0] to-[#31C7AD] flex items-center justify-center text-white text-xs font-semibold">
                                 {getInitials(member.name)}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-foreground truncate">
+                                <div className="text-xs sm:text-sm font-medium text-foreground truncate">
                                   {member.name}
                                 </div>
                               </div>
                               <button
                                 onClick={() => handleMemberToggle(team.id, member.id)}
-                                className="flex-shrink-0 ml-1 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                title="Remove member"
+                                className="flex-shrink-0 ml-1 p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                title="Retirer le membre"
                               >
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                               </button>
                             </div>
                           ))}
@@ -633,7 +611,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                           <div className="text-center">
                             <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                             <p className="text-sm text-muted-foreground">
-                              No members yet. Click "Add Member" to get started.
+                              Aucun membre pour le moment. Cliquez sur "Ajouter un membre" pour commencer.
                             </p>
                           </div>
                         </div>

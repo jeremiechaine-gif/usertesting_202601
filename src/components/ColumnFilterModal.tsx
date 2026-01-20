@@ -76,28 +76,28 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
   const getConditionOptions = () => {
     if (columnType === 'number') {
       return [
-        { value: 'equals', label: 'Equals' },
-        { value: 'notEquals', label: 'Not Equals' },
-        { value: 'greaterThan', label: 'Greater than' },
-        { value: 'lessThan', label: 'Less than' },
-        { value: 'greaterThanOrEqual', label: 'Greater than or equal' },
-        { value: 'lessThanOrEqual', label: 'Less than or equal' },
+        { value: 'equals', label: 'Égal à' },
+        { value: 'notEquals', label: 'Différent de' },
+        { value: 'greaterThan', label: 'Supérieur à' },
+        { value: 'lessThan', label: 'Inférieur à' },
+        { value: 'greaterThanOrEqual', label: 'Supérieur ou égal à' },
+        { value: 'lessThanOrEqual', label: 'Inférieur ou égal à' },
       ];
     }
     if (columnType === 'date') {
       return [
-        { value: 'equals', label: 'Equals' },
-        { value: 'before', label: 'Before' },
-        { value: 'after', label: 'After' },
-        { value: 'between', label: 'Between' },
+        { value: 'equals', label: 'Égal à' },
+        { value: 'before', label: 'Avant' },
+        { value: 'after', label: 'Après' },
+        { value: 'between', label: 'Entre' },
       ];
     }
     // Text type
     return [
-      { value: 'is', label: 'Is' },
-      { value: 'isNot', label: 'Is Not' },
-      { value: 'contains', label: 'Contains' },
-      { value: 'doesNotContain', label: 'Does Not Contain' },
+      { value: 'is', label: 'Est' },
+      { value: 'isNot', label: 'N\'est pas' },
+      { value: 'contains', label: 'Contient' },
+      { value: 'doesNotContain', label: 'Ne contient pas' },
     ];
   };
 
@@ -202,7 +202,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                 <Filter className="h-5 w-5 text-white" />
               </div>
               <DialogTitle className="text-2xl page-title bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                {columnLabel}
+                Filtrer par {columnLabel}
               </DialogTitle>
             </div>
           </DialogHeader>
@@ -241,7 +241,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                     : 'cursor-pointer'
                 }`}
               >
-                Display Selected only
+                Afficher uniquement les sélectionnés
               </label>
               {selectedCount > 0 && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#31C7AD]/10 text-[#31C7AD] border border-[#31C7AD]/20">
@@ -255,7 +255,7 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search values..."
+              placeholder="Rechercher des valeurs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-10 border-border/60 focus:border-[#2063F0] focus:ring-[#2063F0]/20"
@@ -271,8 +271,8 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                 <div className="p-3 rounded-full bg-gradient-to-br from-[#2063F0]/20 to-[#2063F0]/10 mb-3">
                   <Search className="h-6 w-6 text-[#2063F0]/60" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">No results found</p>
-                <p className="text-xs text-muted-foreground/70">Try adjusting your search</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Aucun résultat trouvé</p>
+                <p className="text-xs text-muted-foreground/70">Essayez d'ajuster votre recherche</p>
               </div>
             ) : (
               <>
@@ -292,8 +292,8 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
                     />
                     <span className="text-sm font-semibold text-muted-foreground">
                       {displayedOptions.every((opt) => selectedValues.includes(opt.value))
-                        ? 'Deselect all'
-                        : 'Select all'}
+                        ? 'Tout désélectionner'
+                        : 'Tout sélectionner'}
                     </span>
                   </div>
                 )}
@@ -337,11 +337,11 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
               </div>
               <div className="flex-1">
                 <p className="text-sm text-blue-900 dark:text-blue-300">
-                  Showing <span className="font-semibold">{maxDisplayResults}</span> of{' '}
-                  <span className="font-semibold">{totalResults}</span> results
+                  Affichage de <span className="font-semibold">{maxDisplayResults}</span> sur{' '}
+                  <span className="font-semibold">{totalResults}</span> résultats
                 </p>
                 <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
-                  Refine your search to find more entries
+                  Affinez votre recherche pour trouver plus d'entrées
                 </p>
               </div>
             </div>
@@ -355,17 +355,17 @@ export const ColumnFilterModal: React.FC<ColumnFilterModalProps> = ({
             onClick={handleCancel}
             className="border-border/60 hover:bg-muted"
           >
-            Cancel
+            Annuler
           </Button>
           <Button 
+            variant="default"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
               handleApply(e);
-            }} 
-            className="bg-gradient-to-r from-[#2063F0] to-[#31C7AD] hover:from-[#1a54d8] hover:to-[#2ab89a] text-white shadow-md"
+            }}
           >
-            Apply
+            Appliquer
           </Button>
         </DialogFooter>
       </DialogContent>

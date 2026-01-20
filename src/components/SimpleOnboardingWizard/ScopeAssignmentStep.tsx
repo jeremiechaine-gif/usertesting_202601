@@ -29,12 +29,16 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
+export type ScopeAssignmentSubstep = 'template-scope' | 'assign-scopes';
+
 interface ScopeAssignmentStepProps {
   teams: SimpleTeamConfig[];
   onTeamsUpdate: (teams: SimpleTeamConfig[]) => void;
   onNext: () => void;
   onBack: () => void;
   onClearAll: () => void;
+  currentSubstep?: ScopeAssignmentSubstep;
+  onSubstepChange?: (substep: ScopeAssignmentSubstep) => void;
 }
 
 export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
@@ -43,6 +47,8 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
   onBack,
   onNext,
   onClearAll,
+  currentSubstep = 'template-scope',
+  onSubstepChange,
 }) => {
   const [availableScopes, setAvailableScopes] = useState<Scope[]>([]);
   const [userDefaultScopes, setUserDefaultScopes] = useState<Record<string, string>>({});
@@ -198,46 +204,119 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
     return getUsers().filter(u => team.memberIds.includes(u.id));
   };
 
+  // Helper function to replace "Team" with "Équipe" in team names
+  const formatTeamName = (name: string): string => {
+    // Handle "Approvisionneur Team" -> "Équipe Approvisionneur"
+    // First, try to match pattern "[Word] Team" and swap to "Équipe [Word]"
+    const match = name.match(/^(.+?)\s+Team$/i);
+    if (match) {
+      return `Équipe ${match[1]}`;
+    }
+    // Replace "Team" at the beginning
+    if (/^Team\s+/i.test(name)) {
+      return name.replace(/^Team\s+/i, 'Équipe ');
+    }
+    // Replace "Team" anywhere else
+    return name
+      .replace(/\s+Team\s+/g, ' Équipe ')
+      .replace(/Team\s+/g, 'Équipe ')
+      .replace(/\s+Team$/i, '')
+      .replace(/\s+Team/g, '');
+  };
+
+  // Helper function to replace "Team for" with "Équipe pour" in descriptions
+  const formatTeamDescription = (description: string): string => {
+    return description
+      .replace(/Team for/gi, 'Équipe pour')
+      .replace(/Team\s+/g, 'Équipe ');
+  };
+
   return (
     <>
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <ScrollArea className="flex-1 min-h-0">
           <div className="px-8 pt-4 space-y-6 pb-0">
-            {/* Info Banner */}
-            <div className="flex items-start gap-4 p-5 rounded-xl bg-gradient-to-br from-[#31C7AD]/5 to-[#2063F0]/5 border border-[#31C7AD]/20">
-              <div className="p-3 rounded-lg bg-gradient-to-br from-[#31C7AD]/10 to-[#2063F0]/10 shrink-0">
-                <Target className="h-6 w-6 text-[#31C7AD]" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base font-semibold mb-2">What is a Scope?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                  A <strong>scope</strong> defines your personal data perimeter—the specific subset of data you need to see and work with. Think of it as a filter that shows only what's relevant to your role, such as:
-                </p>
-                <ul className="text-sm text-muted-foreground space-y-1.5 mb-3 ml-4 list-disc">
-                  <li>Specific plants, production lines, or work centers</li>
-                  <li>Certain product codes, suppliers, or customer segments</li>
-                  <li>Particular time periods or project phases</li>
-                  <li>Any combination of filters that match your responsibilities</li>
-                </ul>
-                <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-[#31C7AD]/10 italic">
-                  💡 <strong>Tip:</strong> Assign scopes to each team member individually. Each member can have multiple scopes, with one set as the default primary scope.
-                </p>
-                <div className="mt-4">
+            {/* Substep 3.1: Template scope - Show only "What is a Scope?" section */}
+            {currentSubstep === 'template-scope' && (
+              <div className="max-w-4xl mx-auto">
+                {/* Hero Section */}
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2063F0] to-[#31C7AD] mb-4 shadow-lg">
+                    <Target className="h-8 w-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-3">
+                    Comprendre les périmètres et les routines
+                  </h2>
+                  <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+                    Définir d'abord votre périmètre permet de créer les fondations sur lesquelles vos routines pourront ensuite s'appuyer pour accomplir efficacement vos missions.
+                  </p>
+                </div>
+
+                {/* Definition Card - Scope */}
+                <div className="bg-gradient-to-br from-[#2063F0]/5 via-[#31C7AD]/5 to-[#2063F0]/5 rounded-2xl p-6 mb-6 border-2 border-[#2063F0]/20 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-[#2063F0] to-[#2063F0]/80 flex items-center justify-center shadow-md">
+                      <Target className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-foreground mb-2">
+                        Qu'est-ce qu'un périmètre ?
+                      </h3>
+                      <p className="text-base text-foreground leading-relaxed mb-3">
+                        Un <strong className="text-[#2063F0]">périmètre</strong> est l'ensemble précis des données dont vous êtes responsable dans votre travail quotidien. Il définit votre territoire d'action en filtrant uniquement les informations pertinentes pour votre rôle.
+                      </p>
+                      <div className="bg-background/60 rounded-lg p-4 border border-[#2063F0]/10">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          <strong className="text-foreground">Exemples concrets :</strong>
+                        </p>
+                        <ul className="text-sm text-muted-foreground space-y-1.5 ml-4 list-disc">
+                          <li>Des usines ou lignes de production spécifiques</li>
+                          <li>Certains codes produits, fournisseurs ou segments clients</li>
+                          <li>Des périodes temporelles ou phases de projet particulières</li>
+                          <li>Toute combinaison de filtres correspondant à vos responsabilités</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Key Message */}
+                <div className="bg-gradient-to-r from-[#2063F0]/10 via-[#31C7AD]/10 to-[#2063F0]/10 rounded-xl p-5 mb-6 border-2 border-[#2063F0]/20 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">💡</div>
+                    <div className="flex-1">
+                      <p className="text-base font-semibold text-foreground mb-1">
+                        Le message clé
+                      </p>
+                      <p className="text-base text-foreground">
+                        Le <strong className="text-[#2063F0]">Scope</strong> est ce que je gère, la <strong className="text-[#31C7AD]">Routine</strong> est comment je le traite.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA Button */}
+                <div className="flex justify-center">
                   <Button 
-                    variant="accent"
+                    variant="secondary"
+                    size="lg"
                     onClick={() => {
                       setEditingScope(null);
                       setScopeToDuplicate(null);
                       setScopeModalOpen(true);
                     }}
+                    className="px-8 py-6 text-base font-semibold"
                   >
-                    Create template scope
+                    Créer un modèle de périmètre
                   </Button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Teams Grid */}
+            {/* Substep 3.2: Assign scopes - Show teams grid with members */}
+            {currentSubstep === 'assign-scopes' && (
+              <>
+                {/* Teams Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {teams.map((team) => {
                 const teamMembers = getTeamMembers(team.id);
@@ -251,9 +330,13 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                     <div className="p-5 bg-gradient-to-br from-[#2063F0]/5 to-[#31C7AD]/5 border-b border-border">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg mb-1">{team.name}</h3>
+                          <h3 className="font-semibold text-lg mb-1">
+                            {formatTeamName(team.name)}
+                          </h3>
                           {team.description && (
-                            <p className="text-sm text-muted-foreground">{team.description}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatTeamDescription(team.description)}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -262,7 +345,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Target className="h-3.5 w-3.5" />
-                          {teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}
+                          {teamMembers.length} membre{teamMembers.length !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>
@@ -295,7 +378,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                 </div>
                                 {memberScopes.length > 0 && (
                                   <Badge variant="secondary" className="text-xs">
-                                    {memberScopes.length} scope{memberScopes.length !== 1 ? 's' : ''}
+                                    {memberScopes.length} périmètre{memberScopes.length !== 1 ? 's' : ''}
                                   </Badge>
                                 )}
                               </div>
@@ -303,7 +386,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                               {/* Scopes Section */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium text-muted-foreground">Scopes</span>
+                                  <span className="text-xs font-medium text-muted-foreground">Périmètres</span>
                                   <Popover 
                                     open={openScopePopover === popoverKey}
                                     onOpenChange={(open) => {
@@ -320,7 +403,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                         className="h-6 gap-1 text-xs"
                                       >
                                         <Plus className="h-3 w-3" />
-                                        Add Scope
+                                        Ajouter un périmètre
                                       </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-96 p-0" align="end">
@@ -328,7 +411,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                         <div className="relative">
                                           <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                           <Input
-                                            placeholder="Search scopes..."
+                                            placeholder="Rechercher des périmètres..."
                                             value={scopeSearchQuery[member.id] || ''}
                                             onChange={(e) => setScopeSearchQuery({ ...scopeSearchQuery, [member.id]: e.target.value })}
                                             className="pl-8 h-9 text-sm"
@@ -347,14 +430,14 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                           className="w-full h-8 gap-1.5 text-xs"
                                         >
                                           <Plus className="h-3 w-3" />
-                                          Create Scope Template
+                                          Créer un périmètre
                                         </Button>
                                       </div>
                                       <ScrollArea className="max-h-[400px]">
                                         <div className="p-2">
                                           {availableScopesForMember.length === 0 && availableScopes.length > 0 ? (
                                             <div className="text-center py-8 text-sm text-muted-foreground">
-                                              {scopeSearchQuery[member.id] ? 'No scopes found' : 'All scopes assigned'}
+                                              {scopeSearchQuery[member.id] ? 'Aucun périmètre trouvé' : 'Tous les périmètres sont assignés'}
                                             </div>
                                           ) : availableScopesForMember.length > 0 ? (
                                             <div className="space-y-1">
@@ -379,7 +462,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                                         )}
                                                         {scope.filters && scope.filters.length > 0 && (
                                                           <div className="text-xs text-muted-foreground">
-                                                            {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
+                                                            {scope.filters.length} filtre{scope.filters.length !== 1 ? 's' : ''}
                                                           </div>
                                                         )}
                                                       </div>
@@ -414,18 +497,18 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                               </span>
                                               {isCustomized && (
                                                 <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-orange-500/10 text-orange-600 border-orange-500/30">
-                                                  Customized
+                                                  Personnalisé
                                                 </Badge>
                                               )}
                                               {isDefault && (
                                                 <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-[#2063F0]/10 text-[#2063F0] border-[#2063F0]/30 flex items-center gap-1">
                                                   <Star className="h-2.5 w-2.5 fill-[#2063F0]" />
-                                                  Default
+                                                  Par défaut
                                                 </Badge>
                                               )}
                                               {scope.filters && scope.filters.length > 0 && (
                                                 <Badge variant="secondary" className="text-xs h-4 px-1.5 bg-muted text-muted-foreground border-border">
-                                                  {scope.filters.length} filter{scope.filters.length !== 1 ? 's' : ''}
+                                                  {scope.filters.length} filtre{scope.filters.length !== 1 ? 's' : ''}
                                                 </Badge>
                                               )}
                                             </div>
@@ -464,7 +547,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                                 setScopeModalOpen(true);
                                               }}
                                               className="p-1 rounded-md hover:bg-[#31C7AD]/10 text-muted-foreground hover:text-[#31C7AD] transition-colors opacity-0 group-hover:opacity-100"
-                                              title={isCustomized ? "Edit customized scope" : "Customize template"}
+                                              title={isCustomized ? "Modifier le périmètre personnalisé" : "Personnaliser le modèle"}
                                             >
                                               <Edit2 className="h-3.5 w-3.5" />
                                             </button>
@@ -503,7 +586,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                           <div className="text-center">
                             <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                             <p className="text-sm text-muted-foreground">
-                              No members in this team. Add members in the previous step.
+                              Tous les membres sont assignés à cette équipe.
                             </p>
                           </div>
                         </div>
@@ -513,6 +596,8 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                 );
               })}
             </div>
+              </>
+            )}
           </div>
         </ScrollArea>
       </div>
@@ -536,32 +621,31 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           } : editingScope || undefined}
-          title={scopeToDuplicate ? "Modify Scope" : editingScope ? (isInstance(editingScope) ? "Customize Scope" : "Edit Scope") : "Create Scope Template"}
-          saveButtonText={scopeToDuplicate ? "Add Scope" : editingScope ? (isInstance(editingScope) ? "Update Scope" : "Update Scope") : "Create Template"}
-          onSave={() => {
+          title={scopeToDuplicate ? "Modifier le périmètre" : editingScope ? (isInstance(editingScope) ? "Personnaliser le périmètre" : "Modifier le périmètre") : (currentMemberId ? `Périmètre de ${getUsers().find(u => u.id === currentMemberId)?.name || ''}` : "Créer un modèle de périmètre")}
+          saveButtonText={scopeToDuplicate ? "Ajouter le périmètre" : editingScope ? (isInstance(editingScope) ? "Mettre à jour le périmètre" : "Mettre à jour le périmètre") : "Créer le modèle"}
+          isTemplateScope={currentSubstep === 'template-scope' && !editingScope && !scopeToDuplicate}
+          memberName={currentMemberId && !editingScope && !scopeToDuplicate ? getUsers().find(u => u.id === currentMemberId)?.name : undefined}
+          onSave={(createdScopeId) => {
             // Reload scopes after creation/update
-            const oldScopes = getAvailableScopes();
-            const oldScopeIds = new Set(oldScopes.map(s => s.id));
+            const newScopes = getAvailableScopes();
+            setAvailableScopes(newScopes);
             
-            // Wait a bit for the scope to be saved
-            setTimeout(() => {
-              const allScopes = getScopes(); // Get ALL scopes from localStorage
-              const newScopes = getAvailableScopes(); // Get filtered scopes
+            // If creating a new scope template (not editing) and we have a current member, assign it automatically
+            if (currentMemberId && !editingScope && !scopeToDuplicate) {
+              // Use the created scope ID if provided, otherwise find it
+              let scopeToAssign: Scope | undefined;
               
-              // Find the newly created scope (either new or duplicated)
-              const newScope = newScopes.find(s => !oldScopeIds.has(s.id));
+              if (createdScopeId) {
+                // Use the ID directly from the callback
+                scopeToAssign = getScopes().find(s => s.id === createdScopeId);
+              } else {
+                // Fallback: find the newly created scope by comparing before/after
+                const oldScopes = getAvailableScopes();
+                const oldScopeIds = new Set(oldScopes.map(s => s.id));
+                scopeToAssign = newScopes.find(s => !oldScopeIds.has(s.id));
+              }
               
-              // Also check in all scopes if not found in filtered
-              const newScopeInAll = !newScope ? allScopes.find(s => !oldScopeIds.has(s.id)) : null;
-              
-              // Use the scope from all scopes if available
-              const scopeToAssign = newScope || newScopeInAll;
-              
-              setAvailableScopes(newScopes);
-              
-              // If creating a new scope (not editing) and we have a current member, assign it automatically
-              if (currentMemberId && !editingScope && !scopeToDuplicate && scopeToAssign) {
-                // Directly assign the scope to the member without checking (to avoid timing issues)
+              if (scopeToAssign) {
                 const user = getUsers().find(u => u.id === currentMemberId);
                 
                 if (user) {
@@ -583,10 +667,22 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                   }
                 }
               }
+            }
+            
+            // If duplicating a scope, assign the new copy to the current member
+            if (currentMemberId && scopeToDuplicate) {
+              let scopeToAssign: Scope | undefined;
               
-              // If duplicating a scope, assign the new copy to the current member
-              if (currentMemberId && scopeToDuplicate && scopeToAssign) {
-                // Directly assign the duplicated scope to the member
+              if (createdScopeId) {
+                scopeToAssign = getScopes().find(s => s.id === createdScopeId);
+              } else {
+                // Fallback: find the newly created scope
+                const oldScopes = getAvailableScopes();
+                const oldScopeIds = new Set(oldScopes.map(s => s.id));
+                scopeToAssign = newScopes.find(s => !oldScopeIds.has(s.id));
+              }
+              
+              if (scopeToAssign) {
                 const user = getUsers().find(u => u.id === currentMemberId);
                 if (user) {
                   const assignedScopeIds = user.assignedScopeIds || [];
@@ -607,12 +703,12 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                   }
                 }
               }
-              
-              setScopeModalOpen(false);
-              setEditingScope(null);
-              setScopeToDuplicate(null);
-              setCurrentMemberId(null);
-            }, 200);
+            }
+            
+            setScopeModalOpen(false);
+            setEditingScope(null);
+            setScopeToDuplicate(null);
+            setCurrentMemberId(null);
           }}
         />
       )}

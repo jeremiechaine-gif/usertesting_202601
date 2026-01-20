@@ -909,7 +909,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h3 className="font-semibold text-sm">Add filter</h3>
+            <h3 className="font-semibold text-sm">Ajouter un filtre</h3>
           </div>
           <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -922,7 +922,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
         <div className="flex items-center border rounded-md px-3 bg-background">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <input
-            placeholder="Search filter…"
+            placeholder="Rechercher un filtre…"
             value={filterSearch}
             onChange={(e) => onFilterSearchChange(e.target.value)}
             className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -937,7 +937,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
             {filterSearch ? (
               // Search results
               <>
-                <CommandEmpty>No filters found.</CommandEmpty>
+                <CommandEmpty>Aucun filtre trouvé.</CommandEmpty>
                 <CommandGroup>
                   {filteredFilterDefs.map((filterDef) => (
                     <CommandItem
@@ -962,7 +962,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
               // Grouped view
               <>
                 {groupedFilters.favorites.length > 0 && (
-                  <CommandGroup heading="FAVORITES">
+                  <CommandGroup heading="FAVORIS">
                     {groupedFilters.favorites.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
@@ -981,7 +981,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                 )}
 
                 {groupedFilters.general.length > 0 && (
-                  <CommandGroup heading="GENERAL">
+                  <CommandGroup heading="GÉNÉRAL">
                     {groupedFilters.general.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
@@ -1000,7 +1000,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                 )}
 
                 {groupedFilters.consumedParts.length > 0 && (
-                  <CommandGroup heading="CONSUMED PARTS">
+                  <CommandGroup heading="PIÈCES CONSOMMÉES">
                     {groupedFilters.consumedParts.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}
@@ -1019,7 +1019,7 @@ export const AddFilterView: React.FC<AddFilterViewProps> = ({
                 )}
 
                 {groupedFilters.producedParts.length > 0 && (
-                  <CommandGroup heading="PRODUCED PARTS">
+                  <CommandGroup heading="PIÈCES PRODUITES">
                     {groupedFilters.producedParts.map((filterDef) => (
                       <CommandItem
                         key={filterDef.id}

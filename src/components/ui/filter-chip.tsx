@@ -158,15 +158,17 @@ export const FilterChip: React.FC<FilterChipProps> = ({
             <Badge
               key={idx}
               variant="secondary"
-              className="text-xs flex items-center gap-1 pr-1"
+              className="text-xs flex items-center gap-1 pr-1 whitespace-normal break-words"
               style={{ 
                 backgroundColor: '#ADE9DE',
-                maxWidth: '80px',
                 minWidth: 0,
-                flexShrink: 1
+                flexShrink: 0,
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'normal',
               }}
             >
-              <span className="whitespace-nowrap truncate block min-w-0 overflow-hidden">{getDisplayValue(value, idx)}</span>
+              <span className="block min-w-0 break-words">{getDisplayValue(value, idx)}</span>
               {onRemoveValue && (
                 <button
                   onClick={(e) => {

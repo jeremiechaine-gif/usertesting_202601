@@ -5,7 +5,7 @@
 
 export type SupplyEventType = 'PO' | 'PR' | 'STO';
 export type DeliveryStatus = 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
-export type OTDStatus = 'on-time' | 'at-risk' | 'late';
+export type OTDStatus = 'on-time' | 'late' | 'missing-information';
 
 export interface PurchaseOrderRow {
   id: string;
@@ -24,6 +24,7 @@ export interface PurchaseOrderRow {
   partName: string;
   plant: string;
   buyerCode: string;
+  mrpCode: string;
   // General Information
   openQuantity: number;
   price: number;
@@ -115,8 +116,10 @@ function determineOTDStatus(deliveryDate: string, otdDate: string): OTDStatus {
   const otd = new Date(otdDate);
   const diffDays = Math.floor((delivery.getTime() - otd.getTime()) / (1000 * 60 * 60 * 24));
   
+  // Randomly assign missing information status (10% chance)
+  if (Math.random() < 0.1) return 'missing-information';
+  
   if (diffDays <= 0) return 'on-time';
-  if (diffDays <= 7) return 'at-risk';
   return 'late';
 }
 
@@ -151,6 +154,7 @@ export function generateMockData(count: number = 377): PurchaseOrderRow[] {
       partName: randomElement(partNames),
       plant: randomElement(plants),
       buyerCode: randomElement(buyerCodes),
+      mrpCode: `MRP-${randomInt(1000, 9999)}`,
       openQuantity: openQty,
       price,
       inventoryValue: inventory,
