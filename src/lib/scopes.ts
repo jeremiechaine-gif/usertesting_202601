@@ -4,7 +4,7 @@
  */
 
 import { getUsers, type User } from './users';
-import { getTeams, type Team } from './teams';
+import { getTeams } from './teams';
 import { safeGetItem, safeSetItem, safeRemoveItem } from './utils/storage';
 
 export interface ScopeFilter {

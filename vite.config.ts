@@ -8,8 +8,6 @@ export default defineConfig({
   plugins: [
     // React plugin with Fast Refresh enabled (default)
     react({
-      // Enable Fast Refresh for instant HMR
-      fastRefresh: true,
       // Include all files for HMR
       include: '**/*.{jsx,tsx}',
     }),

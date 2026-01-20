@@ -7,6 +7,7 @@ import type { SortingState, ColumnFiltersState } from '@tanstack/react-table';
 import type { Persona } from '@/lib/onboarding/pelicoViews';
 import type { Objective } from '@/lib/onboarding/types';
 import { safeGetItem, safeSetItem } from './utils/storage';
+import { ROUTINE_LIBRARY } from './onboarding/routineLibrary';
 
 export type PelicoViewPage = 
   | 'escalation'      // Escalation Room
@@ -312,24 +313,17 @@ export const getTeamRoutinesCount = (teamId: string, teamAssignedRoutineIds?: st
   // team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
   let libraryRoutinesCount = 0;
   if (teamAssignedRoutineIds && teamAssignedRoutineIds.length > 0) {
-    try {
-      // Dynamic import to avoid circular dependency
-      const { ROUTINE_LIBRARY } = require('./onboarding/routineLibrary');
-      
-      // Filter library routines: those in teamAssignedRoutineIds that are NOT user-created
-      // This exactly matches: team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
-      const assignedLibraryRoutines = (teamAssignedRoutineIds || [])
-        .filter(id => !teamRoutineIds.has(id)) // Only library routines not already counted as user-created
-        .map(id => {
-          const libraryRoutine = ROUTINE_LIBRARY.find((r: { id: string }) => r.id === id);
-          return libraryRoutine ? id : null;
-        })
-        .filter((id): id is string => id !== null);
-      
-      libraryRoutinesCount = assignedLibraryRoutines.length;
-    } catch (error) {
-      console.warn('Failed to load ROUTINE_LIBRARY for counting:', error);
-    }
+    // Filter library routines: those in teamAssignedRoutineIds that are NOT user-created
+    // This exactly matches: team.assignedRoutineIds.filter(id => !teamRoutineIds.has(id))
+    const assignedLibraryRoutines = (teamAssignedRoutineIds || [])
+      .filter(id => !teamRoutineIds.has(id)) // Only library routines not already counted as user-created
+      .map(id => {
+        const libraryRoutine = ROUTINE_LIBRARY.find((r: { id: string }) => r.id === id);
+        return libraryRoutine ? id : null;
+      })
+      .filter((id): id is string => id !== null);
+    
+    libraryRoutinesCount = assignedLibraryRoutines.length;
   }
   
   // Step 3: Return total count matching what getTeamRoutinesGroupedByObjectives would return

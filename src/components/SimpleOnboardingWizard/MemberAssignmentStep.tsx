@@ -3,11 +3,11 @@
  * Assign members to each team
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Users, Plus, X, Search, CheckSquare, Square, Filter, ArrowLeft, Zap, Upload, Trash2 } from 'lucide-react';
+import { Users, Plus, X, Search, CheckSquare, Square, Filter, Upload, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SimpleTeamConfig } from './SimpleOnboardingWizard';
 import { getUsers, getCurrentUserId, type User } from '@/lib/users';
@@ -32,9 +32,9 @@ interface MemberAssignmentStepProps {
 export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   teams,
   onTeamsUpdate,
-  onNext,
-  onBack,
-  onClearAll,
+  onNext: _onNext,
+  onBack: _onBack,
+  onClearAll: _onClearAll,
 }) => {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [memberSearchQuery, setMemberSearchQuery] = useState<Record<string, string>>({});
@@ -176,8 +176,6 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
   const getFilteredMembers = (teamId: string): User[] => {
     const query = memberSearchQuery[teamId] || '';
     const filter = memberFilter[teamId] || 'all';
-    const team = teams.find(t => t.id === teamId);
-    const selectedMemberIds = team?.memberIds || [];
     
     let filtered = availableUsers.filter(user => {
       const matchesSearch = !query || 
@@ -281,8 +279,6 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
       return firstNameA.localeCompare(firstNameB);
     });
   };
-
-  const canContinue = teams.every(team => team.memberIds.length > 0);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">

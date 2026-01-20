@@ -7,7 +7,7 @@ import { getRoutines } from '../routines';
 import { getCurrentUserId } from '../users';
 import { ROUTINE_LIBRARY } from './routineLibrary';
 import type { Persona } from './types';
-import { getTeamByName, getTeam, type Team } from '../teams';
+import { getTeamByName, getTeam } from '../teams';
 import { createUser, getUsers, type User } from '../users';
 import { getScopes, type Scope } from '../scopes';
 

@@ -10,7 +10,7 @@ import { CheckboxWithIndeterminate } from '@/components/ui/checkbox-with-indeter
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Edit2, AlertCircle } from 'lucide-react';
 
 const columnHelper = createColumnHelper<WorkOrderRow>();
 
@@ -52,9 +52,6 @@ const formatDate = (dateStr: string): string => {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const formatPercentage = (value: number): string => {
-  return `${value}%`;
-};
 
 // Sim. Outcome indicator
 const SimOutcomeIndicator: React.FC<{ outcome: string }> = ({ outcome }) => {

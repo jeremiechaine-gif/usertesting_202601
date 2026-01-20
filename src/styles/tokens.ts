@@ -238,8 +238,8 @@ export const cssVars = {
   '--color-primary-button-focus-width': tokens.colors.primaryButton.focus.width,
   '--color-primary-button-disabled-bg': tokens.colors.primaryButton.disabled.bg,
   '--color-primary-button-disabled-text': tokens.colors.primaryButton.disabled.text,
-  '--radius-leaf-square': tokens.leafRadius.square,
-  '--radius-leaf-rounded': tokens.leafRadius.rounded,
+  '--radius-leaf-square': tokens.colors.leafRadius.square,
+  '--radius-leaf-rounded': tokens.colors.leafRadius.rounded,
   // Typography
   '--font-family-title': tokens.typography.fontFamily.title.join(', '),
   '--font-family-sans': tokens.typography.fontFamily.sans.join(', '),

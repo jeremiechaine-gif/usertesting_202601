@@ -4,8 +4,8 @@
  */
 
 import type { RoutineLibraryEntry, RoutineFilter } from './onboarding/types';
-import type { ColumnFiltersState, SortingState } from '@tanstack/react-table';
-import { getRoutine, createRoutine, type PelicoViewPage } from './routines';
+import type { ColumnFiltersState } from '@tanstack/react-table';
+import { createRoutine, type PelicoViewPage } from './routines';
 import { getCurrentUserId } from './users';
 
 /**

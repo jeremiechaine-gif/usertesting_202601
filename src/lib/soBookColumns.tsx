@@ -8,7 +8,6 @@ import { createColumnHelper, type ColumnDef, type FilterFn } from '@tanstack/rea
 import type { ServiceOrderRow } from './soBookMockData';
 import { CheckboxWithIndeterminate } from '@/components/ui/checkbox-with-indeterminate';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit2, AlertCircle, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
