@@ -1,6 +1,6 @@
-# Pelico Supply - Purchase Order Book Prototype
+# UserTest_onboarding_routine_202601
 
-A high-fidelity prototype of the **Pelico "Supply → Purchase Order Book"** page, built with React, TypeScript, Tailwind CSS, and TanStack Table.
+A high-fidelity prototype of the **Pelico "Supply → Purchase Order Book"** page with comprehensive onboarding wizard, built with React, TypeScript, Tailwind CSS, and TanStack Table.
 
 ## Features
 
@@ -13,6 +13,7 @@ A high-fidelity prototype of the **Pelico "Supply → Purchase Order Book"** pag
 - **Row Selection**: Checkbox selection for individual and all rows
 - **Responsive Design**: Adapts to different screen sizes (≥1440px, 1280-1440px, smaller screens)
 - **Design System**: Token-based design system with CSS variables
+- **Onboarding Wizard**: Complete onboarding flow for teams, members, scopes, and routines
 
 ## Tech Stack
 
