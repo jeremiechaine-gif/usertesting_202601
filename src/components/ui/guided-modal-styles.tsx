@@ -6,7 +6,7 @@
 
 import { Target, Info, X } from 'lucide-react';
 import { Label } from './label';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * Guided Modal Header Props
