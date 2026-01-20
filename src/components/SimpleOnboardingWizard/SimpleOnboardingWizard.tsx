@@ -825,13 +825,18 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     variant="ghost" 
                     size="sm"
                     onClick={() => {
-                      const step: 'choose-view' | 'configure-table' | 'save' | null = routineCreationStep;
-                      if (step === 'configure-table') {
-                        setRoutineCreationStep('choose-view');
-                      } else if (step === 'choose-view') {
-                        setRoutineCreationStep('configure-table');
-                      } else if (step === 'save') {
-                        setRoutineCreationStep(null);
+                      switch (routineCreationStep) {
+                        case 'configure-table':
+                          setRoutineCreationStep('choose-view');
+                          break;
+                        case 'choose-view':
+                          setRoutineCreationStep('configure-table');
+                          break;
+                        case 'save':
+                          setRoutineCreationStep(null);
+                          break;
+                        default:
+                          break;
                       }
                     }}
                     className="gap-2"
