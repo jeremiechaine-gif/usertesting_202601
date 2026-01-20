@@ -827,7 +827,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     onClick={() => {
                       if (routineCreationStep === 'configure-table') {
                         setRoutineCreationStep('choose-view');
-                      } else if (routineCreationStep === 'choose-view') {
+                      } else if (routineCreationStep === 'choose-view' || routineCreationStep === null) {
                         setRoutineCreationStep('configure-table');
                       }
                     }}
