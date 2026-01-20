@@ -632,7 +632,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                             ) : (
                               <Popover 
                                 open={openRoutinePopover === index}
-                                onOpenChange={(open) => {
+                                onOpenChange={(open: boolean) => {
                                   setOpenRoutinePopover(open ? index : null);
                                   if (!open) {
                                     setRoutineSearchQuery({ ...routineSearchQuery, [index]: '' });

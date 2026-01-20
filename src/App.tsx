@@ -224,7 +224,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <SimpleOnboardingWizard
             open={true}
-            onOpenChange={(open) => {
+            onOpenChange={(open: boolean) => {
               if (!open) {
                 setShowOnboarding(false);
               }
