@@ -135,7 +135,7 @@ export function RoutinePreviewTable<TData>({
                 columns={columns}
                 filterDefinitions={filterDefinitions}
                 onOpenFilterModal={handleOpenFilterModal}
-                scopeFilters={scopeFilters}
+                scopeFilters={scopeFilters as any}
               />
             </Suspense>
           </div>
