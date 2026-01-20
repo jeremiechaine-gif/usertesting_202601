@@ -17,6 +17,7 @@ import {
   type ColumnSizingState,
   type Table,
   type ColumnDef,
+  type OnChangeFn,
 } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { ColumnHeader } from '@/components/ColumnHeader';
@@ -32,8 +33,8 @@ interface RoutinePreviewTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   sorting: SortingState;
   columnFilters: ColumnFiltersState;
-  onSortingChange: (sorting: SortingState) => void;
-  onColumnFiltersChange: (filters: ColumnFiltersState) => void;
+  onSortingChange: OnChangeFn<SortingState>;
+  onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
   viewName?: string; // Name to display in the badge (e.g., "Escalation Room")
   scopeFilters?: ColumnFiltersState;
   userFilters?: ColumnFiltersState;

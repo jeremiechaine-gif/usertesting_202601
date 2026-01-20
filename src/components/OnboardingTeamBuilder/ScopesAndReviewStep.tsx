@@ -212,7 +212,7 @@ export const ScopesAndReviewStep: React.FC<ScopesAndReviewStepProps> = ({
                                   <span className="text-xs font-medium text-muted-foreground">Scopes</span>
                                   <Popover 
                                     open={openScopePopover === popoverKey}
-                                    onOpenChange={(open) => {
+                                    onOpenChange={(open: boolean) => {
                                       setOpenScopePopover(open ? popoverKey : null);
                                       if (!open) {
                                         setScopeSearchQuery({ ...scopeSearchQuery, [member.id]: '' });

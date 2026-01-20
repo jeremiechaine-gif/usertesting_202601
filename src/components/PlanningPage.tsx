@@ -24,7 +24,7 @@ const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ 
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
-import { getRoutine, updateRoutine } from '@/lib/routines';
+import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
 import { RoutineModal } from './RoutineModal';
 import { ParametersDrawer } from './ParametersDrawer';
 import { cn } from '@/lib/utils';

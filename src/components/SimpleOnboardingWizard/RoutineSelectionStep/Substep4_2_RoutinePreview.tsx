@@ -177,8 +177,19 @@ export const Substep4_2_RoutinePreview: React.FC<Substep4_2_RoutinePreviewProps>
             open={filterModalOpen}
             onOpenChange={setFilterModalOpen}
             columnId={filterModalColumnId}
-            columnFilters={columnFilters}
-            onColumnFiltersChange={setColumnFilters}
+            columnLabel={filterModalColumnId}
+            options={[]}
+            selectedValues={[]}
+            onApply={(values, condition) => {
+              // Handle filter apply
+              setColumnFilters(prev => {
+                const newFilters = prev.filter(f => f.id !== filterModalColumnId);
+                if (values.length > 0) {
+                  newFilters.push({ id: filterModalColumnId, value: values });
+                }
+                return newFilters;
+              });
+            }}
           />
         </Suspense>
       )}

@@ -261,7 +261,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
                   {team.name}
                   {onToggleShare && (
                     <button
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent) => {
                         e.stopPropagation();
                         onToggleShare(team.id);
                       }}
@@ -280,13 +280,13 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
                       variant="ghost"
                       size="sm"
                       className="h-4 px-1.5 text-xs gap-1"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <Plus className="h-3 w-3" />
                       Add
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-2" align="start" onClick={(e) => e.stopPropagation()}>
+                  <PopoverContent className="w-64 p-2" align="start" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                     <div className="space-y-1">
                       {availableTeams.filter(team => !sharedTeams.some(st => st.id === team.id)).map((team) => (
                         <button
@@ -314,13 +314,13 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2 text-xs gap-1.5 w-full justify-start"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   >
                     <Share2 className="h-3.5 w-3.5" />
                     Share with team
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" align="start" onClick={(e) => e.stopPropagation()}>
+                <PopoverContent className="w-64 p-2" align="start" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <div className="space-y-1">
                     {availableTeams.map((team) => (
                       <button
@@ -366,7 +366,7 @@ export const RoutineChip: React.FC<RoutineChipProps> = ({
             <Button
               variant="secondary"
               size="icon"
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
                 onShare();
               }}

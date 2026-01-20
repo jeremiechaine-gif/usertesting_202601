@@ -72,7 +72,7 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
     return Array.from(personas).sort();
   }, []);
 
-  const allObjectives: Objective[] = ['Anticiper', 'Piloter', 'Corriger', 'Arbitrer', 'Reporter'];
+  const allObjectives: Objective[] = ['Anticipate', 'Monitor', 'Correct', 'Prioritize', 'Report'];
   const allHorizons: Horizon[] = ['Today', 'ThisWeek', 'Projection'];
   const allImpactZones: ImpactZone[] = ['Supplier', 'Production', 'Customer', 'Business'];
   const allFrequencies: Frequency[] = ['Daily', 'Weekly', 'Monthly'];
@@ -485,7 +485,7 @@ export const BrowseAllRoutines: React.FC<BrowseAllRoutinesProps> = ({
                             </div>
                           </div>
                           <Button
-                            variant={isSelected ? 'outline' : 'default'}
+                            variant={isSelected ? 'secondary' : 'default'}
                             size="sm"
                             onClick={() => onRoutineToggle(routine.id)}
                             className="ml-4 shrink-0"

@@ -421,8 +421,19 @@ export const RecommendedRoutinesModal: React.FC<RecommendedRoutinesModalProps> =
                 open={filterModalOpen}
                 onOpenChange={setFilterModalOpen}
                 columnId={filterModalColumnId}
-                columnFilters={previewFilters}
-                onColumnFiltersChange={setPreviewFilters}
+                columnLabel={filterModalColumnId}
+                options={[]}
+                selectedValues={[]}
+                onApply={(values, condition) => {
+                  // Handle filter apply
+                  setPreviewFilters(prev => {
+                    const newFilters = prev.filter(f => f.id !== filterModalColumnId);
+                    if (values.length > 0) {
+                      newFilters.push({ id: filterModalColumnId, value: values });
+                    }
+                    return newFilters;
+                  });
+                }}
               />
             </Suspense>
           )}

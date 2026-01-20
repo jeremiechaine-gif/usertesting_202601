@@ -511,7 +511,7 @@ export const TeamSetupStep: React.FC<TeamSetupStepProps> = ({
                                 </button>
                                 <Popover 
                                   open={openRoutinePopover === index && currentMode === 'manual'}
-                                  onOpenChange={(open) => {
+                                  onOpenChange={(open: boolean) => {
                                     if (open) {
                                       setRoutineAddMode({ ...routineAddMode, [index]: 'manual' });
                                       setOpenRoutinePopover(index);

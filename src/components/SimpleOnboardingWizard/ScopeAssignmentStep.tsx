@@ -389,7 +389,7 @@ export const ScopeAssignmentStep: React.FC<ScopeAssignmentStepProps> = ({
                                   <span className="text-xs font-medium text-muted-foreground">Périmètres</span>
                                   <Popover 
                                     open={openScopePopover === popoverKey}
-                                    onOpenChange={(open) => {
+                                    onOpenChange={(open: boolean) => {
                                       setOpenScopePopover(open ? popoverKey : null);
                                       if (!open) {
                                         setScopeSearchQuery({ ...scopeSearchQuery, [member.id]: '' });

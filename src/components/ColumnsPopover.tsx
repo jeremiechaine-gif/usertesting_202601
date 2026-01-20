@@ -330,7 +330,7 @@ export const ColumnsPopover: React.FC<ColumnsPopoverProps> = ({
           height: 'calc(100vh - 32px)',
           transform: 'none', // Override Radix transform
         }}
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        onOpenAutoFocus={(e: Event) => e.preventDefault()}
       >
         <div className="flex flex-col h-full">
           {/* Header */}

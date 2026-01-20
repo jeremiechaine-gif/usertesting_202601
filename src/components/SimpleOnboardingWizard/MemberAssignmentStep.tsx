@@ -362,7 +362,7 @@ export const MemberAssignmentStep: React.FC<MemberAssignmentStepProps> = ({
                           </Button>
                           <Popover 
                           open={openMemberPopover === team.id}
-                          onOpenChange={(open) => {
+                          onOpenChange={(open: boolean) => {
                             setOpenMemberPopover(open ? team.id : null);
                             if (!open) {
                               setMemberSearchQuery({ ...memberSearchQuery, [team.id]: '' });

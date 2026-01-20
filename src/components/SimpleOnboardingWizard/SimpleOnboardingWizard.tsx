@@ -80,7 +80,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
   const [step0CanProceed, setStep0CanProceed] = useState(false);
   const step0ContinueHandlerRef = useRef<(() => boolean) | null>(null);
   // Routine creation substeps state
-  const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | null>(null);
+  const [routineCreationStep, setRoutineCreationStep] = useState<'choose-view' | 'configure-table' | 'save' | null>(null);
   const [routineNameForValidation, setRoutineNameForValidation] = useState('');
   // Refs for RoutineSelectionStep handlers
   const continueFromRecommendedRef = useRef<(() => void) | null>(null);
@@ -682,7 +682,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                 saveState();
               }}
               routineCreationStep={routineCreationStep}
-              onRoutineCreationStepChange={setRoutineCreationStep}
+              onRoutineCreationStepChange={(step) => setRoutineCreationStep(step)}
               onRoutineNameChange={setRoutineNameForValidation}
               onCancelRoutineCreation={() => {
                 setRoutineCreationStep(null);
@@ -827,7 +827,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
                     onClick={() => {
                       if (routineCreationStep === 'configure-table') {
                         setRoutineCreationStep('choose-view');
-                      } else if (routineCreationStep === 'configure-table') {
+                      } else if (routineCreationStep === 'choose-view') {
                         setRoutineCreationStep('configure-table');
                       }
                     }}

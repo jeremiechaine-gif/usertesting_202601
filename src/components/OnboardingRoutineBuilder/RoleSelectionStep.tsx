@@ -11,18 +11,18 @@ import type { Persona } from '@/lib/onboarding/types';
 import { cn } from '@/lib/utils';
 
 const ROLES: Persona[] = [
-  'Approvisionneur',
-  'Acheteur',
-  'Manager Appro',
-  'Ordonnanceur Assemblage',
-  'Ordonnanceur',
+  'Supply Planner',
+  'Buyer',
+  'Procurement Manager',
+  'Assembly Scheduler',
+  'Scheduler',
   'Master Planner',
-  'Support Logistique',
-  'Recette',
-  'Responsable Supply Chain',
-  'Directeur Supply Chain',
-  'Responsable Ordo & Support log',
-  'Autre / Mixte',
+  'Logistics Support',
+  'Quality Control',
+  'Supply Chain Manager',
+  'Supply Chain Director',
+  'Scheduling & Logistics Manager',
+  'Other / Mixed',
 ];
 
 interface RoleSelectionStepProps {

@@ -145,7 +145,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           if (nomExactIndex !== -1) {
             // Vérifier que ce n'est pas "prénom" ou "prenom" (ne devrait pas arriver mais sécurité)
             const headerValue = String(jsonData[0][nomExactIndex] || '').toLowerCase().trim();
-            if (headerValue === 'nom' && headerValue !== 'prénom' && headerValue !== 'prenom') {
+            if (headerValue === 'nom') {
               lastNameIndex = nomExactIndex;
             }
           }
@@ -183,9 +183,10 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           }
           
           // Colonne "name" complète (si pas de séparation prénom/nom)
-          const nameIndex = headerRow.findIndex((h: string) => 
-            h === 'name' && !h.includes('first') && !h.includes('last') && !h.includes('prénom') && !h.includes('prenom') && h !== 'nom'
-          );
+          const nameIndex = headerRow.findIndex((h: string) => {
+            const lowerH = h.toLowerCase();
+            return lowerH === 'name' && !lowerH.includes('first') && !lowerH.includes('last') && !lowerH.includes('prénom') && !lowerH.includes('prenom');
+          });
           
           const emailIndex = headerRow.findIndex((h: string) => 
             h.includes('email') || h.includes('mail') || h.includes('e-mail')

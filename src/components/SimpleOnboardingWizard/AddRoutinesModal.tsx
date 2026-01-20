@@ -218,14 +218,14 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
         routine.keywords?.some(k => k.toLowerCase().includes(searchLower));
 
       // Persona filter
-      const matchesPersona = personaFilter === 'all' || routine.personas.includes(personaFilter);
+      const matchesPersona = personaFilter === 'all' || (personaFilter !== 'all' && routine.personas.includes(personaFilter as any));
 
       // Objective filter
-      const matchesObjective = objectiveFilter === 'all' || routine.objectives.includes(objectiveFilter);
+      const matchesObjective = objectiveFilter === 'all' || routine.objectives.includes(objectiveFilter as any);
 
       // Pelico View filter
       const matchesPelicoView = pelicoViewFilter === 'all' || 
-        (routine.pelicoViews && routine.pelicoViews.includes(pelicoViewFilter));
+        (routine.pelicoViews && routine.pelicoViews.includes(pelicoViewFilter as any));
 
       return matchesSearch && matchesPersona && matchesObjective && matchesPelicoView;
     });
@@ -426,8 +426,19 @@ export const AddRoutinesModal: React.FC<AddRoutinesModalProps> = ({
                 open={filterModalOpen}
                 onOpenChange={setFilterModalOpen}
                 columnId={filterModalColumnId}
-                columnFilters={previewFilters}
-                onColumnFiltersChange={setPreviewFilters}
+                columnLabel={filterModalColumnId}
+                options={[]}
+                selectedValues={[]}
+                onApply={(values, condition) => {
+                  // Handle filter apply
+                  setPreviewFilters(prev => {
+                    const newFilters = prev.filter(f => f.id !== filterModalColumnId);
+                    if (values.length > 0) {
+                      newFilters.push({ id: filterModalColumnId, value: values });
+                    }
+                    return newFilters;
+                  });
+                }}
               />
             </Suspense>
           )}

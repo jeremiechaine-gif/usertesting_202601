@@ -444,7 +444,7 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
                             <div className="flex items-center gap-2 mb-3">
                               <Popover 
                                 open={openMemberPopover === team.id}
-                                onOpenChange={(open) => {
+                                onOpenChange={(open: boolean) => {
                                   setOpenMemberPopover(open ? team.id : null);
                                   if (!open) {
                                     setMemberSearchQuery({ ...memberSearchQuery, [team.id]: '' });

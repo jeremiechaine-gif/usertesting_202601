@@ -232,7 +232,7 @@ export const MembersAndRoutinesStep: React.FC<MembersAndRoutinesStepProps> = ({
                         </div>
                         <Popover 
                           open={openMemberPopover === teamIndex}
-                          onOpenChange={(open) => {
+                          onOpenChange={(open: boolean) => {
                             setOpenMemberPopover(open ? teamIndex : null);
                             if (!open) {
                               setMemberSearchQuery({ ...memberSearchQuery, [teamIndex]: '' });

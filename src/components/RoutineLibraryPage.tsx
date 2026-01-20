@@ -73,7 +73,7 @@ export const RoutineLibraryPage: React.FC<{
     routines.forEach(routine => {
       // Check if routine is shared with user's team
       const routineTeamIds = routine.teamIds || [];
-      if (routineTeamIds.includes(currentUser.teamId)) {
+      if (currentUser.teamId && routineTeamIds.includes(currentUser.teamId)) {
         // Find matching library entry by name
         const libraryEntry = ROUTINE_LIBRARY.find(entry => entry.label === routine.name);
         if (libraryEntry) {
@@ -285,17 +285,17 @@ export const RoutineLibraryPage: React.FC<{
         routine.keywords?.some(k => k.toLowerCase().includes(searchLower));
 
       // Persona filter
-      const matchesPersona = personaFilter === 'all' || routine.personas.includes(personaFilter);
+      const matchesPersona = personaFilter === 'all' || routine.personas.includes(personaFilter as any);
 
       // Objective filter
-      const matchesObjective = objectiveFilter === 'all' || routine.objectives.includes(objectiveFilter);
+      const matchesObjective = objectiveFilter === 'all' || routine.objectives.includes(objectiveFilter as any);
 
       // Horizon filter
       const matchesHorizon = horizonFilter === 'all' || routine.horizon === horizonFilter;
 
       // Pelico View filter
       const matchesPelicoView = pelicoViewFilter === 'all' || 
-        (routine.pelicoViews && routine.pelicoViews.includes(pelicoViewFilter));
+        (routine.pelicoViews && routine.pelicoViews.includes(pelicoViewFilter as any));
 
       return matchesSearch && matchesPersona && matchesObjective && matchesHorizon && matchesPelicoView;
     });
