@@ -621,7 +621,7 @@ export const WorkOrderBookPage: React.FC<{ onNavigate?: (page: string) => void; 
             }
             return 'is';
           })()}
-          onApply={(values, condition) => {
+          onApply={(values, condition: string) => {
             const newFilters = userFilters.filter((f) => f.id !== filterModalColumnId);
             if (values.length > 0) {
               newFilters.push({
