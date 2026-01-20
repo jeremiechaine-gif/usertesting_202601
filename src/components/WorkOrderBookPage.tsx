@@ -23,7 +23,6 @@ const SortingAndFiltersPopover = lazy(() => import('./SortingAndFiltersPopover')
 const ColumnFilterModal = lazy(() => import('./ColumnFilterModal').then(m => ({ default: m.ColumnFilterModal })));
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { ScopeDropdown } from './ScopeDropdown';
-import { PlanDropdown } from './PlanDropdown';
 import { GroupByDropdown } from './GroupByDropdown';
 import { useScope } from '@/contexts/ScopeContext';
 import { getRoutine, updateRoutine, getPelicoViewDisplayName } from '@/lib/routines';
@@ -56,7 +55,7 @@ export const WorkOrderBookPage: React.FC<{ onNavigate?: (page: string) => void; 
   }, [scopeFilters, userFilters]);
   const [globalFilter, setGlobalFilter] = useState('');
   const debouncedGlobalFilter = useDebounce(globalFilter, 300);
-  const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
+  // const [selectedPlan, setSelectedPlan] = useState<'erp' | 'prod' | null>('erp');
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filterModalColumnId, setFilterModalColumnId] = useState<string | null>(null);
@@ -74,30 +73,30 @@ export const WorkOrderBookPage: React.FC<{ onNavigate?: (page: string) => void; 
 
   const data = useMemo(() => mockData, []);
   
-  const hasUnsavedChanges = useMemo(() => {
-    if (!selectedRoutineId) {
-      return sorting.length > 0 || userFilters.length > 0;
-    }
-    
-    const routine = getRoutine(selectedRoutineId);
-    if (!routine) return false;
-    
-    const sortingMatches = JSON.stringify(sorting) === JSON.stringify(routine.sorting);
-    const normalizeFilters = (filters: ColumnFiltersState) => {
-      return filters.map(f => ({
-        id: f.id,
-        value: typeof f.value === 'object' && f.value !== null 
-          ? JSON.stringify(f.value) 
-          : f.value
-      })).sort((a, b) => a.id.localeCompare(b.id));
-    };
-    const currentUserFiltersNormalized = normalizeFilters(userFilters);
-    const routineFiltersNormalized = normalizeFilters(routine.filters);
-    const filtersMatch = JSON.stringify(currentUserFiltersNormalized) === JSON.stringify(routineFiltersNormalized);
-    const groupByMatches = selectedGroupBy === routine.groupBy;
-    
-    return !sortingMatches || !filtersMatch || !groupByMatches;
-  }, [selectedRoutineId, sorting, userFilters, selectedGroupBy]);
+  // const hasUnsavedChanges = useMemo(() => {
+  //   if (!selectedRoutineId) {
+  //     return sorting.length > 0 || userFilters.length > 0;
+  //   }
+  //   
+  //   const routine = getRoutine(selectedRoutineId);
+  //   if (!routine) return false;
+  //   
+  //   const sortingMatches = JSON.stringify(sorting) === JSON.stringify(routine.sorting);
+  //   const normalizeFilters = (filters: ColumnFiltersState) => {
+  //     return filters.map(f => ({
+  //       id: f.id,
+  //       value: typeof f.value === 'object' && f.value !== null 
+  //         ? JSON.stringify(f.value) 
+  //         : f.value
+  //     })).sort((a, b) => a.id.localeCompare(b.id));
+  //   };
+  //   const currentUserFiltersNormalized = normalizeFilters(userFilters);
+  //   const routineFiltersNormalized = normalizeFilters(routine.filters);
+  //   const filtersMatch = JSON.stringify(currentUserFiltersNormalized) === JSON.stringify(routineFiltersNormalized);
+  //   const groupByMatches = selectedGroupBy === routine.groupBy;
+  //   
+  //   return !sortingMatches || !filtersMatch || !groupByMatches;
+  // }, [selectedRoutineId, sorting, userFilters, selectedGroupBy]);
   
   const handleSaveAsRoutine = useCallback(() => {
     setRoutineModalMode('create');

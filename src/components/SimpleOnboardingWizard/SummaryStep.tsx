@@ -314,7 +314,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
               // Get routines: user-created + library routines
               const teamRoutines = team.assignedRoutineIds
                 .map(id => getRoutineDetails(id))
-                .filter((r): r is { id: string; name: string; description?: string } => r !== null);
+                .filter((r): r is { id: string; name: string; description?: string | undefined } => r !== null);
 
               return (
                 <div

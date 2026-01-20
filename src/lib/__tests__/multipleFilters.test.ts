@@ -22,6 +22,8 @@ const createMockRow = (data: Partial<PurchaseOrderRow>): Row<PurchaseOrderRow> =
     partNumber: 'PART-001',
     partName: 'Test Part',
     plant: 'Plant A',
+    buyerCode: 'ABC123',
+    mrpCode: 'MRP-1234',
     openQuantity: 100,
     price: 10.5,
     inventoryValue: 1050,

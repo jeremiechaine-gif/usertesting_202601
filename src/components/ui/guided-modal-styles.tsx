@@ -5,7 +5,6 @@
  */
 
 import { Target, Info, X } from 'lucide-react';
-import { Button } from './button';
 import { Label } from './label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
@@ -26,7 +25,6 @@ export interface GuidedModalHeaderProps {
  */
 export const GuidedModalHeader: React.FC<GuidedModalHeaderProps> = ({
   title,
-  description,
   icon = <Target className="h-5 w-5 text-[#31C7AD]" />,
   showInfoIcon = false,
   infoTooltip,

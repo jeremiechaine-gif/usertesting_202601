@@ -420,7 +420,7 @@ export const columns: ColumnDef<EscalationRoomRow, any>[] = [
           
           return (
             <span className="text-sm break-words">
-              {parts.map((part, index) => {
+              {parts.map((part: string, index: number) => {
                 if (index % 2 === 1) {
                   // This is a mention
                   return (

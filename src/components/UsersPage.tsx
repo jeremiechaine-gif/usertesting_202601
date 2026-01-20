@@ -23,11 +23,10 @@ import {
   deleteTeam,
   type Team 
 } from '@/lib/teams';
-import { getRoutines, getTeamRoutinesCount } from '@/lib/routines';
+import { getTeamRoutinesCount } from '@/lib/routines';
 import { getScopes, type ScopeFilter } from '@/lib/scopes';
 import { filterDefinitions } from '@/lib/filterDefinitions';
 import { getFilterDisplayValues } from '@/components/sorting-filters/utils';
-import type { FilterDefinition } from '@/components/SortingAndFiltersPopover';
 import { createMockUsersForTeams } from '@/lib/onboarding/teamWizardUtils';
 import { 
   Plus, 
@@ -43,9 +42,7 @@ import {
   ArrowRight,
   Search,
   CheckSquare,
-  Square,
   Filter,
-  X,
   ArrowUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -208,14 +205,14 @@ export const UsersPage: React.FC<{ onNavigate?: (page: string) => void; onLogout
     }
   };
 
-  const handleRemoveMember = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      updateUser(userId, { teamId: null });
-      loadUsers();
-      loadAvailableUsers();
-    }
-  };
+  // const handleRemoveMember = (userId: string) => {
+  //   const user = users.find(u => u.id === userId);
+  //   if (user) {
+  //     updateUser(userId, { teamId: null });
+  //     loadUsers();
+  //     loadAvailableUsers();
+  //   }
+  // };
 
   const getInitials = (name: string): string => {
     return name

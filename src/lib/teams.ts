@@ -7,6 +7,7 @@ export interface Team {
   id: string;
   name: string;
   description?: string;
+  persona?: string; // French Role profile name if created from Role profile
   assignedScopeIds?: string[]; // Scopes assignés à l'équipe (hérités par les membres)
   assignedRoutineIds?: string[]; // Routines assignées à l'équipe (héritées par les membres)
   createdAt: string;

@@ -43,8 +43,6 @@ import { SortingSection } from './sorting-filters/SortingSection';
 import { FiltersSection } from './sorting-filters/FiltersSection';
 import { ScopeFiltersSection } from './sorting-filters/ScopeFiltersSection';
 import { getFilterDisplayValues, getColumnLabel } from './sorting-filters/utils';
-import type { ScopeFilter } from '@/lib/scopes';
-// @ts-expect-error - filterDefinitions is used in useState initializer which TypeScript doesn't detect
 import { filterDefinitions } from '@/lib/filterDefinitions';
 
 // Types

@@ -6,23 +6,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft,
   Zap,
   Plus,
-  X,
   Building2,
   Sparkles,
   RotateCcw,
-  Edit2,
-  Trash2,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { getTeam, updateTeam, type Team } from '@/lib/teams';
-import { getRoutines, getTeamRoutines, getTeamRoutinesCount, type Routine } from '@/lib/routines';
+import { getRoutines, getTeamRoutines, type Routine } from '@/lib/routines';
 import { ROUTINE_LIBRARY } from '@/lib/onboarding/routineLibrary';
-import type { RoutineLibraryEntry } from '@/lib/onboarding/types';
 import { AddRoutinesModal } from './SimpleOnboardingWizard/AddRoutinesModal';
 import { RecommendedRoutinesModal } from './SimpleOnboardingWizard/RecommendedRoutinesModal';
 import { CreateRoutineFullPageWizard } from './CreateRoutineFullPageWizard';
@@ -142,10 +136,10 @@ export const TeamRoutinesPage: React.FC<{
           return {
             id: libraryRoutine.id,
             name: libraryRoutine.label,
-            description: libraryRoutine.description,
+            description: libraryRoutine.description || undefined,
             pelicoViews: libraryRoutine.pelicoViews,
             objectives: libraryRoutine.objectives,
-          };
+          } as RoutineWithDetails;
         }
         return null;
       })
@@ -159,6 +153,7 @@ export const TeamRoutinesPage: React.FC<{
     const grouped: Record<string, RoutineWithDetails[]> = {};
     
     allTeamRoutines.forEach(routine => {
+      if (!routine) return;
       const objectives = routine.objectives && routine.objectives.length > 0 
         ? routine.objectives 
         : ['Other'];
@@ -620,7 +615,20 @@ export const TeamRoutinesPage: React.FC<{
             setCreateRoutineWizardOpen(false);
             loadTeam();
           }}
-          defaultTeamId={team.id}
+          onRoutineCreated={(routineId) => {
+            // Add routine to team
+            if (team) {
+              const currentRoutineIds = team.assignedRoutineIds || [];
+              if (!currentRoutineIds.includes(routineId)) {
+                updateTeam(team.id, {
+                  assignedRoutineIds: [...currentRoutineIds, routineId],
+                });
+                loadTeam();
+              }
+            }
+            setCreateRoutineWizardOpen(false);
+          }}
+          teamId={team.id}
         />
       )}
 

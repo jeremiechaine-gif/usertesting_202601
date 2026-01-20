@@ -312,6 +312,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
           await updateTeam(teamConfig.id, {
             name: teamConfig.name,
             description: teamConfig.description,
+            persona: teamConfig.persona,
             assignedRoutineIds: teamConfig.assignedRoutineIds,
           });
         } else {
@@ -319,6 +320,7 @@ export const SimpleOnboardingWizard: React.FC<SimpleOnboardingWizardProps> = ({
           const newTeam = await createTeam({
             name: teamConfig.name,
             description: teamConfig.description,
+            persona: teamConfig.persona,
             assignedRoutineIds: teamConfig.assignedRoutineIds,
             assignedScopeIds: [],
           });
